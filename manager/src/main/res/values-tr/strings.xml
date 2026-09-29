@@ -5,7 +5,7 @@
     <string name="home_status_adb_usb">adb</string>
     <!-- Home - Adb -->
     <!-- Home - Wireless Adb -->
-    <string name="home_wireless_adb_title"><![CDATA[Kablosuz hata ayıklama ile başlat]]></string>
+    <string name="home_wireless_adb_title"><![CDATA[Start via Wireless debugging]]></string>
     <string name="home_wireless_adb_starting_without_wifi">Starting with no network: the device is asked for wireless debugging over and over until it stays on. This can take up to two minutes before it starts or gives up.</string>
     <string name="home_usb_adb_needs_network">A USB start uses the classic ADB port, and reopening it needs a network. Connect to Wi-Fi once, or use the wireless start above.</string>
     <string name="home_usb_adb_falls_back_to_wireless">USB start uses the ADB port, which needs a network connection to open again. Since Start without Wi-Fi is on, Shizuku will use wireless debugging instead.</string>
@@ -14,77 +14,44 @@
     <string name="home_usb_adb_summary">Starts using USB debugging.</string>
     <!-- Adb -->
     <string name="dialog_adb_port">Port</string>
-    <string name="dialog_adb_invalid_port">Port 1 ile 65535 arasında değişen bir tamsayı olmalıdır. </string>
-    <string name="adb_pairing">Eşleştiriliyor</string>
-    <string name="dialog_adb_pairing_title">Cihazla eşleş</string>
-    <string name="dialog_adb_pairing_discovery">Eşleştirme servisi aranıyor</string>
-    <string name="dialog_adb_pairing_paring_code">Eşleşme kodu</string>
-    <string name="paring_code_is_wrong">Eşleme kodu yanlış.</string>
-    <string name="cannot_connect_port">Kablosuz hata ayıklama servisine bağlanılamıyor.\n\nLütfen
-        Shizuku\'nun ağ erişimini kısıtlayabilen tüm güvenlik duvarı, reklam engelleme, VPN veya
-        benzeri uygulamalarda beyaz listeye alındığından emin olun.</string>
-    <string name="dialog_adb_pairing_message">Lütfen aşağıdaki adımları uygulayarak eşleştirmeyi
-        başlatın:\n- \"Geliştirici Seçenekleri\"ne gidin\n- \"USB hata ayıklama\" ve \"Kablosuz hata
-        ayıklama\"yı etkinleştirin\n- \"Kablosuz hata ayıklama\"nın sol tarafına dokunun\n- \"Cihazı
-        eşleştirme koduyla eşleştir\"e dokunun\n- Bildirimde eşleştirme kodunu girin</string>
-    <string name="dialog_adb_pairing_accessibility_permission">Android 14\'te, Shizuku\'yu Paket
-        Yükleyici ile yüklemek/güncellemek, eşleştirme için erişilebilirlik hizmetini etkinleştirmek
-        için gerekli olan ^1 iznini iptal eder.\n\nBu izni vermek için aşağıdaki ADB komutunu
-        çalıştırın:\n\n^2\n\nKomutu çalıştırdıktan sonra eşleştirme işlemine devam
-        edebilirsiniz.\n\nNot: Bunu ADB ile Shizuku\'yu yükleyerek/güncelleyerek atlayabilirsiniz.</string>
-    <string name="dialog_adb_pairing_accessibility_enable">Eşleştirme işlemini başlatmak için lütfen
-        erişilebilirlik hizmetini etkinleştirin. Bu, Shizuku\'nun eşleştirme kodunu algılamasını
-        sağlar.\n\nKod bulunduğunda veya enerji tasarrufu için 1 dakika sonra erişilebilirlik
-        hizmeti kapatılacaktır.</string>
-    <string name="dialog_adb_pairing_accessibility_navigate">Lütfen aşağıdaki adımları uygulayarak
-        eşleştirmeyi başlatın:\n- \"Geliştirici Seçenekleri\"ne gidin\n- \"USB hata ayıklama\" ve
-        \"Kablosuz hata ayıklama\"yı etkinleştirin\n- \"Kablosuz hata ayıklama\"nın sol tarafına
-        dokunun\n- \"Cihazı eşleştirme koduyla eşleştir\"e dokunun. Shizuku eşleştirme kodunu
-        otomatik olarak algılayacaktır.</string>
-    <string name="adb_pairing_requires_multi_window">Lütfen önce bölünmüş ekran (çoklu pencere)
-        moduna girin.</string>
-    <string name="adb_pairing_requires_multi_window_reason">Sistem, eşleştirme diyalogunun her zaman
-        görünür olmasını gerektirir. Bölünmüş ekran modu kullanmak, bu uygulama ve sistem
-        diyalogunun aynı anda görünmesini sağlamanın tek yoludur.</string>
-    <string name="adb_error_key_store">Kablosuz hata ayıklama için anahtar oluşturulamıyor.\nBunun
-        nedeni, bu cihazın KeyStore mekanizmasının bozulmuş olmasından kaynaklanıyor olabilir.</string>
-    <string name="adb_error_stop_tcp">TCP üzerinden ADB durdurulamadı</string>
-    <string name="adb_pair_required">Lütfen önce eşleştirme adımını uygulayın.</string>
-    <string name="enable">Etkinleştir</string>
+    <string name="dialog_adb_invalid_port">Enter a port number from 1 to 65535.</string>
+    <string name="adb_pairing">Pairing</string>
+    <string name="dialog_adb_pairing_title">Pair with device</string>
+    <string name="dialog_adb_pairing_discovery">Looking for pairing service</string>
+    <string name="dialog_adb_pairing_paring_code">Pairing code</string>
+    <string name="paring_code_is_wrong">The pairing code is incorrect.</string>
+    <string name="cannot_connect_port">Can\'t connect to wireless debugging service.\n\nPlease ensure that Shizuku is whitelisted in all firewall, ad-block, VPN, or similar apps that can restrict network access.</string>
+    <string name="dialog_adb_pairing_message">Please start pairing by performing the following steps:\n- Navigate to \"Developer Options\"\n- Enable \"USB debugging\" and \"Wireless debugging\"\n- Tap the left side of \"Wireless debugging\"\n- Tap \"Pair device with pairing code\"\n- Input the pairing code in the notification</string>
+    <string name="dialog_adb_pairing_accessibility_permission">On Android 14, installing/updating Shizuku with the Package Installer revokes the ^1 permission, which is required to enable the accessibility service for pairing.\n\nTo grant it, run the following ADB command:\n\n^2\n\nAfter running the command, you may continue with the pairing process.\n\nNote: you can bypass this by installing/updating Shizuku with ADB.</string>
+    <string name="dialog_adb_pairing_accessibility_enable">Automatic pairing reads the code out of the system dialog through Shizuku\'s accessibility service, so it has to be enabled. Shizuku normally enables it on its own, and that needs the WRITE_SECURE_SETTINGS permission, which a fresh install has not been granted yet.\n\nEnable it on the next screen, type the code yourself under Manual, or grant the permission once:\n\nadb shell pm grant moe.shizuku.privileged.api android.permission.WRITE_SECURE_SETTINGS\n\nThe service turns itself off once the code is found, or after a minute to save power.</string>
+    <string name="dialog_adb_pairing_accessibility_navigate">Please start pairing by performing the following steps:\n- Navigate to \"Developer Options\"\n- Enable \"USB debugging\" and \"Wireless debugging\"\n- Tap the left side of \"Wireless debugging\"\n- Tap \"Pair device with pairing code.\" Shizuku will automatically detect the pairing code.</string>
+    <string name="adb_pairing_requires_multi_window">First, open split-screen mode.</string>
+    <string name="adb_pairing_requires_multi_window_reason">The system requires the pairing dialog to always be visible. Using split-screen mode is the only way to let this app and the system dialog be visible at the same time.</string>
+    <string name="adb_error_key_store">Unable to generate key for wireless debugging.\nThis may be because the KeyStore mechanism of this device is broken.</string>
+    <string name="adb_error_stop_tcp">Could not stop ADB over TCP</string>
+    <string name="adb_pair_required">Pair the device first.</string>
+    <string name="enable">Enable</string>
     <string name="auto_pair_instructions">Pair without typing a code:\n\n1. Developer options → Wireless debugging\n2. Pair device with pairing code\n\nShizuku reads the code and port straight from that dialog and starts itself. Keep the dialog open until pairing finishes.</string>
     <string name="auto_pair_manual">Manual</string>
-    <string name="development_settings">Geliştirici seçenekleri</string>
-    <string name="notification_settings">Bildirim seçenekleri</string>
-    <string name="adb_pairing_tutorial_content_notification">Shizuku’dan bir bildirim eşleştirmeyi
-        tamamlamanıza yardım edecek.</string>
-    <string name="adb_pairing_tutorial_content_steps">\"Geliştirici Seçenekleri\"ne gidin, ardından
-        \"USB hata ayıklama\" ve \"Kablosuz hata ayıklama\"yı etkinleştirin.</string>
-    <string name="adb_pairing_tutorial_content_enter_pairing_code">\"Kablosuz hata ayıklama\"nın sol
-        tarafına dokunun, ardından \"Cihazı eşleştirme koduyla eşleştir\" seçeneğine dokunun.
-        Eşleştirmeyi tamamlamak için bildirimdeki kodu girin.</string>
-    <string name="adb_pairing_tutorial_content_notification_blocked">Eşleştirme işlemi, Shizuku\'dan
-        gelen bir bildirimle etkileşim kurmanızı gerektirir. Lütfen Shizuku\'nun bildirim
-        göndermesine izin verin.</string>
-    <string name="adb_pairing_tutorial_content_miui">MIUI kullanıcılarının sistem ayarlarında
-        \"Bildirim\" - \"Bildirim gölgesi\"nden bildirim stilini \"Android\" olarak değiştirmeleri
-        gerekebilir.</string>
-    <string name="adb_pairing_tutorial_content_miui_2">Aksi takdirde, bildirimden eşleştirme kodunu
-        giremeyebilirsiniz.</string>
-    <string name="adb_pairing_tutorial_content_finish">Shizuku\'ya geri dön ve Shizuku\'yu başlat.</string>
-    <string name="adb_pairing_tutorial_content_network">Shizuku\'nun yerel ağa erişmesi gerekiyor.
-        Ağ izniyle kontrol edilir.</string>
-    <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Bazı sistemler
-        (örneğin MIUI), uygulamaların görünmediği durumlarda ağa erişmesini yasaklar, uygulama ön
-        plan hizmeti kullansa bile. Lütfen bu tür sistemlerde Shizuku için pil optimizasyon
-        özelliklerini devre dışı bırakın.</string>
+    <string name="development_settings">Automatic</string>
+    <string name="notification_settings">Notification settings</string>
+    <string name="adb_pairing_tutorial_content_notification">A notification from Shizuku will help you complete the pairing.</string>
+    <string name="adb_pairing_tutorial_content_steps">Navigate to \"Developer Options\", then enable \"USB debugging\" and \"Wireless debugging\".</string>
+    <string name="adb_pairing_tutorial_content_enter_pairing_code">Tap the left side of \"Wireless debugging\", then tap \"Pair device with pairing code.\" Enter the code in the notification to complete pairing.</string>
+    <string name="adb_pairing_tutorial_content_notification_blocked">The pairing process needs you to interact with a notification from Shizuku. Please allow Shizuku to post notifications.</string>
+    <string name="adb_pairing_tutorial_content_miui">MIUI users may need to switch notification style to \"Android\" from \"Notification\" - \"Notification shade\" in system settings.</string>
+    <string name="adb_pairing_tutorial_content_miui_2">Otherwise, you may not able to enter the pairing code from the notification.</string>
+    <string name="adb_pairing_tutorial_content_finish">Go back to Shizuku and start Shizuku.</string>
+    <string name="adb_pairing_tutorial_content_network">Shizuku needs to access the local network. It is controlled by the network permission.</string>
+    <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Some systems (such as MIUI) disallow apps to access the network when they are not visible, even if the app uses a foreground service. Please disable battery optimization features for Shizuku on such systems.</string>
     <!-- Home - Root -->
-    <string name="home_root_title"><![CDATA[Başlat (rootlu cihazlar için)]]></string>
-    <string name="home_root_description"><![CDATA[Magisk kullanıyorsanız, %1$skomutunu deneyebilirsiniz. Kök kullanıcılar için, sonunda Shizuku\'nun yerini alacaktır. Mevcut uygulamaların %2$skomutunu kullanabilmesi için biraz değişiklik yapılması gerektiğini unutmayın.]]></string>
-    <string name="home_root_button_start">Başlat</string>
+    <string name="home_root_title"><![CDATA[Start via root]]></string>
+    <string name="home_root_description"><![CDATA[If you are using Magisk, you can try %1$s. For root users, it will eventually replace Shizuku. Note, existing applications need to change a little to use %2$s.]]></string>
+    <string name="home_root_button_start">Start</string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
-        <item quantity="one"><![CDATA[Yetkilendirilmiş %d tane uygulama]]></item>
-        <item quantity="other"><![CDATA[Yetkilendirilmiş %d tane uygulama]]></item>
+        <item quantity="one"><![CDATA[Authorized %d application]]></item>
+        <item quantity="other"><![CDATA[Authorized %d applications]]></item>
     </plurals>
     <!-- Home - Automation -->
     <!-- Home - Stealth mode -->
@@ -97,9 +64,9 @@
     <string name="home_dialog_duplicate_app_detected_message">Another version of this app is installed on your device. To continue, please uninstall all duplicate versions and reboot your device.</string>
     <string name="home_dialog_button_exit">Exit</string>
     <!-- Application management -->
-    <string name="app_management_dialog_adb_is_limited_title">ADB’nin izni sınırlıdır</string>
-    <string name="app_management_dialog_adb_is_limited_message"><![CDATA[Cihaz üreticinizin adb iznini sınırlaması son derece olasıdır. <p>Bu belgede<b><a href="%1$s">sisteminiz için bir çözüm olabilir</a></b>.]]></string>
-    <string name="app_management_toggle_all">Tümünü aç/kapat</string>
+    <string name="app_management_dialog_adb_is_limited_title">The permission of adb is limited</string>
+    <string name="app_management_dialog_adb_is_limited_message"><![CDATA[It\'s highly possible that your device manufacturer limits the permission of adb.<p>There may be a solution for your system in <b><a href=\"%1$s\">this document</a></b>.]]></string>
+    <string name="app_management_toggle_all">Toggle all</string>
     <string name="app_management_search_hint">Search apps</string>
     <string name="app_management_sort">Sort</string>
     <string name="apps_needs_shizuku">Start Shizuku to see apps</string>
@@ -139,7 +106,7 @@
     <string name="status_value_none">-</string>
     <string name="status_running_short">Running</string>
     <string name="status_stopped_short">Stopped</string>
-    <string name="action_start">Shizuku\'yu başlat</string>
+    <string name="action_start">Start</string>
     <string name="tools_stealth">Stealth mode</string>
     <string name="tools_terminal">Terminal apps</string>
     <string name="tools_terminal_summary">Run shell commands in any terminal app, using rish</string>
@@ -181,7 +148,7 @@
     <string name="intents_token">Auth token</string>
     <string name="intents_copy">Copy</string>
     <string name="intents_regenerate">Regenerate</string>
-    <string name="intents_start">Başlat</string>
+    <string name="intents_start">Start</string>
     <string name="intents_stop">Stop</string>
     <string name="intents_watchdog_on">Watchdog on</string>
     <string name="intents_watchdog_off">Watchdog off</string>
@@ -200,20 +167,13 @@
     <string name="app_management_batch_revoked">Access revoked from %1$d apps</string>
     <string name="action_undo">Undo</string>
     <!-- Terminal -->
-    <string name="terminal_tutorial_miui">Kullanıcılar, MIUI\'nin dışa aktarma işlevi tarafından
-        kullanılan Depolama Erişim Çerçevesini bozduğunu bildirdi.</string>
-    <string name="terminal_tutorial_miui_2">Eğer MIUI kullanıyorsanız, dosyayı Shizuku\'nun
-        APK\'sındaki varlıklar klasöründen çıkarmanız gerekebilir.</string>
-    <string name="terminal_tutorial_1">Dosyaları yeni bir klasöre aktarın.</string>
-    <string name="terminal_tutorial_1_description">İki dosya dışa aktarılacak: %1$s ve %2$s.
-        Dosyalar seçili klasörde zaten mevcutsa silinecek.</string>
-    <string name="terminal_tutorial_2">Terminal uygulamanızı kullanarak dosyaları özel dosyalar
-        dizinine kopyalayın.</string>
-    <string name="terminal_tutorial_2_description">İpucu: Terminal uygulamanızın ana dizini (~) özel
-        dosyalar dizinindeyse, dosyaları oraya yerleştirmek, yolu yazmadan %1$s komutunu
-        çalıştırmanıza olanak tanır.\n\nAksi takdirde, terminal uygulamanızın %3$s yapılandırma
-        dosyasında %2$s için bir takma ad oluşturabilirsiniz.</string>
-    <string name="terminal_tutorial_3">Aşağıdaki komutla bir kabuk açın:</string>
+    <string name="terminal_tutorial_miui">Users have reported that MIUI breaks the Storage Access Framework, which is used by the export function.</string>
+    <string name="terminal_tutorial_miui_2">If you are using MIUI, you may have to extract the file from the assets folder in Shizuku\'s APK.</string>
+    <string name="terminal_tutorial_1">Tap to export the files to a new folder.</string>
+    <string name="terminal_tutorial_1_description">Two files will be exported: %1$s and %2$s. If the files already exist in the selected folder, they will be deleted.</string>
+    <string name="terminal_tutorial_2">Use your terminal app to copy the files to its private files directory.</string>
+    <string name="terminal_tutorial_2_description">Tip: If your terminal app\'s home directory (~) is in the private files directory, placing the files there will allow you to run %1$s without writing the path.\n\nOtherwise, you can create an alias for %2$s in your terminal app\'s %3$s configuration file.</string>
+    <string name="terminal_tutorial_3">Open a shell with the following command:</string>
     <!-- Stealth -->
     <string name="stealth_description">Hide Shizuku from apps that refuse to run when it is installed. A clone with a different package name is exported for you to install.</string>
     <string name="stealth_warning_compatibility">Some apps that use Shizuku may not work when Shizuku is hidden because they try to detect if Shizuku is installed.</string>
@@ -236,10 +196,10 @@
     <string name="stealth_hide">Hide</string>
     <string name="stealth_unhide">Unhide</string>
     <!-- Settings -->
-    <string name="settings_start_on_boot">Önyüklemede başla</string>
-    <string name="settings_use_system_color">Sistem tema rengini kullan</string>
-    <string name="settings_watchdog">Bekçi köpeği</string>
-    <string name="settings_watchdog_summary">Çökerse Shizuku\'yu otomatik olarak yeniden başlat</string>
+    <string name="settings_start_on_boot">Start on boot</string>
+    <string name="settings_use_system_color">Use system theme color</string>
+    <string name="settings_watchdog">Watchdog</string>
+    <string name="settings_watchdog_summary">Restart Shizuku automatically if it crashes</string>
     <string name="settings_auto_disable_wireless_debugging">Auto-disable wireless debugging</string>
     <string name="settings_auto_disable_wireless_debugging_summary">Turn off wireless debugging when Shizuku stops.</string>
     <string name="settings_start_method">Default start method</string>
@@ -274,21 +234,18 @@
     <string name="home_system_title">Start via System UID</string>
     <string name="home_system_summary">Run Shizuku as the system user (UID 1000) instead of as adb only works on devices with the built-in exploit</string>
     <string name="home_adb_command_summary">Start Shizuku from a computer over ADB. Tap to copy the command</string>
-    <string name="settings_tcp_mode">TCP modu</string>
-    <string name="settings_tcp_mode_summary">"Shizuku'nun Wi-Fi olmadan yeniden başlatılmasına izin
-        verir. (Shizuku'nun yeniden başlatıldıktan sonra bir kez başlatılmış olması gerekir)"</string>
-    <string name="settings_tcp_mode_dialog_close_port">"TCP portu hemen kapatılacaktır. TCP modunu
-        tekrar açmak için Wi-Fi'ye ihtiyacınız olacak. Devam edilsin mi?"</string>
-    <string name="settings_restart_dialog_title">Yeniden Başlatma Gerekli</string>
-    <string name="settings_restart_dialog_message">Shizuku\'nun bu ayarı uygulayabilmesi için
-        yeniden başlatması gerekiyor.</string>
-    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Wi-Fi zorunlu. Shizuku çalışmaya devam edecek ve Wi-Fi bağlantısını bekleyecek, sonra arka planda yeniden başlatacak.</b>]]></string>
-    <string name="settings_tcp_port">TCP bağlantı noktası</string>
+    <string name="settings_tcp_mode">TCP mode</string>
+    <string name="settings_tcp_mode_summary">"Allows Shizuku to restart without Wi-Fi. (Shizuku must have started once since reboot)"</string>
+    <string name="settings_tcp_mode_dialog_close_port">"The TCP port will be closed immediately. You will need Wi-Fi to turn on TCP mode again. Continue?"</string>
+    <string name="settings_restart_dialog_title">Restart Required</string>
+    <string name="settings_restart_dialog_message">Shizuku must restart to apply this setting.</string>
+    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Wi-Fi is required. Shizuku will continue running and wait for a Wi-Fi connection before restarting in the background.</b>]]></string>
+    <string name="settings_tcp_port">TCP port</string>
     <string name="settings_auto_disable_usb_debugging">Auto-disable USB debugging</string>
     <string name="settings_auto_disable_usb_debugging_summary">Disable USB debugging when stopping Shizuku</string>
-    <string name="settings_language">Dil</string>
-    <string name="settings_black_night_theme">Siyah gece teması</string>
-    <string name="settings_black_night_theme_summary">Gece modu etkinse saf siyah temasını kullanın</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_black_night_theme">Amoled Black</string>
+    <string name="settings_black_night_theme_summary">Use a pure black theme in dark mode</string>
     <string name="settings_update_stable">Stable</string>
     <string name="settings_update_beta">Dev</string>
     <string name="settings_permissions">Permissions</string>
@@ -306,28 +263,24 @@
     <string name="permissions_accessibility">Accessibility service</string>
     <string name="permissions_accessibility_summary">Reads the pairing code automatically.</string>
     <string name="permissions_battery_summary">Stops Android from killing Shizuku in the background.</string>
-    <string name="settings_help">Yardım</string>
-    <string name="settings_report_bug">Bir hata bildirin</string>
-    <string name="settings_legacy_pairing">Miras eşleştirmesi</string>
-    <string name="settings_legacy_pairing_summary">Eşleştirme kodunu bildirim yerine bir iletişim
-        kutusuna girin</string>
+    <string name="settings_help">Help</string>
+    <string name="settings_report_bug">Report a bug</string>
+    <string name="settings_legacy_pairing">Legacy pairing</string>
+    <string name="settings_legacy_pairing_summary">Enter the pairing code in a dialog instead of a notification</string>
     <!-- Bug Report Dialog -->
-    <string name="bug_report_dialog_before_reporting">Öncelikle lütfen aşağıdakileri yapın:</string>
-    <string name="bug_report_dialog_update">^1 operatörünü kullandığınızdan emin olun.</string>
-    <string name="bug_report_dialog_link_update">en son sürüm</string>
-    <string name="bug_report_dialog_wiki">^1 numaralı metni okuyun ve ilgili tüm sorun giderme
-        adımlarını izleyin.</string>
-    <string name="bug_report_dialog_link_wiki">viki</string>
-    <string name="bug_report_dialog_issues">Hatanızın daha önce bildirilip bildirilmediğini görmek
-        için ^1 numaralı tüm kayıtları inceleyin.</string>
-    <string name="bug_report_dialog_link_issues">mevcut sorunlar</string>
-    <string name="bug_report_dialog_method">Hesabınız varsa lütfen ^1 üzerinden bir sorun bildirin.</string>
-    <string name="bug_report_dialog_method_2">Alternatif olarak, e-posta gönderebilirsiniz.</string>
-    <string name="bug_report_dialog_button_email">E-posta</string>
+    <string name="bug_report_dialog_before_reporting">First, please do the following:</string>
+    <string name="bug_report_dialog_update">Check that you are using the ^1.</string>
+    <string name="bug_report_dialog_link_update">latest version</string>
+    <string name="bug_report_dialog_wiki">Read the ^1 and follow all relevant troubleshooting steps.</string>
+    <string name="bug_report_dialog_link_wiki">wiki</string>
+    <string name="bug_report_dialog_issues">Search through all ^1 to see if your bug has already been reported.</string>
+    <string name="bug_report_dialog_link_issues">existing issues</string>
+    <string name="bug_report_dialog_method">Please submit an issue on ^1 if you have an account.</string>
+    <string name="bug_report_dialog_method_2">Otherwise, you can send an email.</string>
+    <string name="bug_report_dialog_button_email">Email</string>
     <!-- Snackbar -->
-    <string name="snackbar_battery_optimization_settings">Bu özelliği kullanmak için lütfen pil
-        optimizasyonunu devre dışı bırakın.</string>
-    <string name="snackbar_action_fix">Düzeltmek</string>
+    <string name="snackbar_battery_optimization_settings">Turn off battery optimization to use this feature.</string>
+    <string name="snackbar_action_fix">Fix</string>
     <string name="snackbar_update_available">A new update is available</string>
     <string name="snackbar_action_update">Update</string>
     <!-- Updates -->
@@ -344,56 +297,54 @@
     <string name="update_success">Update complete</string>
     <string name="update_failed">Update failed</string>
     <!-- Toast -->
-    <string name="toast_no_email_app">E-posta uygulaması bulunamadı</string>
-    <string name="toast_pairing_timeout">Shizuku eşleştirme servisi zaman doldu.</string>
+    <string name="toast_no_email_app">No email app found</string>
+    <string name="toast_pairing_timeout">Shizuku pairing service timed out</string>
     <!-- Dark Mode Setting Override -->
-    <string name="dark_theme">Tema</string>
-    <string name="dark_theme_off">Her zaman hafif</string>
-    <string name="dark_theme_on">Her zaman karanlık</string>
+    <string name="dark_theme">Theme</string>
+    <string name="dark_theme_off">Always light</string>
+    <string name="dark_theme_on">Always dark</string>
     <string name="follow_system">Follow System</string>
     <!-- About -->
     <!-- Start/Stop -->
-    <string name="start">Başlat</string>
-    <string name="action_stop">Shizuku’yu durdur</string>
+    <string name="start">Start</string>
+    <string name="action_stop">Stop</string>
     <string name="action_restart">Restart</string>
     <string name="action_open_adb_port">Open ADB port</string>
     <!-- Notification -->
-    <string name="notification_channel_adb_pairing">Kablosuz hata ayıklama eşleştirmesi</string>
-    <string name="notification_adb_pairing_input_paring_code">Eşleştirme kodunu girin</string>
-    <string name="notification_adb_pairing_searching_for_service_title">Eşleştirme hizmeti aranıyor</string>
-    <string name="notification_adb_pairing_service_found_title">Eşleştirme hizmeti bulundu</string>
-    <string name="notification_adb_pairing_stop_searching">Aramayı durdur</string>
-    <string name="notification_adb_pairing_working_title">Eşleştirme devam ediyor</string>
-    <string name="notification_adb_pairing_succeed_title">Eşleştirme başarılı</string>
-    <string name="notification_adb_pairing_succeed_text">Shizuku hizmetini şimdi başlatabilirsiniz.</string>
-    <string name="notification_adb_pairing_failed_title">Eşleştirme başarısız</string>
-    <string name="notification_adb_pairing_retry">Yeniden dene</string>
+    <string name="notification_channel_adb_pairing">Wireless debugging pairing</string>
+    <string name="notification_adb_pairing_input_paring_code">Enter pairing code</string>
+    <string name="notification_adb_pairing_searching_for_service_title">Looking for pairing service</string>
+    <string name="notification_adb_pairing_service_found_title">Pairing service found</string>
+    <string name="notification_adb_pairing_stop_searching">Stop searching</string>
+    <string name="notification_adb_pairing_working_title">Pairing in progress</string>
+    <string name="notification_adb_pairing_succeed_title">Pairing successful</string>
+    <string name="notification_adb_pairing_succeed_text">You can start Shizuku now.</string>
+    <string name="notification_adb_pairing_failed_title">Pairing failed</string>
+    <string name="notification_adb_pairing_retry">Retry</string>
     <string name="notification_auth_missing_title">Auth token required</string>
     <string name="notification_auth_missing_message">Add the “auth” extra to your intent. You can find your token by tapping “View intents” in the app.</string>
     <string name="notification_auth_invalid_title">Invalid auth token</string>
     <string name="notification_auth_invalid_message">Make sure the token in your intent matches the one shown under “View intents” in the app.</string>
     <!-- Permission related, appears in system permission UI -->
-    <string name="permission_label">Shizuku’ya erişim</string>
-    <string name="permission_description">Uygulamanın Shizuku’yu kullanmasına izin verin.</string>
-    <string name="permission_warning_template"><![CDATA[<b>%1$s</b> uygulamasına %2$s için izin verilsin mi\?]]></string>
-    <string name="grant_dialog_button_allow_always">Her zaman izin ver</string>
-    <string name="grant_dialog_button_deny">"Reddet"</string>
+    <string name="permission_label">access Shizuku</string>
+    <string name="permission_description">Allow the app to use Shizuku.</string>
+    <string name="permission_warning_template"><![CDATA[Allow <b>%1$s</b> to %2$s?]]></string>
+    <string name="grant_dialog_button_allow_always">Always allow</string>
+    <string name="grant_dialog_button_deny">"Deny"</string>
     <!-- Starter -->
-    <string name="starter">Başlatıcı</string>
-    <string name="start_with_root_failed">Root izni verilmediği veya bu aygıtın rootlu olmadığı için
-        hizmet başlatılamıyor.</string>
+    <string name="starter">Starter</string>
+    <string name="start_with_root_failed">Could not start because root access is not available.</string>
     <!-- WADB Starter -->
-    <string name="wadb_notification_title">Shizuku\'ya Başlarken…</string>
-    <string name="wadb_notification_wifi_required">Devam etmeden önce Wi-Fi bağlantısı bekleniyor</string>
-    <string name="wadb_notification_retry">Yeniden denemeyi bekliyor.</string>
+    <string name="wadb_notification_title">Starting Shizuku…</string>
+    <string name="wadb_notification_wifi_required">Waiting for Wi-Fi</string>
+    <string name="wadb_notification_retry">Waiting to retry</string>
     <string name="wadb_notification_connecting">Starting Shizuku with wireless ADB</string>
     <string name="wadb_notification_waiting_for_unlock">Unlock the device to continue</string>
     <string name="wadb_notification_forcing_wireless">Keeping wireless debugging on</string>
-    <string name="wadb_error_title">Önyükleme sırasında hata oluştu</string>
-    <string name="wadb_error_notify_dev">Geliştiriciyi bilgilendirmek için dokunun.</string>
-    <string name="wadb_permission_error_notification_title">İzin Hatası</string>
-    <string name="wadb_permission_error_notification_content">Shizuku\'nun önyükleme sırasında
-        WRITE_SECURE_SETTINGS ayarına ihtiyacı var. Nasıl izin vereceğinizi öğrenmek için dokunun.</string>
+    <string name="wadb_error_title">Could not start after reboot</string>
+    <string name="wadb_error_notify_dev">Tap to report this to the developer.</string>
+    <string name="wadb_permission_error_notification_title">Permission Error</string>
+    <string name="wadb_permission_error_notification_content">Shizuku needs WRITE_SECURE_SETTINGS to turn wireless debugging on. Tap to learn how to grant it.</string>
     <!-- Shell -->
     <string name="shell_title">Shell</string>
     <string name="shell_backend_shizuku">Shizuku</string>
@@ -452,28 +403,24 @@
     <string name="shell_history_previous">Previous command</string>
     <string name="shell_history_next">Next command</string>
     <!-- Watchdog -->
-    <string name="watchdog_running">Bekçi köpeği çalışıyor</string>
-    <string name="watchdog_turn_off">Devre Dışı Bırak</string>
-    <string name="watchdog_shizuku_crashed_title">Shizuku yakın zamanda çöktü</string>
-    <string name="watchdog_shizuku_crashed_text">Bekçi köpeği hizmeti yeniden başlattı. Gelecekteki
-        çökmeleri önlemek için olası çözümler hakkında bilgi edinmek için dokunun.</string>
-    <string name="watchdog_shizuku_crashed_action_turn_off_alerts">Uyarıları Kapat</string>
+    <string name="watchdog_running">Watchdog is active</string>
+    <string name="watchdog_turn_off">Turn Off</string>
+    <string name="watchdog_shizuku_crashed_title">Shizuku crashed recently</string>
+    <string name="watchdog_shizuku_crashed_text">Watchdog restarted Shizuku. Tap to see ways to prevent crashes.</string>
+    <string name="watchdog_shizuku_crashed_action_turn_off_alerts">Turn Off Alerts</string>
     <!-- Misc -->
     <string name="error">Error</string>
     <string name="off">Off</string>
-    <string name="dialog_cannot_open_browser_title">Tarayıcı başlatılamıyor</string>
-    <string name="toast_copied_to_clipboard">Panoya kopyalandı</string>
-    <string name="accessibility_service_description">Bildirimlerin veya bölünmüş ekranın
-        kullanılamadığı cihazlar (örneğin, Android 14+ çalıştıran TV\'ler) için eşleştirme desteği
-        sağlar.\n\nShizuku\'nun eşleştirme kodunu kablosuz hata ayıklama eşleştirme ekranından
-        çıkarmasını sağlar. Eşleştirme kodu bulunduğunda kendini devre dışı bırakır.</string>
+    <string name="dialog_cannot_open_browser_title">Can\'t start browser</string>
+    <string name="toast_copied_to_clipboard">Copied to clipboard</string>
+    <string name="accessibility_service_description">Pairs wireless debugging without typing the code.\n\nShizuku reads the pairing code and port from the system\'s “Pair with device” screen, pairs, and starts itself. On TVs (e.g. Android 14+) it drives the whole flow and switches off once a code is found.</string>
     <!-- Messages for legacy -->
-    <string name="dialog_legacy_not_support_title">%1$s, yeni Shizuku’yu desteklemiyor</string>
-    <string name="dialog_legacy_not_support_message"><![CDATA[Eski Shizuku, Mart 2019’dan beri kullanımdan kaldırılmıştır. Ayrıca, eski Shizuku yeni Android sistemlerinde çalışmaz. <p>Lütfen<b>%1$s</b> geliştiricisinden güncelleme yapmasını isteyin.]]></string>
-    <string name="dialog_requesting_legacy_title">%1$s, mevcut Shizuku gerektiriyor</string>
-    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> yeni Shizuku desteğine sahip ama eski Shizuku talep ediyor. Bu Shizuku çalışmadığı zaman meydana gelir, lütfen Shizuku uygulamasını kontrol edin.<p>Eski Shizuku uygulaması Mart 2019’da kullanımdan kaldırılmıştır.]]></string>
-    <string name="dialog_requesting_legacy_button_open_shizuku">Shizuku’yu aç</string>
-    <string name="wadb_notification_attempt_now">Şimdi dene</string>
+    <string name="dialog_legacy_not_support_title">%1$s does not support modern Shizuku</string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[Legacy Shizuku has been deprecated since March 2019. Also, legacy Shizuku does not work on newer Android systems.<p>Please ask the developer of <b>%1$s</b> to update.]]></string>
+    <string name="dialog_requesting_legacy_title">%1$s is requesting legacy Shizuku</string>
+    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> has modern Shizuku support, but it\'s requesting legacy Shizuku. This could because Shizuku is not running, please check in Shizuku app.<p>Legacy Shizuku has been deprecated since March 2019.]]></string>
+    <string name="dialog_requesting_legacy_button_open_shizuku">Open Shizuku</string>
+    <string name="wadb_notification_attempt_now">Retry</string>
     <!-- Manage tab -->
     <string name="tab_manage">Manage App Ops</string>
     <string name="manage_search_hint">Search apps</string>
@@ -527,14 +474,14 @@
     <string name="app_op_mode_default">Default</string>
     <string name="app_op_mode_allow">Allow</string>
     <string name="app_op_mode_ignore">Ignore</string>
-    <string name="app_op_mode_deny">Reddet</string>
+    <string name="app_op_mode_deny">Deny</string>
     <string name="app_action_force_stop">Force stop</string>
     <string name="app_action_force_stop_note">Stops it now. It may start again later.</string>
     <string name="app_action_suspend">Suspend</string>
     <string name="app_action_unsuspend">Unsuspend</string>
     <string name="app_action_suspend_note">Disables it but keeps its data.</string>
     <string name="app_action_disable">Disable</string>
-    <string name="app_action_enable">Etkinleştir</string>
+    <string name="app_action_enable">Enable</string>
     <string name="app_action_disable_note">Disables it until you enable it again.</string>
     <string name="app_action_clear_data">Clear data</string>
     <string name="app_action_clear_data_note">Deletes its files, settings, and accounts.</string>
