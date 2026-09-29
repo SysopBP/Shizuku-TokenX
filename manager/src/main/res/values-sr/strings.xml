@@ -5,7 +5,7 @@
     <string name="home_status_adb_usb">adb</string>
     <!-- Home - Adb -->
     <!-- Home - Wireless Adb -->
-    <string name="home_wireless_adb_title"><![CDATA[Start via Wireless debugging]]></string>
+    <string name="home_wireless_adb_title"><![CDATA[Pokreni preko Bežičnog otklanjanja grešaka]]></string>
     <string name="home_wireless_adb_starting_without_wifi">Starting with no network: the device is asked for wireless debugging over and over until it stays on. This can take up to two minutes before it starts or gives up.</string>
     <string name="home_usb_adb_needs_network">A USB start uses the classic ADB port, and reopening it needs a network. Connect to Wi-Fi once, or use the wireless start above.</string>
     <string name="home_usb_adb_falls_back_to_wireless">USB start uses the ADB port, which needs a network connection to open again. Since Start without Wi-Fi is on, Shizuku will use wireless debugging instead.</string>
@@ -13,46 +13,76 @@
     <string name="home_usb_adb_title"><![CDATA[Start via USB debugging]]></string>
     <string name="home_usb_adb_summary">Starts using USB debugging.</string>
     <!-- Adb -->
-    <string name="dialog_adb_port">Port</string>
-    <string name="dialog_adb_invalid_port">Enter a port number from 1 to 65535.</string>
-    <string name="adb_pairing">Pairing</string>
-    <string name="dialog_adb_pairing_title">Pair with device</string>
-    <string name="dialog_adb_pairing_discovery">Looking for pairing service</string>
-    <string name="dialog_adb_pairing_paring_code">Pairing code</string>
-    <string name="paring_code_is_wrong">The pairing code is incorrect.</string>
-    <string name="cannot_connect_port">Can\'t connect to wireless debugging service.\n\nPlease ensure that Shizuku is whitelisted in all firewall, ad-block, VPN, or similar apps that can restrict network access.</string>
-    <string name="dialog_adb_pairing_message">Please start pairing by performing the following steps:\n- Navigate to \"Developer Options\"\n- Enable \"USB debugging\" and \"Wireless debugging\"\n- Tap the left side of \"Wireless debugging\"\n- Tap \"Pair device with pairing code\"\n- Input the pairing code in the notification</string>
-    <string name="dialog_adb_pairing_accessibility_permission">On Android 14, installing/updating Shizuku with the Package Installer revokes the ^1 permission, which is required to enable the accessibility service for pairing.\n\nTo grant it, run the following ADB command:\n\n^2\n\nAfter running the command, you may continue with the pairing process.\n\nNote: you can bypass this by installing/updating Shizuku with ADB.</string>
-    <string name="dialog_adb_pairing_accessibility_enable">Automatic pairing reads the code out of the system dialog through Shizuku\'s accessibility service, so it has to be enabled. Shizuku normally enables it on its own, and that needs the WRITE_SECURE_SETTINGS permission, which a fresh install has not been granted yet.\n\nEnable it on the next screen, type the code yourself under Manual, or grant the permission once:\n\nadb shell pm grant moe.shizuku.privileged.api android.permission.WRITE_SECURE_SETTINGS\n\nThe service turns itself off once the code is found, or after a minute to save power.</string>
-    <string name="dialog_adb_pairing_accessibility_navigate">Please start pairing by performing the following steps:\n- Navigate to \"Developer Options\"\n- Enable \"USB debugging\" and \"Wireless debugging\"\n- Tap the left side of \"Wireless debugging\"\n- Tap \"Pair device with pairing code.\" Shizuku will automatically detect the pairing code.</string>
-    <string name="adb_pairing_requires_multi_window">First, open split-screen mode.</string>
-    <string name="adb_pairing_requires_multi_window_reason">The system requires the pairing dialog to always be visible. Using split-screen mode is the only way to let this app and the system dialog be visible at the same time.</string>
-    <string name="adb_error_key_store">Unable to generate key for wireless debugging.\nThis may be because the KeyStore mechanism of this device is broken.</string>
-    <string name="adb_error_stop_tcp">Could not stop ADB over TCP</string>
-    <string name="adb_pair_required">Pair the device first.</string>
-    <string name="enable">Enable</string>
+    <string name="dialog_adb_port">Лука</string>
+    <string name="dialog_adb_invalid_port">Порт је цео број у распону од 1 до 65535.</string>
+    <string name="adb_pairing">Упаривање</string>
+    <string name="dialog_adb_pairing_title">Upari sa uređajem</string>
+    <string name="dialog_adb_pairing_discovery">Traženje uređaja za uparivanje</string>
+    <string name="dialog_adb_pairing_paring_code">Kód za uparivanje</string>
+    <string name="paring_code_is_wrong">Kód za uparivanje je pogrešan.</string>
+    <string name="cannot_connect_port">Ne mogu da se povežem sa bežičnom uslugom otklanjanje
+        grešaka.\n\nUverite se da je Shizuku na beloj listi u svim zaštitnim zidovima, ad-block, VPN
+        ili sličnim aplikacijama koje mogu ograničiti pristup mreži.</string>
+    <string name="dialog_adb_pairing_message">Почните упаривање пратећи следеће кораке:\n- Идите на
+        „Опције за програмере“\n- Омогућите „USB отклањање грешака“ и „Бежично отклањање грешака“\n-
+        Додирните леву страну „Бежично отклањање грешака“\n- Додирните „Упари уређај са кодом за
+        упаривање“\n- Унесите код за упаривање у обавештење</string>
+    <string name="dialog_adb_pairing_accessibility_permission">На Андроиду 14, инсталирање/ажурирање
+        Шизукуа помоћу инсталера пакета опозива дозволу ^1, која је потребна за омогућавање услуге
+        приступачности за упаривање.\n\nДа бисте је доделили, покрените следећу ADB
+        команду:\n\n^2\n\nНакон покретања команде, можете наставити са процесом
+        упаривања.\n\nНапомена: ово можете заобићи инсталирањем/ажурирањем Шизукуа помоћу ADB-а.</string>
+    <string name="dialog_adb_pairing_accessibility_enable">Омогућите услугу приступачности да бисте
+        започели процес упаривања. Ово омогућава Шизукуу да детектује код за упаривање.\n\nУслуга
+        приступачности ће бити искључена када се пронађе код или након 1 минута ради уштеде
+        енергије.</string>
+    <string name="dialog_adb_pairing_accessibility_navigate">Почните упаривање пратећи следеће
+        кораке:\n- Идите на „Опције за програмере“\n- Омогућите „USB отклањање грешака“ и „Бежично
+        отклањање грешака“\n- Додирните леву страну „Бежично отклањање грешака“\n- Додирните „Упари
+        уређај са кодом за упаривање“. Шизуку ће аутоматски детектовати код за упаривање.</string>
+    <string name="adb_pairing_requires_multi_window">Molim Vas, najpre izaberite režim podeljenog
+        ekrana, odnosno režim više prozora.</string>
+    <string name="adb_pairing_requires_multi_window_reason">Sistem zahteva dijalog uparivanja da
+        uvek bude vidljiv. Korišćenje režima podeljenog ekrana je jedini način da ova aplikacija i
+        sistemski dijalog budu vidljivi u isto vreme.</string>
+    <string name="adb_error_key_store">Nije moguće generisati ključ za bežično otklanjanje
+        grešaka.\nTo može biti zato što je KeiStore mehanizam ovog uređaja je slomljena.</string>
+    <string name="adb_error_stop_tcp">Заустављање ADB-а преко TCP-а није успело</string>
+    <string name="adb_pair_required">Molim Vas, najpre prođite kroz korake za uparivanje uređaja.</string>
+    <string name="enable">Омогући</string>
     <string name="auto_pair_instructions">Pair without typing a code:\n\n1. Developer options → Wireless debugging\n2. Pair device with pairing code\n\nShizuku reads the code and port straight from that dialog and starts itself. Keep the dialog open until pairing finishes.</string>
     <string name="auto_pair_manual">Manual</string>
-    <string name="development_settings">Automatic</string>
-    <string name="notification_settings">Notification settings</string>
-    <string name="adb_pairing_tutorial_content_notification">A notification from Shizuku will help you complete the pairing.</string>
-    <string name="adb_pairing_tutorial_content_steps">Navigate to \"Developer Options\", then enable \"USB debugging\" and \"Wireless debugging\".</string>
-    <string name="adb_pairing_tutorial_content_enter_pairing_code">Tap the left side of \"Wireless debugging\", then tap \"Pair device with pairing code.\" Enter the code in the notification to complete pairing.</string>
-    <string name="adb_pairing_tutorial_content_notification_blocked">The pairing process needs you to interact with a notification from Shizuku. Please allow Shizuku to post notifications.</string>
-    <string name="adb_pairing_tutorial_content_miui">MIUI users may need to switch notification style to \"Android\" from \"Notification\" - \"Notification shade\" in system settings.</string>
-    <string name="adb_pairing_tutorial_content_miui_2">Otherwise, you may not able to enter the pairing code from the notification.</string>
-    <string name="adb_pairing_tutorial_content_finish">Go back to Shizuku and start Shizuku.</string>
-    <string name="adb_pairing_tutorial_content_network">Shizuku needs to access the local network. It is controlled by the network permission.</string>
-    <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Some systems (such as MIUI) disallow apps to access the network when they are not visible, even if the app uses a foreground service. Please disable battery optimization features for Shizuku on such systems.</string>
+    <string name="development_settings">Razvojne opcije programera</string>
+    <string name="notification_settings">Opcije obaveštenja</string>
+    <string name="adb_pairing_tutorial_content_notification">Notifikacija iz Shizuku aplikacije će
+        Vam pomoći da dovršite uparivanje.</string>
+    <string name="adb_pairing_tutorial_content_steps">Идите на „Опције за програмере“, затим
+        омогућите „USB дебаговање“ и „Бежично дебаговање“.</string>
+    <string name="adb_pairing_tutorial_content_enter_pairing_code">Додирните леву страну „Бежично
+        отклањање грешака“, а затим додирните „Упари уређај са кодом за упаривање“. Унесите код из
+        обавештења да бисте завршили упаривање.</string>
+    <string name="adb_pairing_tutorial_content_notification_blocked">Процес упаривања захтева вашу
+        интеракцију са обавештењем од Шизукуа. Дозволите Шизукуу да објављује обавештења.</string>
+    <string name="adb_pairing_tutorial_content_miui">Корисници MIUI-ја ће можда морати да промене
+        стил обавештења на „Android“ из „Обавештења“ - „Тањир обавештења“ у системским подешавањима.</string>
+    <string name="adb_pairing_tutorial_content_miui_2">U suprotnom, možda nećete moći da unesete kod
+        za uparivanje iz obaveštenja.</string>
+    <string name="adb_pairing_tutorial_content_finish">Vratite se u Shizuku i počnite Shizuku.</string>
+    <string name="adb_pairing_tutorial_content_network">Shizuku treba da pristupi lokalnoj mreži.
+        Kontroliše se mrežnom dozvolom.</string>
+    <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Neki sistemi (kao
+        što je MIUI) ne dozvoljavaju aplikacijama pristup mreži kada nisu vidljive, čak i ako
+        aplikacija koristi uslugu u prvom planu. Molimo Vas da onemogućite funkcije optimizacije
+        baterije za Shizuku na takvim sistemima.</string>
     <!-- Home - Root -->
-    <string name="home_root_title"><![CDATA[Start via root]]></string>
-    <string name="home_root_description"><![CDATA[If you are using Magisk, you can try %1$s. For root users, it will eventually replace Shizuku. Note, existing applications need to change a little to use %2$s.]]></string>
-    <string name="home_root_button_start">Start</string>
+    <string name="home_root_title"><![CDATA[Покрени (за рутоване уређаје)]]></string>
+    <string name="home_root_description"><![CDATA[Ако користите Magisk, можете испробати %1$s. За root кориснике, на крају ће заменити Shizuku. Имајте на уму да постојеће апликације треба мало да се промене да би користиле %2$s.]]></string>
+    <string name="home_root_button_start">Почетак</string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
-        <item quantity="one"><![CDATA[Authorized %d application]]></item>
-        <item quantity="few"><![CDATA[Authorized %d applications]]></item>
-        <item quantity="other"><![CDATA[Authorized %d applications]]></item>
+        <item quantity="one"><![CDATA[Овлашћена %d апликација]]></item>
+        <item quantity="few"><![CDATA[Овлашћене %d апликације]]></item>
+        <item quantity="other"><![CDATA[Овлашћене %d апликације]]></item>
     </plurals>
     <!-- Home - Automation -->
     <!-- Home - Stealth mode -->
@@ -65,9 +95,9 @@
     <string name="home_dialog_duplicate_app_detected_message">Another version of this app is installed on your device. To continue, please uninstall all duplicate versions and reboot your device.</string>
     <string name="home_dialog_button_exit">Exit</string>
     <!-- Application management -->
-    <string name="app_management_dialog_adb_is_limited_title">The permission of adb is limited</string>
-    <string name="app_management_dialog_adb_is_limited_message"><![CDATA[It\'s highly possible that your device manufacturer limits the permission of adb.<p>There may be a solution for your system in <b><a href=\"%1$s\">this document</a></b>.]]></string>
-    <string name="app_management_toggle_all">Toggle all</string>
+    <string name="app_management_dialog_adb_is_limited_title">Дозвола adb-а је ограничена</string>
+    <string name="app_management_dialog_adb_is_limited_message"><![CDATA[Врло је могуће да произвођач вашег уређаја ограничава дозволе adb-а.<p>Можда постоји решење за ваш систем у <b><a href=\"%1$s\">овом документу</a></b>.]]></string>
+    <string name="app_management_toggle_all">Укључи/искључи све</string>
     <string name="app_management_search_hint">Search apps</string>
     <string name="app_management_sort">Sort</string>
     <string name="apps_needs_shizuku">Start Shizuku to see apps</string>
@@ -107,7 +137,7 @@
     <string name="status_value_none">-</string>
     <string name="status_running_short">Running</string>
     <string name="status_stopped_short">Stopped</string>
-    <string name="action_start">Start</string>
+    <string name="action_start">Покрени Схизуку</string>
     <string name="tools_stealth">Stealth mode</string>
     <string name="tools_terminal">Terminal apps</string>
     <string name="tools_terminal_summary">Run shell commands in any terminal app, using rish</string>
@@ -149,7 +179,7 @@
     <string name="intents_token">Auth token</string>
     <string name="intents_copy">Copy</string>
     <string name="intents_regenerate">Regenerate</string>
-    <string name="intents_start">Start</string>
+    <string name="intents_start">Почетак</string>
     <string name="intents_stop">Stop</string>
     <string name="intents_watchdog_on">Watchdog on</string>
     <string name="intents_watchdog_off">Watchdog off</string>
@@ -168,13 +198,20 @@
     <string name="app_management_batch_revoked">Access revoked from %1$d apps</string>
     <string name="action_undo">Undo</string>
     <!-- Terminal -->
-    <string name="terminal_tutorial_miui">Users have reported that MIUI breaks the Storage Access Framework, which is used by the export function.</string>
-    <string name="terminal_tutorial_miui_2">If you are using MIUI, you may have to extract the file from the assets folder in Shizuku\'s APK.</string>
-    <string name="terminal_tutorial_1">Tap to export the files to a new folder.</string>
-    <string name="terminal_tutorial_1_description">Two files will be exported: %1$s and %2$s. If the files already exist in the selected folder, they will be deleted.</string>
-    <string name="terminal_tutorial_2">Use your terminal app to copy the files to its private files directory.</string>
-    <string name="terminal_tutorial_2_description">Tip: If your terminal app\'s home directory (~) is in the private files directory, placing the files there will allow you to run %1$s without writing the path.\n\nOtherwise, you can create an alias for %2$s in your terminal app\'s %3$s configuration file.</string>
-    <string name="terminal_tutorial_3">Open a shell with the following command:</string>
+    <string name="terminal_tutorial_miui">Корисници су пријавили да MIUI крши Storage Access
+        Framework, који користи функција извоза.</string>
+    <string name="terminal_tutorial_miui_2">Ако користите MIUI, можда ћете морати да извучете
+        датотеку из фасцикле assets у Shizuku-овом APK-у.</string>
+    <string name="terminal_tutorial_1">Извезите датотеке у нову фасциклу.</string>
+    <string name="terminal_tutorial_1_description">Биће извезене две датотеке: %1$s и %2$s. Ако
+        датотеке већ постоје у изабраној фасцикли, биће обрисане.</string>
+    <string name="terminal_tutorial_2">Користите терминалну апликацију да копирате датотеке у њен
+        приватни директоријум датотека.</string>
+    <string name="terminal_tutorial_2_description">Савет: Ако се почетни директоријум ваше
+        терминалне апликације (~) налази у директоријуму приватних датотека, смештање датотека тамо
+        ће вам омогућити да покренете %1$s без писања путање.\n\nУ супротном, можете креирати алиас
+        за %2$s у конфигурационој датотеци %3$s ваше терминалне апликације.</string>
+    <string name="terminal_tutorial_3">Отворите љуску следећом командом:</string>
     <!-- Stealth -->
     <string name="stealth_description">Hide Shizuku from apps that refuse to run when it is installed. A clone with a different package name is exported for you to install.</string>
     <string name="stealth_warning_compatibility">Some apps that use Shizuku may not work when Shizuku is hidden because they try to detect if Shizuku is installed.</string>
@@ -197,10 +234,10 @@
     <string name="stealth_hide">Hide</string>
     <string name="stealth_unhide">Unhide</string>
     <!-- Settings -->
-    <string name="settings_start_on_boot">Start on boot</string>
-    <string name="settings_use_system_color">Use system theme color</string>
-    <string name="settings_watchdog">Watchdog</string>
-    <string name="settings_watchdog_summary">Restart Shizuku automatically if it crashes</string>
+    <string name="settings_start_on_boot">Покрени при покретању</string>
+    <string name="settings_use_system_color">Користи боју системске теме</string>
+    <string name="settings_watchdog">Чувар</string>
+    <string name="settings_watchdog_summary">Аутоматски поново покрените Шизуку ако се сруши</string>
     <string name="settings_auto_disable_wireless_debugging">Auto-disable wireless debugging</string>
     <string name="settings_auto_disable_wireless_debugging_summary">Turn off wireless debugging when Shizuku stops.</string>
     <string name="settings_start_method">Default start method</string>
@@ -235,18 +272,22 @@
     <string name="home_system_title">Start via System UID</string>
     <string name="home_system_summary">Run Shizuku as the system user (UID 1000) instead of as adb only works on devices with the built-in exploit</string>
     <string name="home_adb_command_summary">Start Shizuku from a computer over ADB. Tap to copy the command</string>
-    <string name="settings_tcp_mode">TCP mode</string>
-    <string name="settings_tcp_mode_summary">"Allows Shizuku to restart without Wi-Fi. (Shizuku must have started once since reboot)"</string>
-    <string name="settings_tcp_mode_dialog_close_port">"The TCP port will be closed immediately. You will need Wi-Fi to turn on TCP mode again. Continue?"</string>
-    <string name="settings_restart_dialog_title">Restart Required</string>
-    <string name="settings_restart_dialog_message">Shizuku must restart to apply this setting.</string>
-    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Wi-Fi is required. Shizuku will continue running and wait for a Wi-Fi connection before restarting in the background.</b>]]></string>
-    <string name="settings_tcp_port">TCP port</string>
+    <string name="settings_tcp_mode">TCP режим</string>
+    <string name="settings_tcp_mode_summary">"Омогућава Шизукуу да се поново покрене без Wi-Fi-ја.
+        (Шизуку се морао једном покренути од поновног покретања)"</string>
+    <string name="settings_tcp_mode_dialog_close_port">"TCP порт ће бити одмах затворен. Биће вам
+        потребан Wi-Fi да бисте поново укључили TCP режим. Желите ли да наставите?"</string>
+    <string name="settings_restart_dialog_title">Потребно је поновно покретање</string>
+    <string name="settings_restart_dialog_message">Shizuku treba da se ponovo pokrene da bi se
+        primenila ova postavka.</string>
+    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Vi-Fi je potreban. Shizuku će nastaviti da radi i čekati Vi-Fi vezu pre ponovnog pokretanja u pozadini.</b>]]></string>
+    <string name="settings_tcp_port">ТЦП порт</string>
     <string name="settings_auto_disable_usb_debugging">Auto-disable USB debugging</string>
     <string name="settings_auto_disable_usb_debugging_summary">Disable USB debugging when stopping Shizuku</string>
-    <string name="settings_language">Language</string>
-    <string name="settings_black_night_theme">Amoled Black</string>
-    <string name="settings_black_night_theme_summary">Use a pure black theme in dark mode</string>
+    <string name="settings_language">Језик</string>
+    <string name="settings_black_night_theme">Тема црне ноћи</string>
+    <string name="settings_black_night_theme_summary">Користите чисто црну тему ако је омогућен
+        ноћни режим</string>
     <string name="settings_update_stable">Stable</string>
     <string name="settings_update_beta">Dev</string>
     <string name="settings_permissions">Permissions</string>
@@ -264,24 +305,28 @@
     <string name="permissions_accessibility">Accessibility service</string>
     <string name="permissions_accessibility_summary">Reads the pairing code automatically.</string>
     <string name="permissions_battery_summary">Stops Android from killing Shizuku in the background.</string>
-    <string name="settings_help">Help</string>
-    <string name="settings_report_bug">Report a bug</string>
-    <string name="settings_legacy_pairing">Legacy pairing</string>
-    <string name="settings_legacy_pairing_summary">Enter the pairing code in a dialog instead of a notification</string>
+    <string name="settings_help">Помоћ</string>
+    <string name="settings_report_bug">Пријави грешку</string>
+    <string name="settings_legacy_pairing">Упаривање са старим уређајима</string>
+    <string name="settings_legacy_pairing_summary">Унесите код за упаривање у дијалогу уместо у
+        обавештењу</string>
     <!-- Bug Report Dialog -->
-    <string name="bug_report_dialog_before_reporting">First, please do the following:</string>
-    <string name="bug_report_dialog_update">Check that you are using the ^1.</string>
-    <string name="bug_report_dialog_link_update">latest version</string>
-    <string name="bug_report_dialog_wiki">Read the ^1 and follow all relevant troubleshooting steps.</string>
-    <string name="bug_report_dialog_link_wiki">wiki</string>
-    <string name="bug_report_dialog_issues">Search through all ^1 to see if your bug has already been reported.</string>
-    <string name="bug_report_dialog_link_issues">existing issues</string>
-    <string name="bug_report_dialog_method">Please submit an issue on ^1 if you have an account.</string>
-    <string name="bug_report_dialog_method_2">Otherwise, you can send an email.</string>
-    <string name="bug_report_dialog_button_email">Email</string>
+    <string name="bug_report_dialog_before_reporting">Прво, урадите следеће:</string>
+    <string name="bug_report_dialog_update">Проверите да ли користите ^1.</string>
+    <string name="bug_report_dialog_link_update">најновија верзија</string>
+    <string name="bug_report_dialog_wiki">Прочитајте ^1 и пратите све релевантне кораке за решавање
+        проблема.</string>
+    <string name="bug_report_dialog_link_wiki">вики</string>
+    <string name="bug_report_dialog_issues">Претражите све ^1 да бисте видели да ли је ваша грешка
+        већ пријављена.</string>
+    <string name="bug_report_dialog_link_issues">постојећи проблеми</string>
+    <string name="bug_report_dialog_method">Молимо вас да пријавите проблем на ^1 ако имате налог.</string>
+    <string name="bug_report_dialog_method_2">У супротном, можете послати е-пошту.</string>
+    <string name="bug_report_dialog_button_email">Е-пошта</string>
     <!-- Snackbar -->
-    <string name="snackbar_battery_optimization_settings">Turn off battery optimization to use this feature.</string>
-    <string name="snackbar_action_fix">Fix</string>
+    <string name="snackbar_battery_optimization_settings">Онемогућите оптимизацију батерије да бисте
+        користили ову функцију.</string>
+    <string name="snackbar_action_fix">Поправи</string>
     <string name="snackbar_update_available">A new update is available</string>
     <string name="snackbar_action_update">Update</string>
     <!-- Updates -->
@@ -298,54 +343,56 @@
     <string name="update_success">Update complete</string>
     <string name="update_failed">Update failed</string>
     <!-- Toast -->
-    <string name="toast_no_email_app">No email app found</string>
-    <string name="toast_pairing_timeout">Shizuku pairing service timed out</string>
+    <string name="toast_no_email_app">Није пронађена апликација за е-пошту</string>
+    <string name="toast_pairing_timeout">Shizuku uparivanje servis je isteklo.</string>
     <!-- Dark Mode Setting Override -->
-    <string name="dark_theme">Theme</string>
-    <string name="dark_theme_off">Always light</string>
-    <string name="dark_theme_on">Always dark</string>
+    <string name="dark_theme">Тема</string>
+    <string name="dark_theme_off">Увек светло</string>
+    <string name="dark_theme_on">Увек мрачно</string>
     <string name="follow_system">Follow System</string>
     <!-- About -->
     <!-- Start/Stop -->
-    <string name="start">Start</string>
-    <string name="action_stop">Stop</string>
+    <string name="start">Почетак</string>
+    <string name="action_stop">Заустави Шизуку</string>
     <string name="action_restart">Restart</string>
     <string name="action_open_adb_port">Open ADB port</string>
     <!-- Notification -->
-    <string name="notification_channel_adb_pairing">Wireless debugging pairing</string>
-    <string name="notification_adb_pairing_input_paring_code">Enter pairing code</string>
-    <string name="notification_adb_pairing_searching_for_service_title">Looking for pairing service</string>
-    <string name="notification_adb_pairing_service_found_title">Pairing service found</string>
-    <string name="notification_adb_pairing_stop_searching">Stop searching</string>
-    <string name="notification_adb_pairing_working_title">Pairing in progress</string>
-    <string name="notification_adb_pairing_succeed_title">Pairing successful</string>
-    <string name="notification_adb_pairing_succeed_text">You can start Shizuku now.</string>
-    <string name="notification_adb_pairing_failed_title">Pairing failed</string>
-    <string name="notification_adb_pairing_retry">Retry</string>
+    <string name="notification_channel_adb_pairing">Бежично упаривање за отклањање грешака</string>
+    <string name="notification_adb_pairing_input_paring_code">Унесите код за упаривање</string>
+    <string name="notification_adb_pairing_searching_for_service_title">Тражење услуге упаривања</string>
+    <string name="notification_adb_pairing_service_found_title">Пронађена је услуга упаривања</string>
+    <string name="notification_adb_pairing_stop_searching">Престани претрагу</string>
+    <string name="notification_adb_pairing_working_title">Упаривање у току</string>
+    <string name="notification_adb_pairing_succeed_title">Упаривање је успешно</string>
+    <string name="notification_adb_pairing_succeed_text">Сада можете покренути Шизуку услугу.</string>
+    <string name="notification_adb_pairing_failed_title">Упаривање није успело</string>
+    <string name="notification_adb_pairing_retry">Покушај поново</string>
     <string name="notification_auth_missing_title">Auth token required</string>
     <string name="notification_auth_missing_message">Add the “auth” extra to your intent. You can find your token by tapping “View intents” in the app.</string>
     <string name="notification_auth_invalid_title">Invalid auth token</string>
     <string name="notification_auth_invalid_message">Make sure the token in your intent matches the one shown under “View intents” in the app.</string>
     <!-- Permission related, appears in system permission UI -->
-    <string name="permission_label">access Shizuku</string>
-    <string name="permission_description">Allow the app to use Shizuku.</string>
-    <string name="permission_warning_template"><![CDATA[Allow <b>%1$s</b> to %2$s?]]></string>
-    <string name="grant_dialog_button_allow_always">Always allow</string>
-    <string name="grant_dialog_button_deny">"Deny"</string>
+    <string name="permission_label">приступ Шизуку</string>
+    <string name="permission_description">Дозволите апликацији да користи Шизуку.</string>
+    <string name="permission_warning_template"><![CDATA[Дозволити <b>%1$s</b> до %2$s?]]></string>
+    <string name="grant_dialog_button_allow_always">Дозволи све време</string>
+    <string name="grant_dialog_button_deny">"Одбиј"</string>
     <!-- Starter -->
-    <string name="starter">Starter</string>
-    <string name="start_with_root_failed">Could not start because root access is not available.</string>
+    <string name="starter">Стартер</string>
+    <string name="start_with_root_failed">Не могу да покренем услугу јер није одобрена root дозвола
+        или овај уређај није рутован.</string>
     <!-- WADB Starter -->
-    <string name="wadb_notification_title">Starting Shizuku…</string>
-    <string name="wadb_notification_wifi_required">Waiting for Wi-Fi</string>
-    <string name="wadb_notification_retry">Waiting to retry</string>
+    <string name="wadb_notification_title">Почетак игре Шизуку…</string>
+    <string name="wadb_notification_wifi_required">Чека се Wi-Fi веза пре него што се настави</string>
+    <string name="wadb_notification_retry">Чекање на поновни покушај</string>
     <string name="wadb_notification_connecting">Starting Shizuku with wireless ADB</string>
     <string name="wadb_notification_waiting_for_unlock">Unlock the device to continue</string>
     <string name="wadb_notification_forcing_wireless">Keeping wireless debugging on</string>
-    <string name="wadb_error_title">Could not start after reboot</string>
-    <string name="wadb_error_notify_dev">Tap to report this to the developer.</string>
-    <string name="wadb_permission_error_notification_title">Permission Error</string>
-    <string name="wadb_permission_error_notification_content">Shizuku needs WRITE_SECURE_SETTINGS to turn wireless debugging on. Tap to learn how to grant it.</string>
+    <string name="wadb_error_title">Грешка при покретању система</string>
+    <string name="wadb_error_notify_dev">Додирните да бисте обавестили програмера.</string>
+    <string name="wadb_permission_error_notification_title">Грешка дозволе</string>
+    <string name="wadb_permission_error_notification_content">Шизуку захтева WRITE_SECURE_SETTINGS
+        да би се покренуо при покретању система. Додирните да бисте сазнали како да га одобрите.</string>
     <!-- Shell -->
     <string name="shell_title">Shell</string>
     <string name="shell_backend_shizuku">Shizuku</string>
@@ -404,24 +451,28 @@
     <string name="shell_history_previous">Previous command</string>
     <string name="shell_history_next">Next command</string>
     <!-- Watchdog -->
-    <string name="watchdog_running">Watchdog is active</string>
-    <string name="watchdog_turn_off">Turn Off</string>
-    <string name="watchdog_shizuku_crashed_title">Shizuku crashed recently</string>
-    <string name="watchdog_shizuku_crashed_text">Watchdog restarted Shizuku. Tap to see ways to prevent crashes.</string>
-    <string name="watchdog_shizuku_crashed_action_turn_off_alerts">Turn Off Alerts</string>
+    <string name="watchdog_running">Чуварски орган ради</string>
+    <string name="watchdog_turn_off">Ugasi</string>
+    <string name="watchdog_shizuku_crashed_title">Шизуку се недавно срушио</string>
+    <string name="watchdog_shizuku_crashed_text">Watchdog је поново покренуо услугу. Додирните да
+        бисте сазнали више о потенцијалним решењима за спречавање будућих падова.</string>
+    <string name="watchdog_shizuku_crashed_action_turn_off_alerts">Искључи упозорења</string>
     <!-- Misc -->
     <string name="error">Error</string>
     <string name="off">Off</string>
-    <string name="dialog_cannot_open_browser_title">Can\'t start browser</string>
-    <string name="toast_copied_to_clipboard">Copied to clipboard</string>
-    <string name="accessibility_service_description">Pairs wireless debugging without typing the code.\n\nShizuku reads the pairing code and port from the system\'s “Pair with device” screen, pairs, and starts itself. On TVs (e.g. Android 14+) it drives the whole flow and switches off once a code is found.</string>
+    <string name="dialog_cannot_open_browser_title">Не могу да покренем прегледач</string>
+    <string name="toast_copied_to_clipboard">Копирано у међуспремник</string>
+    <string name="accessibility_service_description">Пружа подршку за упаривање уређаја (нпр.
+        телевизора са Андроидом 14+) где обавештења или подељени екран не могу да се
+        користе.\n\nОмогућава Шизуку-у да издвоји код за упаривање са екрана за упаривање за бежично
+        отклањање грешака. Сам ће се деактивирати када се пронађе код за упаривање.</string>
     <!-- Messages for legacy -->
-    <string name="dialog_legacy_not_support_title">%1$s does not support modern Shizuku</string>
-    <string name="dialog_legacy_not_support_message"><![CDATA[Legacy Shizuku has been deprecated since March 2019. Also, legacy Shizuku does not work on newer Android systems.<p>Please ask the developer of <b>%1$s</b> to update.]]></string>
-    <string name="dialog_requesting_legacy_title">%1$s is requesting legacy Shizuku</string>
-    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> has modern Shizuku support, but it\'s requesting legacy Shizuku. This could because Shizuku is not running, please check in Shizuku app.<p>Legacy Shizuku has been deprecated since March 2019.]]></string>
-    <string name="dialog_requesting_legacy_button_open_shizuku">Open Shizuku</string>
-    <string name="wadb_notification_attempt_now">Retry</string>
+    <string name="dialog_legacy_not_support_title">%1$s не подржава модерни Шизуку</string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[Застарели Шизуку је застарео од марта 2019. Такође, застарели Шизуку не ради на новијим Андроид системима.<p>Замолите програмера <b>%1$s</b> да ажурира.]]></string>
+    <string name="dialog_requesting_legacy_title">%1$s захтева старију верзију Шизукуа</string>
+    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> има подршку за модерни Шизуку, али захтева старији Шизуку. То би могло бити зато што Шизуку не ради, проверите у апликацији Шизуку.<p>Старији Шизуку је застарео од марта 2019.]]></string>
+    <string name="dialog_requesting_legacy_button_open_shizuku">Отвори Шизуку</string>
+    <string name="wadb_notification_attempt_now">Покушај сада</string>
     <!-- Manage tab -->
     <string name="tab_manage">Manage App Ops</string>
     <string name="manage_search_hint">Search apps</string>
@@ -475,14 +526,14 @@
     <string name="app_op_mode_default">Default</string>
     <string name="app_op_mode_allow">Allow</string>
     <string name="app_op_mode_ignore">Ignore</string>
-    <string name="app_op_mode_deny">Deny</string>
+    <string name="app_op_mode_deny">Одбиј</string>
     <string name="app_action_force_stop">Force stop</string>
     <string name="app_action_force_stop_note">Stops it now. It may start again later.</string>
     <string name="app_action_suspend">Suspend</string>
     <string name="app_action_unsuspend">Unsuspend</string>
     <string name="app_action_suspend_note">Disables it but keeps its data.</string>
     <string name="app_action_disable">Disable</string>
-    <string name="app_action_enable">Enable</string>
+    <string name="app_action_enable">Омогући</string>
     <string name="app_action_disable_note">Disables it until you enable it again.</string>
     <string name="app_action_clear_data">Clear data</string>
     <string name="app_action_clear_data_note">Deletes its files, settings, and accounts.</string>
