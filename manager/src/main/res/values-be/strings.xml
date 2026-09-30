@@ -121,6 +121,7 @@
     <string name="action_open_wireless_debugging">Wireless debugging</string>
     <string name="start_failed_unsupported">This device cannot start it in the background</string>
     <string name="start_failed_wifi_required">Connect to a Wi-Fi network the system turns wireless debugging off without one. Or start from a computer using the ADB command below.</string>
+    <string name="start_failed_binder_went_away">The service was started and then stopped again, so nothing can use it yet. That happens when the server is taken down with the app the start went through, which is what the payload does after it has started it. Try the start again.</string>
     <string name="start_failed_no_port">No wireless debugging port was found. Make sure wireless debugging is enabled and Wi-Fi is connected.</string>
     <string name="start_failed_no_port_no_permission">No wireless debugging port was found, and Shizuku can\'t turn wireless debugging on without WRITE_SECURE_SETTINGS: <b>adb shell pm grant moe.shizuku.privileged.api android.permission.WRITE_SECURE_SETTINGS</b>. Or start Shizuku over USB debugging once it grants itself afterwards.</string>
     <string name="start_failed_no_auth">Wireless debugging is not allowed on this network. Pair the device again.</string>
@@ -132,7 +133,7 @@
     <string name="start_failed_usb_no_port">No local ADB port is open Android clears it on every reboot, and reopening it needs a connection to borrow. Connect to Wi-Fi and Shizuku will reopen it over wireless debugging, run <b>adb tcpip 5555</b> from a computer, or turn on <b>Start without Wi-Fi</b> to start over wireless debugging instead.</string>
     <string name="start_failed_root_unavailable">Root is no longer available on this device, so Shizuku can\'t start over root. Pick another start method.</string>
     <string name="start_failed_system_needs_app">The system start method must be started from the app.</string>
-    <string name="start_failed_system_no_exploit">This device does not ship the component the system start uses (com.sdet.fotaagent), so there is nothing to escalate with here. Switch the system start method to Custom command: the app will show you what to run with an escalation your device does have.</string>
+    <string name="start_failed_system_no_exploit">This device does not ship the Samsung FOTA agent (com.sdet.fotaagent), which is the only component the system start method can use, so there is nothing to escalate with here. Switch the system start method to Custom command: the app will show you what to run with an escalation your device does have.</string>
     <string name="start_failed_no_binder">The service did not appear within a minute. Both halves keep a log: the starter under ShizukuServiceStarter and the hand-over under BinderSender. A logcat reader filtered to those two shows whether the starter got as far as forking the server, and whether the server ever asked for the binder.</string>
     <string name="start_system_custom_intro">Escalate however you can, your own exploit, an automation or a root shell, and run this command: it launches the service as the system uid. The app is waiting for it to appear.</string>
     <string name="start_system_custom_copied">Command copied to the clipboard.</string>
@@ -231,10 +232,10 @@
     <string name="settings_persist_adb_port_refused">Android refused this. Shizuku must be running as root or the system user.</string>
     <string name="settings_persist_adb_port_unavailable">Start Shizuku first. This setting can only be changed through Shizuku.</string>
     <string name="settings_system_start_method">System start method</string>
-    <string name="settings_system_start_method_exploit">Device exploit</string>
+    <string name="settings_system_start_method_exploit">Samsung (FOTA agent)</string>
     <string name="settings_system_start_method_custom">Custom command</string>
     <string name="home_system_title">Start via System UID</string>
-    <string name="home_system_summary">Run Shizuku as the system user (UID 1000) instead of as adb only works on devices with the built-in exploit</string>
+    <string name="home_system_summary">Run Shizuku as the system user (UID 1000) instead of as adb: Samsung only, through the FOTA agent those builds ship</string>
     <string name="home_adb_command_summary">Start Shizuku from a computer over ADB. Tap to copy the command</string>
     <string name="settings_tcp_mode">TCP mode</string>
     <string name="settings_tcp_mode_summary">"Allows Shizuku to restart without Wi-Fi. (Shizuku must have started once since reboot)"</string>
