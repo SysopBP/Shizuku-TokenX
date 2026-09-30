@@ -418,5 +418,6 @@
     <string name="app_info_min_sdk">最小 SDK</string>
     <string name="app_info_abi">ABI</string>
     <string name="app_info_data_dir">データの保存先</string>
+    <string name="app_info_signature">署名</string>
     <string name="app_info_updated">更新日時</string>
 </resources>
