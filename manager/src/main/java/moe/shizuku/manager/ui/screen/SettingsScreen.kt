@@ -617,6 +617,32 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
             }
 
             item {
+                Text(
+                    "TOKENX",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 16.dp, top = 12.dp)
+                )
+            }
+            item {
+                SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
+                    item {
+                        SegmentedListItem(
+                            centerSlots = true,
+                            leadingContent = { SettingsIcon(Icons.Outlined.AdminPanelSettings) },
+                            headlineContent = { Text("TokenX Control Center") },
+                            supportingContent = { Text("Backends, router, Boot Guardian, native API and live privilege state") },
+                            trailingContent = {
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                            },
+                            onClick = { onOpenDetail(Detail.TOKENX) }
+                        )
+                    }
+                }
+            }
+
+            item {
                 SettingsSectionHeader(R.string.settings_section_appearance)
             }
             item {
