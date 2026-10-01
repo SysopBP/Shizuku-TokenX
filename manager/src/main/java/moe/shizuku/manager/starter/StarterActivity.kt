@@ -353,73 +353,28 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
         "agent: not installed"
     }
 
+    /**
+     * System mode is now an LSPosed system_server backend, not an APK UID spoof/exploit.
+     * LSPosed loads SystemServerEntry into the Android framework process (uid 1000), where
+     * it starts the server automatically. This button therefore verifies the bridge rather
+     * than trying to manufacture uid 1000 from this ordinary app process.
+     */
     private suspend fun startSys(): Boolean {
-        log("Starting with system...\n")
-        log(agentReport())
+        log("System Server / LSPosed mode\n")
+        log("This mode runs inside Android system_server as UID 1000.\n")
+        log("Enable this app in LSPosed and scope it to System Framework (android), then restart the framework/device.\n")
 
-        return withContext(Dispatchers.IO) {
-            try {
-                appContext.startActivity(
-                    Intent().apply {
-                        setClassName(FOTA_AGENT_PACKAGE, "$FOTA_AGENT_PACKAGE.Main")
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                )
-
-                // Both stages come before the starter that they bracket, and the force stop
-                // stays last: it is the reason the later sends of this command find no
-                // receiver, and it has to run after everything this attempt wants to say.
-                fun stage(value: String) =
-                    "am broadcast -a $STAGE_ACTION --es $STAGE_EXTRA $value"
-
-                val exploit = Intent("$FOTA_AGENT_PACKAGE.intent.CP_FILE").apply {
-                    putExtra("CP_FILE", "/data")
-                    putExtra(
-                        "CP_LOC",
-                        "; ${stage(STAGE_AT_SHELL)}" +
-                            "; " + appContext.applicationInfo.nativeLibraryDir + "/libshizuku.so" +
-                            "; ${stage(STAGE_AFTER_STARTER)}" +
-                            "; am force-stop com.sdet.fotaagent"
-                    )
-                }
-
-                // Several times, and not only for luck. The agent registers the receiver
-                // that acts on this when its activity starts, and a single send a second
-                // later is a race against that: on a device where the activity is still
-                // coming up, the one send lands nowhere and the start looks like a timeout
-                // with nothing to show for it. Repeats cost nothing when the first lands
-                // because the payload stops the agent as its last step, which leaves the
-                // later sends without a receiver.
-                for (attempt in 0 until FOTA_ATTEMPTS) {
-                    if (attempt > 0) delay(FOTA_ATTEMPT_INTERVAL_MS)
-                    appContext.sendBroadcast(exploit)
-                    exploitSent = true
-                    log("sent the agent command (attempt ${attempt + 1} of $FOTA_ATTEMPTS)\n")
-
-                    // And stop as soon as the agent has acted. Every further send runs the
-                    // payload again, and every run stops the server the previous one started,
-                    // so a manager can be handed a binder and have it taken away again before
-                    // it notices: the repeats are only there for the race against the agent's
-                    // receiver being registered, and that race is over the moment it answers.
-                    if (payloadSeen) {
-                        log("the agent acted, so no further commands are sent\n")
-                        break
-                    }
-                }
-                true
-            } catch (e: ActivityNotFoundException) {
-                // The exploit only exists where the device ships the component it abuses,
-                // and a phone that no longer does has nothing to start: say which component
-                // is missing and which method does not need it, instead of reporting a
-                // success that never happened and then waiting for it.
-                val message = appContext.getString(R.string.start_failed_system_no_exploit)
-                log(message)
-                withContext(Dispatchers.Main) { StartStatusReporter.failed(message) }
-                false
-            } catch (e: Throwable) {
-                log("Start system failed!", e)
-                false
-            }
+        ShizukuStateMachine.update()
+        return if (ShizukuStateMachine.isRunning()) {
+            log("System Server bridge is active.\n")
+            true
+        } else {
+            val message =
+                "System Server bridge is not active yet. Enable the TokenX module in LSPosed " +
+                    "for System Framework (android), then reboot or restart the framework."
+            log(message)
+            withContext(Dispatchers.Main) { StartStatusReporter.failed(message) }
+            false
         }
     }
 
