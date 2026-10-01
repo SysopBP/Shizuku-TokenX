@@ -119,6 +119,30 @@ fixes a critical bug in the original v13.6.0 which prevented Shizuku from workin
 
 * And more!
 
+## 🔥 TokenX — October 1, 2026 update
+
+### New features
+
+- **LSPosed System Server backend (UID 1000):** TokenX can load its backend inside Android's `system_server` through LSPosed while the manager APK remains a normal application UID.
+- **Embedded Shizuku server:** the existing server can be started in-process from `system_server`, with an explicit UID 1000 check before activation.
+- **Three-stage boot fallback:** unattended startup now prefers **System Server / UID 1000 → Root / UID 0 → ADB Shell / UID 2000**.
+- **Boot-token arbitration:** each boot stage checks for an already-published Shizuku binder before starting another backend. Diagnostic logs expose `BOOT_TOKEN CLAIMED` and `BOOT_TOKEN CONFIRMED`.
+- **Automatic root boot:** when the System Server backend has not come online, TokenX can start through the existing root backend.
+- **Automatic shell fallback:** when root is unavailable or its boot attempt times out, TokenX falls through to the existing ADB transport, which launches the server as shell UID 2000.
+
+### Hot fixes and architecture changes
+
+- System mode no longer tries to turn the manager APK itself into UID 1000; privilege comes from code loaded into the real `system_server`.
+- Replaced the previous System-mode escalation flow with LSPosed/System Framework bridge verification.
+- Added embedded-server guards so normal server shutdown paths do not intentionally call `System.exit()` from inside `system_server`.
+- Added a manager-package fallback for the embedded environment, where the standalone server's normal `CLASSPATH` information may not exist.
+- Added R8/ProGuard protection for the Xposed entry class referenced by `assets/xposed_init`.
+- Added framework-service readiness checks and duplicate-start protection to the System Server entry.
+- Added a root-start timeout so boot can continue to the UID 2000 shell fallback instead of remaining stuck.
+- Boot startup checks the actual Shizuku binder between privilege stages to reduce duplicate-server races.
+
+> **Testing status:** the architecture is implemented on `master`, but the complete UID 1000 → UID 0 → UID 2000 sequence still needs a successful build and physical-device reboot validation before it should be considered release-verified.
+
 ### 🦊 Added by Shizuku Next (this fork)
 
 The interface work, the start-method handling and the reliability fixes below are ours, built on top of his
@@ -431,7 +455,7 @@ Please read the [wiki](https://github.com/thedjchi/Shizuku/wiki) for setup, info
 - **Root mode:** Requires a rooted device
 - **Wireless Debugging mode:** Works on Android 11+ and all Android TVs
 - **PC mode:** Works on all devices
-- **Start on boot:** Available only when using Wireless Debugging or Root mode
+- **Start on boot:** TokenX supports System Server (UID 1000), Root (UID 0), and ADB/Shell (UID 2000) boot paths, with automatic fallback where the required backend is available
 
 ## 🔒 Privacy
 
