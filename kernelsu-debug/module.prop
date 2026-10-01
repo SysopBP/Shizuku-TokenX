@@ -1,0 +1,6 @@
+id=shizuku_tokenx_debug
+name=Shizuku TokenX KernelSU Debug
+version=1.0.0
+versionCode=1
+author=SysopBP
+description=Diagnostic-only KernelSU module for Shizuku TokenX root, Binder, boot and service troubleshooting.
