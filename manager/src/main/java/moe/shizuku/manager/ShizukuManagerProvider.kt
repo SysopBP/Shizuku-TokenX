@@ -22,6 +22,7 @@ class ShizukuManagerProvider : ShizukuProvider() {
     companion object {
         private const val EXTRA_BINDER = "moe.shizuku.privileged.api.intent.extra.BINDER"
         private const val METHOD_SEND_USER_SERVICE = "sendUserService"
+        private const val METHOD_SEND_BINDER = "sendBinder"
     }
 
     override fun onCreate(): Boolean {
@@ -32,7 +33,23 @@ class ShizukuManagerProvider : ShizukuProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         if (extras == null) return null
 
-        return if (method == METHOD_SEND_USER_SERVICE) {
+        return if (method == METHOD_SEND_BINDER) {
+            // Explicit handoff for the LSPosed embedded backend running in system_server.
+            try {
+                extras.classLoader = BinderContainer::class.java.classLoader
+                val binder = extras.getParcelable<BinderContainer>(EXTRA_BINDER)?.binder ?: return null
+                if (!binder.pingBinder() || !binder.isBinderAlive) {
+                    LOGGER.e("Rejected dead system_server binder")
+                    return null
+                }
+                Shizuku.onBinderReceived(binder, packageName)
+                ShizukuStateMachine.update()
+                Bundle()
+            } catch (e: Throwable) {
+                LOGGER.e(e, "receive system_server binder")
+                null
+            }
+        } else if (method == METHOD_SEND_USER_SERVICE) {
             try {
                 extras.classLoader = BinderContainer::class.java.classLoader
 
