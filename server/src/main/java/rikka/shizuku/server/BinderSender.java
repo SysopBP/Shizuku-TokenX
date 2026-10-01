@@ -10,6 +10,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.RemoteException;
+import android.os.Process;
 import android.text.TextUtils;
 
 import androidx.annotation.RequiresApi;
@@ -171,6 +172,24 @@ public class BinderSender {
 
     public static void register(ShizukuService shizukuService) {
         sShizukuService = shizukuService;
+
+        /*
+         * TokenX may host ShizukuService directly inside system_server through LSPosed.
+         * On Samsung Android 17, registering a second set of external AMS process/UID
+         * observers from the injected module can be rejected by SELinux even though the
+         * code is genuinely UID 1000. These observers are only a convenience for pushing
+         * the binder to newly-started clients; the embedded backend already performs the
+         * initial manager/client binder handoff from ShizukuService.
+         *
+         * Do not make the embedded backend depend on this SELinux-sensitive registration.
+         * Clients can still obtain the binder through the normal provider handoff, while
+         * standalone root/shell Shizuku keeps the original observer behavior unchanged.
+         */
+        if (Process.myUid() == Process.SYSTEM_UID) {
+            LOGGER.i("embedded system_server: skip AMS observer registration; using provider binder handoff");
+            ServerLog.mark("embedded binder transport: provider handoff active; AMS observers skipped");
+            return;
+        }
 
         try {
             ActivityManagerApis.registerProcessObserver(new ProcessObserver());
