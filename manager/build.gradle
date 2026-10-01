@@ -173,6 +173,8 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2"
 
     implementation project(":server")
+    // Package the TokenX LSPosed bridge into the manager APK.
+    implementation project(":xposed")
     implementation project(":rish")
     implementation project(":starter")
     implementation project(":api")
