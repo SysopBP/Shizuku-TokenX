@@ -5,5 +5,6 @@ android {
 }
 
 dependencies {
-    compileOnly "de.robv.android.xposed:api:82"
+    // Modern Xposed API. LSPosed supplies the implementation at runtime.
+    compileOnly "io.github.libxposed:api:102.0.0"
 }
