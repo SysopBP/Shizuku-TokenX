@@ -102,6 +102,7 @@ import moe.shizuku.manager.ui.component.ExpressiveCard
 import moe.shizuku.manager.ui.component.TokenXDashboard
 import moe.shizuku.manager.ui.component.SegmentedColumn
 import moe.shizuku.manager.ui.theme.LocalAmoledTheme
+import moe.shizuku.manager.ui.theme.LocalTokenXGlass
 import moe.shizuku.manager.ui.component.SegmentedListItem
 import moe.shizuku.manager.ui.component.stripHtmlTags
 import moe.shizuku.manager.utils.EnvironmentUtils
@@ -742,93 +743,106 @@ private fun StatusCard(
     uid: Int,
     @StringRes startMethodLabelRes: Int
 ) {
-    // "Stopped" is a normal state, not an error a red container made the
-    // primary action clash. Use a neutral surface instead.
-    val containerColor = if (running) {
-        MaterialTheme.colorScheme.secondaryContainer
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh
-    }
-    val contentColor = if (running) {
-        MaterialTheme.colorScheme.onSecondaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-
-    // On the pure black theme the stopped card is the same colour as the page, so it
-    // gets the same hairline outline as the other cards. The running card uses a
-    // tinted container that the page can't swallow.
-    val outlined = LocalAmoledTheme.current && !running
-
+    val glass = LocalTokenXGlass.current
+    val accent = MaterialTheme.colorScheme.primary
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (outlined) {
-                    Modifier.border(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                        shape = MaterialTheme.shapes.large
-                    )
-                } else {
-                    Modifier
-                }
+            .border(
+                1.dp,
+                if (running) accent.copy(alpha = .34f) else MaterialTheme.colorScheme.outlineVariant,
+                MaterialTheme.shapes.large
             ),
-        color = containerColor,
-        contentColor = contentColor,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
+            alpha = if (glass.enabled) glass.opacity.coerceAtLeast(.55f) else 1f
+        ),
+        contentColor = MaterialTheme.colorScheme.onSurface,
         shape = MaterialTheme.shapes.large
     ) {
-        // The icon reads as a status badge for the title beside it, with the facts in a
-        // row underneath the two of them.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp)
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Icon(
-                if (running) Icons.Rounded.CheckCircle else Icons.Rounded.StopCircle,
-                contentDescription = null,
-                // Nudged down to sit on the title's line rather than above it.
-                modifier = Modifier.padding(top = 2.dp)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    stringResource(
-                        if (running) R.string.status_running_short else R.string.status_stopped_short
-                    ),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                // Everything about the server at a glance: how it is running now, what
-                // the Start button below will do next, and what it is running as.
-                StatusFacts(
-                    StatusFactEntry(
-                        R.string.home_status_started_with,
-                        if (running) runningMethodLabel(uid) else stringResource(R.string.status_value_none)
-                    ),
-                    StatusFactEntry(
-                        R.string.home_status_started_default,
-                        stringResource(startMethodLabelRes)
-                    ),
-                    // The wire, as opposed to the method above it: a wireless start can ride
-                    // the classic port (and a system start uses no adb at all).
-                    StatusFactEntry(
-                        R.string.home_status_transport_label,
-                        if (running) transportLabel(uid) else stringResource(R.string.status_value_none)
-                    ),
-                    // The number is the fact; what the uid is called goes underneath it,
-                    // because "2000 (shell)" in a quarter of the width lost its own name.
-                    StatusFactEntry(
-                        R.string.uid_label,
-                        if (uid < 0) stringResource(R.string.status_value_none) else uid.toString(),
-                        uidName(uid)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = CircleShape,
+                    color = if (running) accent.copy(alpha = .18f) else MaterialTheme.colorScheme.surfaceContainerHighest
+                ) {
+                    Icon(
+                        if (running) Icons.Rounded.CheckCircle else Icons.Rounded.StopCircle,
+                        contentDescription = null,
+                        tint = if (running) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(9.dp).size(22.dp)
                     )
-                )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        stringResource(if (running) R.string.status_running_short else R.string.status_stopped_short),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        if (running) "Privilege engine active" else "Privilege engine offline",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Surface(
+                    shape = CircleShape,
+                    color = if (running) accent.copy(alpha = .14f) else MaterialTheme.colorScheme.surfaceContainerHighest
+                ) {
+                    Text(
+                        if (running) "UID $uid" else "OFFLINE",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (running) accent else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                CompactStatusFact(
+                    "Current",
+                    if (running) runningMethodLabel(uid) else stringResource(R.string.status_value_none),
+                    Modifier.weight(1f)
+                )
+                CompactStatusFact(
+                    "Default",
+                    stringResource(startMethodLabelRes),
+                    Modifier.weight(1f)
+                )
+                CompactStatusFact(
+                    "Transport",
+                    if (running) transportLabel(uid) else stringResource(R.string.status_value_none),
+                    Modifier.weight(1f)
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun CompactStatusFact(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        Text(
+            label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
