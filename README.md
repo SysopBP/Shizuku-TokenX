@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/logo.png" width="132" alt="Shizuku Next">
+<img src="docs/logo.png" width="132" alt="Shizuku TknBoot">
 
-# Shizuku Next
+# Shizuku TknBoot
 
 <img width="200" alt="Screenshot_20260928_115734_Shizuku Next" src="https://github.com/user-attachments/assets/377def8a-0e21-45a8-abd1-22ad83e53fa2" />
 <img width="200" alt="Screenshot_20260928_115739_Shizuku Next" src="https://github.com/user-attachments/assets/339d8b1b-0c2c-4374-9a9f-13a5aa3fb2c7" />
@@ -10,7 +10,7 @@
 
 #
 
-An Android app that allows other apps to use system-level APIs that require ADB/root privileges.
+**TknBoot** extends the Shizuku foundation with Token Boot coordination and the TokenX multi-backend privilege engine, while preserving Shizuku compatibility.\n\nAn Android app that allows other apps to use system-level APIs that require ADB/root privileges.
 
 **Shizuku Next is a fork of [thedjchi's Shizuku](https://github.com/thedjchi/Shizuku), which is itself a fork of
 [RikkaApps' Shizuku](https://github.com/RikkaApps/Shizuku).** Shizuku the server, the API, the shell and
