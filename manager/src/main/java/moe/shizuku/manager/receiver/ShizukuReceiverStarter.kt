@@ -29,6 +29,8 @@ import moe.shizuku.manager.utils.SettingsPage
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import moe.shizuku.manager.utils.UserHandleCompat
 import moe.shizuku.manager.worker.AdbStartWorker
+import moe.shizuku.manager.tokenx.TokenXBootOwner
+import moe.shizuku.manager.tokenx.TokenXBootSession
 
 object ShizukuReceiverStarter {
 
@@ -265,6 +267,18 @@ object ShizukuReceiverStarter {
     }
 
     private fun rootStart(context: Context) {
+        // Root is the first real TokenX boot producer. Claiming is additive: it
+        // coordinates this manager process but does not replace the proven
+        // Shizuku root launch command below.
+        val boot = TokenXBootSession.current()
+        val claimed = when (boot.state) {
+            moe.shizuku.manager.tokenx.TokenXBootState.NEW ->
+                TokenXBootSession.claim(TokenXBootOwner.ROOT)
+            moe.shizuku.manager.tokenx.TokenXBootState.FAILED ->
+                TokenXBootSession.claimRecovery(TokenXBootOwner.ROOT)
+            else -> boot.owner == TokenXBootOwner.ROOT
+        }
+
         if (!Shell.getShell().isRoot) {
             // [start] has already dropped root when the device doesn't have it, so reaching
             // here means it was revoked in between. Say so instead of returning silently:
@@ -272,14 +286,20 @@ object ShizukuReceiverStarter {
             Log.w(AppConstants.TAG, "Root was revoked before the start could use it")
             Shell.getCachedShell()?.close()
             StartStatusReporter.failed(context.getString(R.string.start_failed_root_unavailable))
+            if (claimed) TokenXBootSession.fail(TokenXBootOwner.ROOT, "Root unavailable before server launch")
             ShizukuStateMachine.update()
             return
         }
 
         try {
             ShizukuStateMachine.set(ShizukuStateMachine.State.STARTING)
-            Shell.cmd(Starter.internalCommand).exec()
+            if (claimed) TokenXBootSession.markServerStarting(TokenXBootOwner.ROOT)
+            val result = Shell.cmd(Starter.internalCommand).exec()
+            if (!result.isSuccess && claimed) {
+                TokenXBootSession.fail(TokenXBootOwner.ROOT, "Root starter exited with code ${result.code}")
+            }
         } catch (e: Exception) {
+            if (claimed) TokenXBootSession.fail(TokenXBootOwner.ROOT, e.message ?: "Root starter exception")
             Log.e(AppConstants.TAG, "Failed to start Shizuku with root", e)
             ShizukuStateMachine.update()
         }
