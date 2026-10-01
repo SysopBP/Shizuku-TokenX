@@ -329,12 +329,10 @@ private fun MainTabs(
         // The entire bottom decoration must participate in the toolbar's exit scroll.
         // Previously only HorizontalFloatingToolbar translated, leaving this full-width
         // fade/band behind as an empty rounded bar after the controls hid.
-        val barTranslation = scrollBehavior.offset
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .graphicsLayer { translationY = -barTranslation }
                 .background(
                     Brush.verticalGradient(
                         0f to Color.Transparent,
