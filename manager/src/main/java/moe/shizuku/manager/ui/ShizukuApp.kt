@@ -68,6 +68,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -325,14 +326,15 @@ private fun MainTabs(
         // the bar, which a scrim that waited for a scroll would leave with a hard edge.
         // A gradient and not a blur: blurring a scrolling page means drawing it into an
         // offscreen layer and re-blurring it every frame.
+        // The entire bottom decoration must participate in the toolbar's exit scroll.
+        // Previously only HorizontalFloatingToolbar translated, leaving this full-width
+        // fade/band behind as an empty rounded bar after the controls hid.
+        val barTranslation = scrollBehavior.offset
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                // Before the insets, so the fade reaches the bottom of the screen instead of
-                // stopping at the top of the gesture area: below the bar is page the bar is
-                // floating over too. It lands on the colour the pages themselves draw, so it
-                // dissolves into them in every theme, black included.
+                .graphicsLayer { translationY = -barTranslation }
                 .background(
                     Brush.verticalGradient(
                         0f to Color.Transparent,
