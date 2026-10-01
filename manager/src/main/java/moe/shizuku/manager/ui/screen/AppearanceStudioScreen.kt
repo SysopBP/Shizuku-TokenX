@@ -16,6 +16,11 @@ import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.ui.component.TokenXGlassCard
 import moe.shizuku.manager.ui.theme.BackgroundMode
 import moe.shizuku.manager.ui.theme.TokenXAppearanceKeys
+import moe.shizuku.manager.ui.theme.TokenXAccent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
 import moe.shizuku.manager.ui.theme.ThemeState
 
 @Composable
@@ -87,6 +92,46 @@ fun AppearanceStudioScreen() {
                 )
             }
         }
+
+        Text("Accent color", style = MaterialTheme.typography.titleMedium)
+        Text("Changes Material, TokenX glass highlights and active-state accents across the app.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            TokenXAccent.entries.forEach { preset ->
+                Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                    Box(
+                        Modifier
+                            .size(44.dp)
+                            .background(Color(preset.argb.toULong()), CircleShape)
+                            .clickable {
+                                prefs.edit()
+                                    .putLong(TokenXAppearanceKeys.ACCENT_COLOR, preset.argb)
+                                    .putString(TokenXAppearanceKeys.ACCENT_PRESET, preset.name)
+                                    .putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
+                                    .apply()
+                                refresh()
+                            }
+                    )
+                    Text(preset.label, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+        var customAccent by remember { mutableStateOf(String.format("#%08X", prefs.getLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.TOKEN_PURPLE.argb))) }
+        OutlinedTextField(
+            value = customAccent,
+            onValueChange = { customAccent = it.take(9) },
+            label = { Text("Custom accent (#AARRGGBB)") },
+            singleLine = true
+        )
+        Button(onClick = {
+            runCatching { AndroidColor.parseColor(customAccent) }.onSuccess { parsed ->
+                prefs.edit()
+                    .putLong(TokenXAppearanceKeys.ACCENT_COLOR, parsed.toLong() and 0xFFFFFFFFL)
+                    .putString(TokenXAppearanceKeys.ACCENT_PRESET, "CUSTOM")
+                    .putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
+                    .apply()
+                refresh()
+            }
+        }) { Text("Apply custom accent") }
 
         Text("Background", style = MaterialTheme.typography.titleMedium)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
