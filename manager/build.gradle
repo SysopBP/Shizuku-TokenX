@@ -60,7 +60,15 @@ android {
             useLegacyPackaging = true
         }
         resources {
-            excludes += ["**"]
+            // Upstream stripped every Java resource from the APK. TokenX's modern
+            // LSPosed module descriptor lives under META-INF/xposed, so keep that
+            // namespace while continuing to discard unrelated dependency resources.
+            excludes += ["META-INF/**"]
+            pickFirsts += [
+                "META-INF/xposed/java_init.list",
+                "META-INF/xposed/scope.list",
+                "META-INF/xposed/module.prop"
+            ]
         }
     }
     dependenciesInfo {
