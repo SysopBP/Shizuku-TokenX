@@ -19,6 +19,7 @@ data class TokenXRuntimeState(
 )
 
 object TokenXRuntime {
+    const val REFRESH_INTERVAL_MS = 1000L
     private val knownXposedManagers = listOf(
         "org.lsposed.manager",
         "org.meowcat.edxposed.manager",
@@ -39,7 +40,7 @@ object TokenXRuntime {
             serverUid = uid,
             rootAvailable = root || uid == 0,
             systemServerBridgeAvailable = bridgeActive || uid == 1000,
-            shellAvailable = uid == 2000 || running,
+            shellAvailable = uid == 2000,
         )
 
         return TokenXRuntimeState(
