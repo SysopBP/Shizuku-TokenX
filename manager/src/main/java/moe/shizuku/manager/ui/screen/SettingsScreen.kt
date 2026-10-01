@@ -624,6 +624,20 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                     item {
                         SegmentedListItem(
                             centerSlots = true,
+                            leadingContent = { SettingsIcon(Icons.Outlined.Palette) },
+                            headlineContent = { Text("TokenX Appearance Studio") },
+                            supportingContent = { Text("Glass, backgrounds, opacity, blur, radius, dimming and presets") },
+                            trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
+                            onClick = { onOpenDetail(Detail.APPEARANCE) }
+                        )
+                    }
+                }
+            }
+            item {
+                SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
+                    item {
+                        SegmentedListItem(
+                            centerSlots = true,
                             leadingContent = { SettingsIcon(Icons.Outlined.DarkMode) },
                             headlineContent = { Text(stringResource(R.string.settings_theme)) },
                             supportingContent = {
