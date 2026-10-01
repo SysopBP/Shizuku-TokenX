@@ -157,7 +157,9 @@ configurations.configureEach {
     // coexist in the manager runtime graph.
     exclude group: "androidx.appcompat", module: "appcompat"
     exclude group: "androidx.core", module: "core"
+    exclude group: "androidx.core", module: "core-ktx"
     exclude group: "androidx.fragment", module: "fragment"
+    exclude group: "androidx.fragment", module: "fragment-ktx"
     exclude group: "androidx.customview", module: "customview"
     exclude group: "androidx.drawerlayout", module: "drawerlayout"
     exclude group: "androidx.viewpager", module: "viewpager"
