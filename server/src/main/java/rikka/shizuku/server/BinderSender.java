@@ -187,7 +187,6 @@ public class BinderSender {
          */
         if (Process.myUid() == Process.SYSTEM_UID) {
             LOGGER.i("embedded system_server: skip AMS observer registration; using provider binder handoff");
-            ServerLog.mark("embedded binder transport: provider handoff active; AMS observers skipped");
             return;
         }
 
