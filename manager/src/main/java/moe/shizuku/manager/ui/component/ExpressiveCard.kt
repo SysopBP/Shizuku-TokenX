@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.ui.theme.LocalAmoledTheme
+import moe.shizuku.manager.ui.theme.LocalTokenXGlass
 
 /**
  * An action that explains itself: an icon on a tinted plate, what it does, and why it might
@@ -65,7 +66,7 @@ fun ExpressiveCard(
                 }
             ),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
+        color = if (LocalTokenXGlass.current.enabled) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = LocalTokenXGlass.current.opacity) else MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
         Row(
             modifier = Modifier.padding(18.dp),
