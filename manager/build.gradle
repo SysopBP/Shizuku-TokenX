@@ -206,6 +206,11 @@ dependencies {
     implementation "com.squareup.okhttp3:okhttp:4.12.0"
     implementation "com.github.topjohnwu.libsu:core:6.0.0"
 
+    // TokenX Samsung UI bridge — tribalfs SESL AppCompat. Keep the migration
+    // isolated while Compose remains the primary UI; expand SESL module-by-module
+    // after each CI/device compatibility check.
+    implementation "sesl.androidx.appcompat:appcompat:1.8.0+1.0.21-sesl8+rev2"
+
     implementation "dev.rikka.rikkax.appcompat:appcompat:1.6.1"
     implementation "dev.rikka.rikkax.compatibility:compatibility:2.0.0"
     implementation "dev.rikka.rikkax.core:core-ktx:1.4.1"
