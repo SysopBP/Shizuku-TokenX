@@ -137,7 +137,7 @@
     <string name="tools_terminal_summary">Run shell commands in any terminal app, using rish</string>
     <string name="tools_battery">Battery optimization</string>
     <string name="intents_title">Intents</string>
-    <string name="about_package">Package</string>
+    <string name="about_package">Package</string>\n    <string name="about_developer">Developer</string>\n    <string name="about_developer_name">SysopBP</string>\n    <string name="about_github">GitHub</string>\n    <string name="about_github_summary">SysopBP / Shizuku-TokenX</string>\n    <string name="about_github_url">https://github.com/SysopBP/Shizuku-TokenX</string>
     <string name="check_for_updates_now">Check now</string>
     <string name="start_failed">Could not start Shizuku</string>
     <string name="start_failed_write_secure_settings">Shizuku cannot switch wireless debugging on without the WRITE_SECURE_SETTINGS permission. Turn it on yourself under Developer options &gt; Wireless debugging, or grant the permission with <b>adb shell pm grant moe.shizuku.privileged.api android.permission.WRITE_SECURE_SETTINGS</b>. Once Shizuku is running it keeps that permission itself, so this is a one-off.</string>
