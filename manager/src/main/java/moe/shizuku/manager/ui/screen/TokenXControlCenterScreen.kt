@@ -14,6 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.ui.component.TokenXGlassCard
+import moe.shizuku.manager.tokenx.TokenXBootSession
+import moe.shizuku.manager.tokenx.TokenXBootState
 import moe.shizuku.manager.utils.ShizukuStateMachine
 
 /**
@@ -29,6 +31,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
     val running = ShizukuStateMachine.isRunning()
     val uid = runCatching { rikka.shizuku.Shizuku.getUid() }.getOrDefault(-1)
     val prefs = ShizukuSettings.getPreferences()
+    val boot = TokenXBootSession.current()
     var routerMode by remember { mutableStateOf(prefs.getString("tokenx_router_mode", "Automatic") ?: "Automatic") }
     var rootFirst by remember { mutableStateOf(prefs.getBoolean("tokenx_root_first", true)) }
     var recovery by remember { mutableStateOf(prefs.getBoolean("tokenx_recovery_preview", true)) }
@@ -99,9 +102,10 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
             SectionTitle("Boot Guardian")
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FeatureRow(Icons.Outlined.Token, "Boot Session Token", "Preview • NEW → CLAIMED → BINDER_READY → CONFIRMED")
-                    FeatureRow(Icons.Outlined.Bolt, "Early boot handoff", "Preview • System Server → Root → Shell recovery")
+                    FeatureRow(Icons.Outlined.Token, "Boot Session Token", "Generation ${boot.generation} • ${boot.state.name} • ${boot.token.take(8)}…")
+                    FeatureRow(Icons.Outlined.Bolt, "Session owner", if (boot.state == TokenXBootState.NEW) "Waiting for a startup path to claim this generation" else "${boot.owner.name.replace('_', ' ')} • ${boot.state.name.replace('_', ' ')}")
                     FeatureRow(Icons.Outlined.MonitorHeart, "Guardian watchdog", "Existing watchdog remains the health/recovery layer")
+                    boot.failure?.let { FeatureRow(Icons.Outlined.Warning, "Last boot failure", it) }
                     PreviewSwitch("Recovery handoff", "Prepare fallback ownership when the preferred backend cannot confirm.", recovery) {
                         recovery = it; prefs.edit().putBoolean("tokenx_recovery_preview", it).apply()
                     }
