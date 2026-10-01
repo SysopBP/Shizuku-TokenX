@@ -6,6 +6,9 @@ on:
     branches: [ master ]
     paths:
       - 'kernelsu-debug/**'
+      - 'manager/**'
+      - 'server/**'
+      - 'starter/**'
       - '.github/workflows/ksu-debug.yml'
 
 jobs:
