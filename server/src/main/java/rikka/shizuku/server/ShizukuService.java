@@ -661,18 +661,16 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         boolean success = sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
         ServerLog.mark(success
                 ? "the manager took the binder"
-                : "the manager did not take the binder: retrying, which force stops it first");
+                : "the manager did not take the binder: retrying without force-stop");
         if (!success) {
-            // Nothing to retry in a user the manager is not installed in, and the retry force
-            // stops it: on a device with a work profile that is a force stop, on every start,
-            // of an app that was never in that user. Only the missing app is skipped, which
-            // is exactly the case where the retry could not have worked anyway.
+            // Do NOT force-stop the manager here. On Android 17 a force-stop marks the
+            // package stopped, so the next getContentProviderExternal() cannot reliably
+            // bring the manager provider back. That turns a recoverable provider race into
+            // a permanent Binder handoff timeout while shizuku_server itself stays alive.
             boolean installed;
             try {
                 installed = Android17Compat.getApplicationInfo(MANAGER_APPLICATION_ID, 0, userId) != null;
             } catch (Throwable tr) {
-                // Not certain it is absent, so keep the retry rather than skip a user that
-                // needs it.
                 installed = true;
             }
             if (!installed) {
@@ -680,23 +678,27 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                 return;
             }
 
-            // For unknown reason, sometimes this could happens
-            // Kill Shizuku app and try again could work
-            try {
-                LOGGER.e("kill %s in user %d and try again", MANAGER_APPLICATION_ID, userId);
-                ActivityManagerApis.forceStopPackageNoThrow(MANAGER_APPLICATION_ID, userId);
+            final long[] retryDelays = {250L, 750L, 1500L, 3000L};
+            for (long retryDelay : retryDelays) {
                 try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {}
+                    Thread.sleep(retryDelay);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+
+                ServerLog.mark("manager binder handoff retry after " + retryDelay
+                        + "ms, serverUid=" + Process.myUid());
                 success = sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
                 if (success) {
-                    LOGGER.e("retry succeeded");
-                } else {
-                    LOGGER.e("retry failed");
+                    ServerLog.mark("manager binder handoff retry succeeded");
+                    LOGGER.i("manager binder handoff retry succeeded in user %d", userId);
+                    return;
                 }
-            } catch (Throwable tr) {
-                LOGGER.e(tr, "retry failed");
             }
+
+            ServerLog.mark("manager binder handoff retries exhausted; server remains alive");
+            LOGGER.e("manager binder handoff retries exhausted in user %d", userId);
         }
     }
 
