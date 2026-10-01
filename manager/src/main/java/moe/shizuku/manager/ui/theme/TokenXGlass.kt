@@ -57,6 +57,8 @@ object TokenXAppearanceKeys {
     const val GLASS_BLUR = "tokenx_glass_blur"
     const val GLASS_RADIUS = "tokenx_glass_radius"
     const val GLASS_BORDER = "tokenx_glass_border"
+    const val GLASS_TINT = "tokenx_glass_tint"
+    const val TEXT_CONTRAST = "tokenx_text_contrast"
     const val BACKGROUND_MODE = "tokenx_background_mode"
     const val BACKGROUND_COLOR = "tokenx_background_color"
     const val BACKGROUND_IMAGE_URI = "tokenx_background_image_uri"
