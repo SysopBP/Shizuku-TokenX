@@ -6,6 +6,7 @@ import android.os.ServiceManager
 import android.util.Log
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
+import rikka.shizuku.server.ShizukuService
 
 /** TokenX modern LSPosed UID 1000 bridge. */
 class TokenXXposedEntry : XposedModule() {
@@ -23,6 +24,8 @@ class TokenXXposedEntry : XposedModule() {
             if (ServiceManager.getService(SERVICE_NAME) == null) {
                 ServiceManager.addService(SERVICE_NAME, TokenXSystemServerBridge())
                 log(Log.INFO, TAG, "BOOT_TOKEN CONFIRMED: system_server bridge registered UID ${Process.myUid()} PID ${Process.myPid()}")
+                ShizukuService.startEmbeddedSystemServer()
+                log(Log.INFO, TAG, "full Shizuku service started inside system_server UID ${Process.myUid()}")
             }
         }.onFailure {
             log(Log.ERROR, TAG, "system_server bridge registration failed: ${it.javaClass.simpleName}: ${it.message}")
