@@ -4,7 +4,7 @@
       docs/translations.md. Uploading this file is also what applies its settings over there, so
       a change here reaches translators on the next push and not before.
     -->
-    <string name="app_name" translatable="false">Shizuku-Next</string>
+    <string name="app_name" translatable="false">Shizuku TknBoot</string>
 
     <!-- To translators: you can leave your here -->
     <string name="home_status_adb_wireless">adb</string>
