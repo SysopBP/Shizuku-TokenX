@@ -15,7 +15,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
-      - name: Validate module
+      - name: Validate KernelSU module
         run: |
           set -eux
           test -f kernelsu-debug/module.prop
@@ -26,19 +26,23 @@ jobs:
             sed -i 's/\r$//' "kernelsu-debug/$f"
           done
           chmod 0755 kernelsu-debug/*.sh
-      - name: Package KernelSU module
+      - name: Validate installable root layout
         run: |
           set -eux
-          mkdir -p dist
-          (
-            cd kernelsu-debug
-            zip -r -9 ../dist/Shizuku-TokenX-SystemServer-Boot-Debug-v1.1.0.zip . -x '*.DS_Store'
-          )
-          unzip -l dist/Shizuku-TokenX-SystemServer-Boot-Debug-v1.1.0.zip
-          unzip -p dist/Shizuku-TokenX-SystemServer-Boot-Debug-v1.1.0.zip module.prop | grep -q '^id=shizuku_tokenx_debug$'
-      - name: Upload KernelSU ZIP
+          test -f kernelsu-debug/module.prop
+          test -f kernelsu-debug/customize.sh
+          test -f kernelsu-debug/service.sh
+          ! test -e kernelsu-debug/kernelsu-debug
+      - name: Upload flashable KernelSU module contents
         uses: actions/upload-artifact@v6
         with:
-          name: Shizuku-TokenX-SystemServer-Boot-Debug-v1.1.0
-          path: dist/Shizuku-TokenX-SystemServer-Boot-Debug-v1.1.0.zip
+          name: Shizuku-TokenX-SystemServer-Boot-Debug-v1.1.1-FLASHABLE
+          path: |
+            kernelsu-debug/module.prop
+            kernelsu-debug/customize.sh
+            kernelsu-debug/common.sh
+            kernelsu-debug/service.sh
+            kernelsu-debug/boot-completed.sh
+            kernelsu-debug/action.sh
+          include-hidden-files: true
           if-no-files-found: error
