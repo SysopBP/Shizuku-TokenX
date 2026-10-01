@@ -34,7 +34,7 @@ fun TokenXDashboard(
                 Icon(Icons.Rounded.Token, contentDescription = null)
                 Column(Modifier.padding(start = 12.dp).weight(1f)) {
                     Text(
-                        "TokenX Control Center",
+                        "TKN Boot Privilege Engine",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -74,12 +74,12 @@ fun TokenXDashboard(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusLine(Icons.Rounded.Token, "Boot Token", "Foundation ready", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.Token, "Token Boot", "Session coordination", Modifier.weight(1f))
                 StatusLine(Icons.Rounded.Security, "Watchdog", "Existing engine", Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusLine(Icons.Rounded.AdminPanelSettings, "Xposed", "Planned", Modifier.weight(1f))
-                StatusLine(Icons.Rounded.Terminal, "Router", "Multi-backend", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.AdminPanelSettings, "LSPosed", "Bridge discovery", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.Terminal, "TokenX Router", "Multi-backend", Modifier.weight(1f))
             }
         }
     }
