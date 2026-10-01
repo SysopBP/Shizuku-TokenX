@@ -1,0 +1,6 @@
+id=shizuku_tokenx_debug
+name=Shizuku TokenX Debug
+version=1.0.0
+versionCode=1
+author=SysopBP
+description=Passive boot/token diagnostics for Shizuku-TokenX. Captures Binder, UID, system_server, Zygote, LSPosed, SELinux and boot state without modifying tokens.
