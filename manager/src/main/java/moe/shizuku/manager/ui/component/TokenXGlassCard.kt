@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.ui.theme.LocalTokenXGlass
 
@@ -30,8 +31,8 @@ fun TokenXGlassCard(
 ) {
     val glass = LocalTokenXGlass.current
     val shape = RoundedCornerShape(glass.cornerRadiusDp.dp)
-    val base = MaterialTheme.colorScheme.surfaceContainerHigh
-    val tint = MaterialTheme.colorScheme.primary
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val base = if (dark) Color(0xFF101216) else Color.White
 
     Box(
         modifier = modifier
@@ -42,8 +43,8 @@ fun TokenXGlassCard(
                     Brush.linearGradient(
                         listOf(
                             base.copy(alpha = glass.opacity),
-                            tint.copy(alpha = glass.opacity * 0.14f),
-                            base.copy(alpha = (glass.opacity * 0.78f).coerceIn(0f, 1f)),
+                            base.copy(alpha = (glass.opacity * 0.86f).coerceIn(0f, 1f)),
+                            Color.Black.copy(alpha = (glass.opacity * 0.32f).coerceIn(0f, 1f)),
                         )
                     )
                 } else {
