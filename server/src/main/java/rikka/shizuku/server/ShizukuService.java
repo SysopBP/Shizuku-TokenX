@@ -121,45 +121,29 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     private final ShizukuConfigManager configManager;
     private final int managerAppId;
 
-    /** Starts the Shizuku server in the current system_server process. */
+    /**
+     * Starts the Shizuku binder implementation from the LSPosed system_server hook.
+     * SystemServerEntry validates that this entry point is invoked from system_server.
+     */
     public static synchronized void startEmbeddedSystemServer() {
-        if (Process.myUid() != Process.SYSTEM_UID) {
-            throw new SecurityException("Embedded backend requires system_server UID 1000");
-        }
-        EMBEDDED_SYSTEM_SERVER = true;
-        ServerLog.mark("embedded system_server start, uid=" + Process.myUid());
-
-        /*
-         * LSPosed invokes this from a worker thread inside system_server. Unlike the
-         * standalone app_process entry point, that worker has no prepared Looper. The
-         * service constructor creates a Handler from Looper.myLooper(), so constructing it
-         * on the LSPosed worker can fail before BinderSender ever gets a chance to hand the
-         * binder to the manager.
-         *
-         * Construct the embedded backend on system_server's main looper instead. This keeps
-         * the backend genuinely UID 1000; root/shell remain fallback paths only.
-         */
         final Looper mainLooper = Looper.getMainLooper();
         if (mainLooper == null) {
             throw new IllegalStateException("system_server main looper is not ready");
         }
 
-        if (Looper.myLooper() == mainLooper) {
-            new ShizukuService();
-            return;
-        }
-
-        final Handler mainHandler = new Handler(mainLooper);
-        if (!mainHandler.post(() -> {
+        Runnable start = () -> {
             try {
-                ServerLog.mark("embedded service constructing on system_server main looper");
+                LOGGER.i("TokenX embedded backend constructing on system_server main looper");
                 new ShizukuService();
-                ServerLog.mark("embedded service constructed; binder handoff scheduled");
+                LOGGER.i("TokenX embedded backend constructed; provider binder handoff scheduled");
             } catch (Throwable tr) {
-                ServerLog.mark("embedded startup failed: " + Log.getStackTraceString(tr));
                 LOGGER.e(tr, "embedded system_server startup failed");
             }
-        })) {
+        };
+
+        if (Looper.myLooper() == mainLooper) {
+            start.run();
+        } else if (!new Handler(mainLooper).post(start)) {
             throw new IllegalStateException("could not post embedded backend to system_server main looper");
         }
     }
