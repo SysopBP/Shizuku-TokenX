@@ -27,6 +27,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Parcel;
+import android.os.Process;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.util.Log;
@@ -63,6 +64,7 @@ import rikka.shizuku.server.util.UserHandleCompat;
 public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuClientManager, ShizukuConfigManager> {
 
     public static final String MANAGER_APPLICATION_ID;
+    private static volatile boolean EMBEDDED_SYSTEM_SERVER = false;
 
     static {
         String packageName = null;
@@ -127,7 +129,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             throw new SecurityException("Embedded backend requires system_server UID 1000");
         }
         EMBEDDED_SYSTEM_SERVER = true;
-        ServerLog.mark("embedded system_server start, uid=" + Process.myUid());
+        LOGGER.i("embedded system_server start, uid=" + Process.myUid());
 
         /*
          * LSPosed invokes this from a worker thread inside system_server. Unlike the
@@ -152,11 +154,11 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         final Handler mainHandler = new Handler(mainLooper);
         if (!mainHandler.post(() -> {
             try {
-                ServerLog.mark("embedded service constructing on system_server main looper");
+                LOGGER.i("embedded service constructing on system_server main looper");
                 new ShizukuService();
-                ServerLog.mark("embedded service constructed; binder handoff scheduled");
+                LOGGER.i("embedded service constructed; binder handoff scheduled");
             } catch (Throwable tr) {
-                ServerLog.mark("embedded startup failed: " + Log.getStackTraceString(tr));
+                LOGGER.i("embedded startup failed: " + Log.getStackTraceString(tr));
                 LOGGER.e(tr, "embedded system_server startup failed");
             }
         })) {

@@ -1,0 +1,26 @@
+name: Token Debug KernelSU Module
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - debug/token-diagnostics
+    paths:
+      - 'tools/token-debug/**'
+      - '.github/workflows/token-debug-module.yml'
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package KernelSU module
+        run: |
+          cd tools/token-debug/ksu-module
+          chmod +x service.sh action.sh customize.sh token_debug.sh
+          zip -r "$GITHUB_WORKSPACE/Shizuku-TokenX-Token-Debug-KSU-v1.0.1.zip" module.prop service.sh action.sh customize.sh token_debug.sh
+          unzip -l "$GITHUB_WORKSPACE/Shizuku-TokenX-Token-Debug-KSU-v1.0.1.zip"
+          unzip -p "$GITHUB_WORKSPACE/Shizuku-TokenX-Token-Debug-KSU-v1.0.1.zip" module.prop >/dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Shizuku-TokenX-Token-Debug-KSU-v1.0.1
+          path: Shizuku-TokenX-Token-Debug-KSU-v1.0.1.zip
+          if-no-files-found: error
