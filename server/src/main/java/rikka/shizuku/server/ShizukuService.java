@@ -58,7 +58,6 @@ import rikka.hidden.compat.PackageManagerApis;
 import rikka.shizuku.server.util.Android17Compat;
 import rikka.hidden.compat.UserManagerApis;
 import rikka.parcelablelist.ParcelableListSlice;
-import rikka.rish.RishConfig;
 import rikka.shizuku.ShizukuApiConstants;
 import rikka.shizuku.server.api.IContentProviderUtils;
 import rikka.shizuku.server.util.HandlerUtil;
@@ -104,7 +103,12 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
         try {
             DdmHandleAppName.setAppName("shizuku_server", 0);
-            RishConfig.setLibraryPath(System.getProperty("shizuku.library.path"));
+            // Keep Rish completely out of the embedded system_server class-link path.
+            // LSPosed's module ClassLoader does not expose librish.so to system_server.
+            // The standalone root/shell server still configures Rish here when main() runs.
+            Class<?> rishConfig = Class.forName("rikka.rish.RishConfig");
+            rishConfig.getMethod("setLibraryPath", String.class)
+                    .invoke(null, System.getProperty("shizuku.library.path"));
 
             Looper.prepareMainLooper();
             new ShizukuService();
@@ -126,7 +130,9 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }
 
         EMBEDDED_SYSTEM_SERVER = true;
-        ServerLog.mark("embedded system_server start, uid=" + Process.myUid());
+        ServerLog.mark("SYSTEM_SERVER_HOOK: embedded start uid=" + Process.myUid()
+                + ", pid=" + Process.myPid());
+        ServerLog.mark("NATIVE_READY: embedded backend does not require librish");
 
         final Looper mainLooper = Looper.getMainLooper();
         if (mainLooper == null) {
@@ -136,7 +142,8 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
         if (Looper.myLooper() == mainLooper) {
             new ShizukuService();
-            ServerLog.mark("embedded system_server backend ready on main looper");
+            ServerLog.mark("SERVER_CREATED: embedded backend ready on main looper");
+            ServerLog.mark("BINDER_PUBLISHED: provider binder handoff scheduled");
             return;
         }
 
@@ -146,7 +153,8 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             try {
                 ServerLog.mark("embedded service constructing on system_server main looper");
                 new ShizukuService();
-                ServerLog.mark("embedded service constructed; binder handoff scheduled");
+                ServerLog.mark("SERVER_CREATED: embedded service constructed");
+                ServerLog.mark("BINDER_PUBLISHED: provider binder handoff scheduled");
             } catch (Throwable tr) {
                 failure.set(tr);
                 ServerLog.mark("embedded startup failed: " + Log.getStackTraceString(tr));
@@ -178,7 +186,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             throw new IllegalStateException("embedded backend construction failed", startupFailure);
         }
 
-        ServerLog.mark("embedded system_server backend ready; provider binder publication active");
+        ServerLog.mark("CLIENT_HANDOFF: embedded backend ready; provider binder publication active");
     }
 
     private static void waitSystemService(String name) {
