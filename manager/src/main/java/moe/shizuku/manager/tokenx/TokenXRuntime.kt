@@ -2,6 +2,9 @@ package moe.shizuku.manager.tokenx
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.IBinder
+import android.os.Parcel
+import android.os.ServiceManager
 import com.topjohnwu.superuser.Shell
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import rikka.shizuku.Shizuku
@@ -32,9 +35,9 @@ object TokenXRuntime {
         val root = runCatching { Shell.getCachedShell()?.isRoot == true }.getOrDefault(false)
         val xposedDetected = knownXposedManagers.any { isInstalled(context.packageManager, it) }
 
-        // Deliberately false until the actual system_server hook performs a
-        // handshake. Installation/detection alone must never grant capability.
-        val bridgeActive = false
+        // A package/manager being installed is not enough. Trust the UID 1000
+        // backend only after the Binder service in system_server answers our ping.
+        val bridgeActive = pingSystemServerBridge()
         val state = TokenXBackendState(
             serverRunning = running,
             serverUid = uid,
@@ -51,6 +54,24 @@ object TokenXRuntime {
         )
     }
 
+    private fun pingSystemServerBridge(): Boolean = runCatching {
+        val binder = ServiceManager.getService(SYSTEM_SERVER_SERVICE) ?: return false
+        val data = Parcel.obtain()
+        val reply = Parcel.obtain()
+        try {
+            data.writeInterfaceToken(SYSTEM_SERVER_DESCRIPTOR)
+            if (!binder.transact(IBinder.FIRST_CALL_TRANSACTION, data, reply, 0)) return false
+            reply.readException()
+            reply.readInt() == 1000
+        } finally {
+            data.recycle()
+            reply.recycle()
+        }
+    }.getOrDefault(false)
+
     private fun isInstalled(pm: PackageManager, packageName: String): Boolean =
         runCatching { pm.getPackageInfo(packageName, 0) }.isSuccess
+
+    private const val SYSTEM_SERVER_SERVICE = "tokenx_system_server"
+    private const val SYSTEM_SERVER_DESCRIPTOR = "moe.shizuku.tokenx.ISystemServerBridge"
 }
