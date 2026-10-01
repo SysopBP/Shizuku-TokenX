@@ -30,24 +30,50 @@ object Starter {
 
     val serviceStartedMessage = "Service started, this window will be automatically closed in 3 seconds"
 
-    suspend fun waitForBinder(log: ((String) -> Unit)? = null) {
-        try {
-            log?.invoke("\nWaiting for service. This may take up to 1 minute...")
-            withTimeout(60_000) {
+    private suspend fun awaitRunning(timeoutMs: Long): Boolean {
+        // Refresh before subscribing. This is important when a previous agent process is
+        // still alive but its binder was never published (or has already died).
+        ShizukuStateMachine.update()
+        if (ShizukuStateMachine.isRunning()) return true
+
+        return try {
+            withTimeout(timeoutMs) {
                 ShizukuStateMachine.asFlow()
                     .first { it == ShizukuStateMachine.State.RUNNING }
             }
-            log?.invoke(serviceStartedMessage)
-        } catch (e: TimeoutCancellationException) {
-            throw TimeoutException("Failed to receive binder within 1 minute")
+            // Do not accept a transient RUNNING emission as success. Re-query the binder
+            // and require it to still be alive before the starter reports success.
+            ShizukuStateMachine.update()
+            ShizukuStateMachine.isRunning()
+        } catch (_: TimeoutCancellationException) {
+            false
+        }
+    }
+
+    suspend fun waitForBinder(log: ((String) -> Unit)? = null) {
+        log?.invoke("\nWaiting for service binder...")
+
+        // The old implementation waited a full minute even when the agent process was
+        // already present but had failed to publish a usable binder. Probe in two stages:
+        // an initial window and one refreshed recovery window. The caller can then retry
+        // its normal start/fallback path instead of being trapped for 60 seconds.
+        var running = awaitRunning(15_000)
+        if (!running) {
+            Log.w(AppConstants.TAG, "Starter: agent may be alive without binder; refreshing state")
+            log?.invoke("\nAgent did not publish a binder; refreshing and retrying...")
+            delay(500)
+            running = awaitRunning(15_000)
         }
 
-        // And then check that it stayed. The payload a device exploit runs stops the app it
-        // borrowed once the server has started, so a server that goes down with that app
-        // looks exactly like this from here: a binder arrives, the start is reported as
-        // successful, and nothing works a moment later. Checked from its own scope because
-        // this screen closes itself three seconds after the message above, which is before
-        // anyone could have looked, and a check tied to it would be cancelled with it.
+        if (!running) {
+            StartStatusReporter.failed("Agent is running but no live Shizuku binder was received")
+            throw TimeoutException(
+                "Failed to receive a live Shizuku binder after recovery retry"
+            )
+        }
+
+        log?.invoke(serviceStartedMessage)
+
         CoroutineScope(Dispatchers.IO).launch {
             delay(10_000)
             ShizukuStateMachine.update()
@@ -56,15 +82,9 @@ object Starter {
                 ShizukuStateMachine.isRunning() ->
                     log?.invoke("\nThe service is still running.\n")
 
-                // Stopped on purpose is not a service that went away, and the card already
-                // says so: this is the state every deliberate Stop leaves behind.
                 ShizukuSettings.getManuallyStopped() ->
                     log?.invoke("\nThe service was stopped again.\n")
 
-                // A background start (boot, the watchdog, an app asking for the binder) has
-                // no screen to report on, and the watchdog is what acts on a service that
-                // stops by itself: saying it on the home card there would be an alarm about
-                // something nobody asked about.
                 log == null -> Log.i(
                     AppConstants.TAG,
                     "The service started and then went away again"
@@ -79,5 +99,4 @@ object Starter {
             }
         }
     }
-
 }
