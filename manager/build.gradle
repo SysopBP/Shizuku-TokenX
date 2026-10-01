@@ -4,7 +4,6 @@ import com.android.build.gradle.internal.tasks.CompileArtProfileTask
 
 plugins {
     id "com.android.application"
-    id "org.jetbrains.kotlin.android"
     id "org.jetbrains.kotlin.plugin.compose"
     id "org.jetbrains.kotlin.plugin.serialization"
     id "dev.rikka.tools.refine"
@@ -55,9 +54,6 @@ android {
             path = file("src/main/jni/CMakeLists.txt")
             version = "3.31.0+"
         }
-    }
-    kotlinOptions {
-        jvmTarget = "21"
     }
     packagingOptions {
         jniLibs {
