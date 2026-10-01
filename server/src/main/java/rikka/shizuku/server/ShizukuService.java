@@ -106,9 +106,13 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             // Keep Rish completely out of the embedded system_server class-link path.
             // LSPosed's module ClassLoader does not expose librish.so to system_server.
             // The standalone root/shell server still configures Rish here when main() runs.
-            Class<?> rishConfig = Class.forName("rikka.rish.RishConfig");
-            rishConfig.getMethod("setLibraryPath", String.class)
-                    .invoke(null, System.getProperty("shizuku.library.path"));
+            try {
+                Class<?> rishConfig = Class.forName("rikka.rish.RishConfig");
+                rishConfig.getMethod("setLibraryPath", String.class)
+                        .invoke(null, System.getProperty("shizuku.library.path"));
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException("Unable to configure Rish for standalone server", e);
+            }
 
             Looper.prepareMainLooper();
             new ShizukuService();
@@ -119,7 +123,9 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             // Nothing else can report this one: there is no manager connection to report it
             // over yet, and the logcat is not readable by the app that is waiting.
             ServerLog.mark("startup failed: " + Log.getStackTraceString(tr));
-            throw tr;
+            if (tr instanceof RuntimeException) throw (RuntimeException) tr;
+            if (tr instanceof Error) throw (Error) tr;
+            throw new IllegalStateException("Shizuku server startup failed", tr);
         }
     }
 
