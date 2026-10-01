@@ -202,6 +202,24 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         mainHandler.post(() -> {
             sendBinderToClient();
             sendBinderToManager();
+
+            // The embedded UID-1000 backend may be ready before the manager provider.
+            // Retry Binder publication only; do not launch another Shizuku server.
+            if (EMBEDDED_SYSTEM_SERVER) {
+                final long[] retryDelays = {500L, 1500L, 3000L, 5000L, 8000L, 12000L};
+                for (long retryDelay : retryDelays) {
+                    mainHandler.postDelayed(() -> {
+                        try {
+                            ServerLog.mark("embedded binder handoff retry after " + retryDelay + "ms");
+                            sendBinderToManager();
+                        } catch (Throwable tr) {
+                            ServerLog.mark("embedded binder handoff retry failed: "
+                                    + Log.getStackTraceString(tr));
+                            LOGGER.e(tr, "embedded binder handoff retry failed");
+                        }
+                    }, retryDelay);
+                }
+            }
         });
     }
 
