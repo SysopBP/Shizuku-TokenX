@@ -66,6 +66,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -98,6 +99,9 @@ import moe.shizuku.manager.ui.screen.StealthScreen
 import moe.shizuku.manager.ui.screen.TerminalScreen
 import moe.shizuku.manager.ui.screen.TokenXControlCenterScreen
 import moe.shizuku.manager.ui.theme.LocalAmoledTheme
+import moe.shizuku.manager.ui.theme.FloatingBarStyle
+import moe.shizuku.manager.ui.theme.TokenXAppearanceKeys
+import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.ui.theme.ShizukuTheme
 
 /**
@@ -244,6 +248,15 @@ private fun MainTabs(
     onOpenDetail: (Detail) -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val appearancePrefs = ShizukuSettings.getPreferences()
+    val floatingBarStyle = runCatching {
+        FloatingBarStyle.valueOf(
+            appearancePrefs.getString(TokenXAppearanceKeys.FLOATING_BAR_STYLE, FloatingBarStyle.FROSTED.name)!!
+        )
+    }.getOrDefault(FloatingBarStyle.FROSTED)
+    val floatingBarOpacity = appearancePrefs
+        .getFloat(TokenXAppearanceKeys.FLOATING_BAR_OPACITY, .82f)
+        .coerceIn(.20f, 1f)
 
     // Whether the app has settled enough to read the lists nobody is looking at yet. Both app
     // lists are expensive to read - six hundred packages each - and a pager composes the page
@@ -364,10 +377,25 @@ private fun MainTabs(
                     label = "tabPillWidth"
                 )
                 val pillColor = MaterialTheme.colorScheme.secondaryContainer
+                val barShape = FloatingToolbarDefaults.ContainerShape
+                val barSurface = when (floatingBarStyle) {
+                    FloatingBarStyle.FLOATING -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = floatingBarOpacity)
+                    FloatingBarStyle.FROSTED -> Color(0xFF101216).copy(alpha = floatingBarOpacity)
+                    FloatingBarStyle.SOLID -> MaterialTheme.colorScheme.surfaceContainerHighest
+                    FloatingBarStyle.CLEAR -> Color.Transparent
+                }
+                val barBorder = when (floatingBarStyle) {
+                    FloatingBarStyle.FROSTED -> Color.White.copy(alpha = .18f)
+                    FloatingBarStyle.CLEAR -> Color.White.copy(alpha = .10f)
+                    else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = .35f)
+                }
 
                 HorizontalFloatingToolbar(
                     expanded = true,
-                    modifier = Modifier,
+                    modifier = Modifier
+                        .clip(barShape)
+                        .background(barSurface)
+                        .border(1.dp, barBorder, barShape),
                     contentPadding = PaddingValues(0.dp),
                     scrollBehavior = scrollBehavior
                 ) {
