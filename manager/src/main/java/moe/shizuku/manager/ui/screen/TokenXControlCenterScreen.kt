@@ -16,6 +16,11 @@ import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.ui.component.TokenXGlassCard
 import moe.shizuku.manager.tokenx.TokenXBootSession
 import moe.shizuku.manager.tokenx.TokenXBootState
+import moe.shizuku.manager.tokenx.TokenXRuntime
+import moe.shizuku.manager.tokenx.TokenXRuntimeState
+import moe.shizuku.manager.tokenx.TokenXCapability
+import kotlinx.coroutines.delay
+import androidx.compose.ui.platform.LocalContext
 import moe.shizuku.manager.utils.ShizukuStateMachine
 
 /**
@@ -28,10 +33,19 @@ import moe.shizuku.manager.utils.ShizukuStateMachine
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TokenXControlCenterScreen(onBack: () -> Unit) {
-    val running = ShizukuStateMachine.isRunning()
-    val uid = runCatching { rikka.shizuku.Shizuku.getUid() }.getOrDefault(-1)
+    val context = LocalContext.current
     val prefs = ShizukuSettings.getPreferences()
-    val boot = TokenXBootSession.current()
+    var runtime by remember { mutableStateOf(TokenXRuntime.snapshot(context)) }
+    var boot by remember { mutableStateOf(TokenXBootSession.current()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            runtime = TokenXRuntime.snapshot(context)
+            boot = TokenXBootSession.current()
+            delay(TokenXRuntime.REFRESH_INTERVAL_MS)
+        }
+    }
+    val running = runtime.backendState.serverRunning
+    val uid = runtime.backendState.serverUid
     var routerMode by remember { mutableStateOf(prefs.getString("tokenx_router_mode", "Automatic") ?: "Automatic") }
     var rootFirst by remember { mutableStateOf(prefs.getBoolean("tokenx_root_first", true)) }
     var recovery by remember { mutableStateOf(prefs.getBoolean("tokenx_recovery_preview", true)) }
@@ -68,10 +82,10 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
             SectionTitle("Privilege backends")
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    BackendRow(Icons.Outlined.AdminPanelSettings, "Root", "UID 0", if (uid == 0) "Active now" else "Primary TokenX backend")
-                    BackendRow(Icons.Outlined.Security, "System Server", "UID 1000", if (uid == 1000) "Active now" else "Framework-specialized backend")
-                    BackendRow(Icons.Outlined.Terminal, "Shell", "UID 2000", if (uid == 2000) "Active now" else "Compatibility / fallback")
-                    BackendRow(Icons.Outlined.Extension, "Xposed / LSPosed", "system_server bridge", "Preview • backend not wired yet")
+                    BackendRow(Icons.Outlined.AdminPanelSettings, "Root", "UID 0", if (runtime.backendState.rootAvailable) if (uid == 0) "ACTIVE • current server" else "READY" else "Unavailable")
+                    BackendRow(Icons.Outlined.Security, "System Server", "UID 1000", if (runtime.backendState.systemServerBridgeAvailable) "ACTIVE • bridge verified" else "Waiting for bridge")
+                    BackendRow(Icons.Outlined.Terminal, "Shell", "UID 2000", if (runtime.backendState.shellAvailable) "ACTIVE • compatibility fallback" else "Standby")
+                    BackendRow(Icons.Outlined.Extension, "Xposed / LSPosed", "system_server bridge", when { runtime.xposedBridgeActive -> "ACTIVE • handshake verified"; runtime.xposedFrameworkDetected -> "Framework detected • bridge waiting"; else -> "Not detected" })
                 }
             }
 
@@ -79,7 +93,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Router preferences", style = MaterialTheme.typography.titleMedium)
-                    Text("These preferences prepare the UI for the native TokenX router. They do not change execution until the router backend lands.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Live capability routes are calculated from the backends that are actually available now.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                         listOf("Automatic", "Capability").forEachIndexed { index, mode ->
                             SegmentedButton(
@@ -92,10 +106,11 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     PreviewSwitch("Prefer Root when capable", "Root-first policy; framework-only calls can route to System Server.", rootFirst) {
                         rootFirst = it; prefs.edit().putBoolean("tokenx_root_first", it).apply()
                     }
-                    CapabilityLine("Filesystem / process", "Root → Shell")
-                    CapabilityLine("Android framework", "System Server → Root")
-                    CapabilityLine("Shell commands", "Root → Shell")
-                    CapabilityLine("General Binder compatibility", "Current Shizuku server")
+                    CapabilityLine("Filesystem", runtime.routes.getValue(TokenXCapability.FILESYSTEM).backend.name)
+                    CapabilityLine("Process", runtime.routes.getValue(TokenXCapability.PROCESS).backend.name)
+                    CapabilityLine("Android framework", runtime.routes.getValue(TokenXCapability.FRAMEWORK).backend.name)
+                    CapabilityLine("Shell commands", runtime.routes.getValue(TokenXCapability.SHELL_COMMAND).backend.name)
+                    CapabilityLine("General", runtime.routes.getValue(TokenXCapability.GENERAL).backend.name)
                 }
             }
 
@@ -115,9 +130,9 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
             SectionTitle("Native TokenX API")
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FeatureRow(Icons.Outlined.Api, "Capability discovery", "Preview • apps ask what the active backends can do")
-                    FeatureRow(Icons.Outlined.Route, "Per-capability routing", "Preview • choose backend by operation, not one global mode")
-                    FeatureRow(Icons.Outlined.Code, "Root execution", "Preview • explicit UID 0 execution path")
+                    FeatureRow(Icons.Outlined.Api, "Capability discovery", "LIVE • runtime backend state feeds the router")
+                    FeatureRow(Icons.Outlined.Route, "Per-capability routing", "LIVE • Root first, System Server for framework work, Shell fallback")
+                    FeatureRow(Icons.Outlined.Code, "Root execution", if (runtime.backendState.rootAvailable) "READY • UID 0 backend available" else "Unavailable")
                     FeatureRow(Icons.Outlined.AdminPanelSettings, "Framework operations", "Preview • System Server / Xposed path")
                     FeatureRow(Icons.Outlined.Link, "Shizuku compatibility", "Preserved • existing Binder model stays intact")
                 }
