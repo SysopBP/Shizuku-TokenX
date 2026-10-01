@@ -32,6 +32,7 @@ fun AppearanceStudioScreen() {
     var blur by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_BLUR, 22f)) }
     var radius by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_RADIUS, 28f)) }
     var border by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_BORDER, .18f)) }
+    var textContrast by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.TEXT_CONTRAST, 1f)) }
     var dim by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.BACKGROUND_DIM, .18f)) }
     var colorHex by remember { mutableStateOf(String.format("#%08X", prefs.getLong(TokenXAppearanceKeys.BACKGROUND_COLOR, 0xFF090A0FFF))) }
     var seslSwitch by remember { mutableStateOf(true) }
@@ -67,6 +68,7 @@ fun AppearanceStudioScreen() {
                 StudioSlider("Blur", blur, 0f..48f, " dp") { blur = it; putFloat(TokenXAppearanceKeys.GLASS_BLUR, it) }
                 StudioSlider("Corner radius", radius, 8f..40f, " dp") { radius = it; putFloat(TokenXAppearanceKeys.GLASS_RADIUS, it) }
                 StudioSlider("Border strength", border, 0f..0.5f) { border = it; putFloat(TokenXAppearanceKeys.GLASS_BORDER, it) }
+                StudioSlider("Text contrast", textContrast, .75f..1f) { textContrast = it; putFloat(TokenXAppearanceKeys.TEXT_CONTRAST, it) }
             }
         }
 
@@ -166,7 +168,8 @@ fun AppearanceStudioScreen() {
         }
         StudioSlider("Background dim", dim, 0f..0.8f) { dim = it; putFloat(TokenXAppearanceKeys.BACKGROUND_DIM, it) }
 
-        Text("Presets", style = MaterialTheme.typography.titleMedium)
+        Text("Glass presets", style = MaterialTheme.typography.titleMedium)
+        Text("Neutral glass keeps wallpaper colors intact while the accent stays on controls.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = {
                 glass=true; opacity=.42f; blur=10f; radius=30f; border=.24f
@@ -180,6 +183,14 @@ fun AppearanceStudioScreen() {
                 mode=BackgroundMode.AMOLED; opacity=.58f; border=.12f
                 prefs.edit().putString(TokenXAppearanceKeys.BACKGROUND_MODE,mode.name).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).apply(); refresh()
             }) { Text("AMOLED") }
+            Button(onClick = {
+                glass=true; opacity=.82f; radius=28f; border=.16f; dim=.32f
+                prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).putFloat(TokenXAppearanceKeys.BACKGROUND_DIM,dim).apply(); refresh()
+            }) { Text("Readable") }
+            Button(onClick = {
+                glass=true; opacity=.34f; radius=32f; border=.22f; dim=.12f
+                prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).putFloat(TokenXAppearanceKeys.BACKGROUND_DIM,dim).apply(); refresh()
+            }) { Text("Crystal") }
         }
     }
 }
