@@ -7,4 +7,5 @@ android {
 dependencies {
     // Modern Xposed API. LSPosed supplies the implementation at runtime.
     compileOnly "io.github.libxposed:api:102.0.0"
+    compileOnly libs.hidden.stub
 }
