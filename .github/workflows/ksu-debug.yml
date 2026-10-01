@@ -3,7 +3,7 @@ name: Build KernelSU Debug Module
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ master ]
     paths:
       - 'kernelsu-debug/**'
       - '.github/workflows/ksu-debug.yml'
