@@ -1,8 +1,6 @@
 package moe.shizuku.tokenx.xposed
 
-import android.os.Binder
 import android.os.Process
-import android.os.ServiceManager
 import android.util.Log
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
@@ -21,35 +19,24 @@ class TokenXXposedEntry : XposedModule() {
             return
         }
         runCatching {
-            if (ServiceManager.getService(SERVICE_NAME) == null) {
-                ServiceManager.addService(SERVICE_NAME, TokenXSystemServerBridge())
-                log(Log.INFO, TAG, "BOOT_TOKEN CONFIRMED: system_server bridge registered UID ${Process.myUid()} PID ${Process.myPid()}")
-                ShizukuService.startEmbeddedSystemServer()
-                log(Log.INFO, TAG, "full Shizuku service started inside system_server UID ${Process.myUid()}")
-            }
+            // Samsung Android 17 blocks custom servicemanager registrations from
+            // injected system_server code even though this hook already runs as UID 1000.
+            // Do not publish a second Binder service name. Start the embedded Shizuku
+            // backend directly and let its existing ContentProvider BinderSender hand the
+            // Binder to the manager. This is the same transport used by Shizuku itself
+            // and avoids the SELinux service_manager add denial entirely.
+            ShizukuService.startEmbeddedSystemServer()
+            log(
+                Log.INFO,
+                TAG,
+                "BOOT_TOKEN CONFIRMED: embedded Shizuku backend started in system_server UID ${Process.myUid()} PID ${Process.myPid()} via provider binder handoff"
+            )
         }.onFailure {
-            log(Log.ERROR, TAG, "system_server bridge registration failed: ${it.javaClass.simpleName}: ${it.message}")
-        }
-    }
-
-    private class TokenXSystemServerBridge : Binder() {
-        override fun getInterfaceDescriptor(): String = DESCRIPTOR
-        override fun onTransact(code: Int, data: android.os.Parcel, reply: android.os.Parcel?, flags: Int): Boolean {
-            if (code == TRANSACTION_PING) {
-                data.enforceInterface(DESCRIPTOR)
-                reply?.writeNoException()
-                reply?.writeInt(Process.myUid())
-                reply?.writeInt(Process.myPid())
-                return true
-            }
-            return super.onTransact(code, data, reply, flags)
+            log(Log.ERROR, TAG, "embedded system_server startup failed: ${it.javaClass.simpleName}: ${it.message}")
         }
     }
 
     private companion object {
         const val TAG = "TokenX/Xposed"
-        const val SERVICE_NAME = "tokenx_system_server"
-        const val DESCRIPTOR = "moe.shizuku.tokenx.ISystemServerBridge"
-        const val TRANSACTION_PING = Binder.FIRST_CALL_TRANSACTION
     }
 }
