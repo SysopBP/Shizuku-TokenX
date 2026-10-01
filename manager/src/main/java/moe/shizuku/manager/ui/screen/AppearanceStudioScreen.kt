@@ -17,6 +17,7 @@ import moe.shizuku.manager.ui.component.TokenXGlassCard
 import moe.shizuku.manager.ui.theme.BackgroundMode
 import moe.shizuku.manager.ui.theme.TokenXAppearanceKeys
 import moe.shizuku.manager.ui.theme.TokenXAccent
+import moe.shizuku.manager.ui.theme.FloatingBarStyle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
@@ -33,6 +34,12 @@ fun AppearanceStudioScreen() {
     var radius by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_RADIUS, 28f)) }
     var border by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_BORDER, .18f)) }
     var textContrast by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.TEXT_CONTRAST, 1f)) }
+    var barOpacity by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_OPACITY, .82f)) }
+    var barStyle by remember {
+        mutableStateOf(runCatching {
+            FloatingBarStyle.valueOf(prefs.getString(TokenXAppearanceKeys.FLOATING_BAR_STYLE, FloatingBarStyle.FROSTED.name)!!)
+        }.getOrDefault(FloatingBarStyle.FROSTED))
+    }
     var dim by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.BACKGROUND_DIM, .18f)) }
     var colorHex by remember { mutableStateOf(String.format("#%08X", prefs.getLong(TokenXAppearanceKeys.BACKGROUND_COLOR, 0xFF090A0FFF))) }
     var seslSwitch by remember { mutableStateOf(true) }
@@ -93,6 +100,26 @@ fun AppearanceStudioScreen() {
                     }
                 )
             }
+        }
+
+        Text("Floating navigation bar", style = MaterialTheme.typography.titleMedium)
+        Text("Choose a floating, frosted, solid or ultra-clear bottom bar.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FloatingBarStyle.entries.forEach { candidate ->
+                FilterChip(
+                    selected = barStyle == candidate,
+                    onClick = {
+                        barStyle = candidate
+                        prefs.edit().putString(TokenXAppearanceKeys.FLOATING_BAR_STYLE, candidate.name).apply()
+                        refresh()
+                    },
+                    label = { Text(candidate.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                )
+            }
+        }
+        StudioSlider("Bar opacity", barOpacity, .20f..1f) {
+            barOpacity = it
+            putFloat(TokenXAppearanceKeys.FLOATING_BAR_OPACITY, it)
         }
 
         Text("Accent color", style = MaterialTheme.typography.titleMedium)
@@ -191,6 +218,14 @@ fun AppearanceStudioScreen() {
                 glass=true; opacity=.34f; radius=32f; border=.22f; dim=.12f
                 prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).putFloat(TokenXAppearanceKeys.BACKGROUND_DIM,dim).apply(); refresh()
             }) { Text("Crystal") }
+            Button(onClick = {
+                glass=true; opacity=.52f; radius=34f; border=.28f; dim=.20f
+                prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).putFloat(TokenXAppearanceKeys.BACKGROUND_DIM,dim).apply(); refresh()
+            }) { Text("Smoke") }
+            Button(onClick = {
+                glass=true; opacity=.64f; radius=26f; border=.10f; dim=.26f
+                prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).putFloat(TokenXAppearanceKeys.BACKGROUND_DIM,dim).apply(); refresh()
+            }) { Text("One UI") }
         }
     }
 }
