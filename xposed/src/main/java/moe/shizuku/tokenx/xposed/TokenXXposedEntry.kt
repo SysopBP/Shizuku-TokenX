@@ -1,20 +1,33 @@
 package moe.shizuku.tokenx.xposed
 
-import de.robv.android.xposed.IXposedHookLoadPackage
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.callbacks.XC_LoadPackage
+import android.util.Log
+import io.github.libxposed.api.XposedModule
+import io.github.libxposed.api.XposedModuleInterface
 
 /**
- * Minimal TokenX LSPosed/Xposed entry point.
+ * TokenX's modern LSPosed entry point.
  *
- * Phase one deliberately does not hook framework methods. It proves that the
- * module is loaded in android/system_server; the authenticated IPC handshake
- * will be added next. Keeping this inert avoids destabilising system_server
- * while the bridge contract is built.
+ * This stage intentionally installs no framework method hooks. It only proves
+ * that LSPosed loaded TokenX into system_server and exposes framework metadata
+ * in the Xposed log. The authenticated TokenX Binder bridge is layered on top
+ * of this lifecycle point rather than modifying framework behavior.
  */
-class TokenXXposedEntry : IXposedHookLoadPackage {
-    override fun handleLoadPackage(param: XC_LoadPackage.LoadPackageParam) {
-        if (param.packageName != "android" || param.processName != "android") return
-        XposedBridge.log("TokenX: system_server module loaded; bridge handshake pending")
+class TokenXXposedEntry : XposedModule() {
+
+    override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
+        if (!param.isSystemServer) return
+        log(
+            Log.INFO,
+            TAG,
+            "module loaded in system_server; framework=${frameworkName} ${frameworkVersion}; api=${apiVersion}",
+        )
+    }
+
+    override fun onSystemServerStarting(param: XposedModuleInterface.SystemServerStartingParam) {
+        log(Log.INFO, TAG, "system_server starting; TokenX bridge lifecycle ready")
+    }
+
+    private companion object {
+        const val TAG = "TokenX/Xposed"
     }
 }
