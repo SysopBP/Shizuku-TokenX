@@ -66,10 +66,12 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
     // Like KernelSU: keep the chosen key color by default, only follow the
     // wallpaper when the user enables system color. A fixed seed avoids a
     // washed-out grey palette on desaturated wallpapers.
+    val savedAccent = prefs.getLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.TOKEN_PURPLE.argb)
+    val tokenAccent = Color(savedAccent.toULong())
     val seed = if (useSystemColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         (if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)).primary
     } else {
-        BrandColor
+        tokenAccent
     }
 
     val baseScheme = rememberDynamicColorScheme(
@@ -115,6 +117,7 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
         blurRadiusDp = prefs.getFloat(TokenXAppearanceKeys.GLASS_BLUR, 22f),
         cornerRadiusDp = prefs.getFloat(TokenXAppearanceKeys.GLASS_RADIUS, 28f),
         borderOpacity = prefs.getFloat(TokenXAppearanceKeys.GLASS_BORDER, .18f),
+        accent = tokenAccent,
         backgroundMode = runCatching {
             BackgroundMode.valueOf(
                 prefs.getString(TokenXAppearanceKeys.BACKGROUND_MODE, BackgroundMode.AMOLED_GRADIENT.name)
