@@ -63,6 +63,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.SESL_GITHUB_TOKEN }}
         run: ./gradlew :manager:assembleDebug --stacktrace
 
+      - name: Verify TokenX Xposed packaging
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="$(find manager/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          test -n "$FILE"
+          unzip -l "$FILE" | grep -F 'META-INF/xposed/java_init.list'
+          unzip -l "$FILE" | grep -F 'META-INF/xposed/scope.list'
+          unzip -l "$FILE" | grep -F 'META-INF/xposed/module.prop'
+          echo "TokenX modern Xposed module metadata verified in manager APK"
+
       - name: Collect APK
         id: apk
         shell: bash
