@@ -171,12 +171,40 @@ fun SegmentedListItem(
     if (!centerSlots) {
         ListItem(
             modifier = clickable,
-            headlineContent = headlineContent,
-            supportingContent = supportingContent,
-            leadingContent = leadingContent,
-            trailingContent = resolvedTrailing,
+            headlineContent = {
+                CompositionLocalProvider(
+                    LocalTextStyle provides MaterialTheme.typography.bodyLarge,
+                    LocalContentColor provides MaterialTheme.colorScheme.onSurface
+                ) { headlineContent() }
+            },
+            supportingContent = supportingContent?.let { content ->
+                {
+                    CompositionLocalProvider(
+                        LocalTextStyle provides MaterialTheme.typography.bodyMedium,
+                        LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant
+                    ) { content() }
+                }
+            },
+            leadingContent = leadingContent?.let { content ->
+                {
+                    CompositionLocalProvider(
+                        LocalContentColor provides MaterialTheme.colorScheme.primary
+                    ) { content() }
+                }
+            },
+            trailingContent = resolvedTrailing?.let { content ->
+                {
+                    CompositionLocalProvider(
+                        LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant
+                    ) { content() }
+                }
+            },
             colors = androidx.compose.material3.ListItemDefaults.colors(
-                containerColor = androidx.compose.ui.graphics.Color.Transparent
+                containerColor = Color.Transparent,
+                headlineColor = MaterialTheme.colorScheme.onSurface,
+                supportingColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                leadingIconColor = MaterialTheme.colorScheme.primary,
+                trailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
         )
         return
