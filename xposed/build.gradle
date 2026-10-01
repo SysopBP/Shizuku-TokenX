@@ -1,0 +1,10 @@
+plugins { id "com.android.library" }
+
+android {
+    namespace = "moe.shizuku.tokenx.xposed"
+    defaultConfig { minSdk = rootProject.ext.minSdk }
+}
+
+dependencies {
+    compileOnly "de.robv.android.xposed:api:82"
+}
