@@ -156,7 +156,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             try {
                 LOGGER.i("embedded service constructing on system_server main looper");
                 new ShizukuService();
-                ServerLog.mark("embedded service constructed; binder handoff scheduled");
+                LOGGER.i("embedded service constructed; binder handoff scheduled");
             } catch (Throwable tr) {
                 LOGGER.i("embedded startup failed: " + Log.getStackTraceString(tr));
                 LOGGER.e(tr, "embedded system_server startup failed");
