@@ -234,14 +234,15 @@ private fun LabTile(icon: ImageVector, label: String, badge: String? = null, onC
                 // Two lines, so a longer name wraps rather than being cut, and centred,
                 // because it is a tile and not a list row.
                 maxLines = 2,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface
             )
             badge?.let {
                 Text(
                     text = it,
                     modifier = Modifier.padding(top = 5.dp),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
             }
