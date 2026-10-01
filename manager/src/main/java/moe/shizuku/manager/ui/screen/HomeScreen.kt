@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -50,6 +51,8 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -521,75 +524,16 @@ fun HomeScreen(bottomPadding: Dp) {
             }
 
             item {
-                // Keep the proven start handlers intact while presenting them as a modern,
-                // clearly grouped Shizuku section. A later pass can compact the individual
-                // method cards without changing any startup behavior.
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ExpressiveCard(
-                        icon = Icons.Rounded.Wifi,
-                        title = stringResource(R.string.home_wireless_adb_title),
-                        // A start with the experiment on can spend two minutes asking before it
-                        // either starts or gives up, and a card that only spins for that long
-                        // reads as stuck.
-                        body = if (startStatus is StartStatus.Starting &&
-                            ShizukuSettings.getForceWirelessDebugging()
-                        ) {
-                            stringResource(R.string.home_wireless_adb_starting_without_wifi)
-                        } else {
-                            stringResource(R.string.home_wireless_adb_summary)
-                        },
-                        enabled = !running,
-                        onClick = {
-                            startWithLocalNetworkPermission(ShizukuSettings.StartMethod.WIRELESS) {
-                                ShizukuReceiverStarter.start(
-                                    context,
-                                    userInitiated = true,
-                                    startMethod = ShizukuSettings.StartMethod.WIRELESS
-                                )
-                            }
-                        }
-                    )
-                    ExpressiveCard(
-                        icon = Icons.Rounded.Usb,
-                        title = stringResource(R.string.home_usb_adb_title),
-                        // A USB start needs the classic port, and with no network and no port
-                        // there is nothing it can do. It says so here rather than sliding over
-                        // to wireless: starting without a network is a method of its own, and
-                        // the card that does it is the one above this.
-                        body = if (!EnvironmentUtils.isWifiConnected() &&
-                            EnvironmentUtils.getAdbTcpPort() <= 0
-                        ) {
-                            stringResource(R.string.home_usb_adb_needs_network)
-                        } else {
-                            stringResource(R.string.home_usb_adb_summary).stripHtmlTags()
-                        },
-                        enabled = !running,
-                        onClick = {
-                            ShizukuReceiverStarter.start(
-                                context,
-                                userInitiated = true,
-                                startMethod = ShizukuSettings.StartMethod.USB
-                            )
-                        }
-                    )
-                    if (rooted) {
-                        val rootDescription = stringResource(
-                            R.string.home_root_description,
-                            "<b><a href=\"${Helps.SUI.get()}\">Sui</a></b>",
-                            "Sui"
-                        ).stripHtmlTags()
-
-                        // Always says what it does: start over root. It used to flip to
-                        // "Restart" once a root server was running, which just duplicated the
-                        // Restart button above (and hid the fact that this card starts over
-                        // root whatever the start method is set to).
-                        ExpressiveCard(
-                            // A hash, which is what a root shell is: the same mark the shell's
-                            // own prompt uses.
+                SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
+                    item {
+                        StartMethodRow(
                             icon = Icons.Rounded.Numbers,
                             title = stringResource(R.string.home_root_title),
-                            body = rootDescription,
-                            enabled = !running,
+                            summary = if (rooted) {
+                                if (running && uid == 0) "Active now • UID 0" else "Primary • UID 0"
+                            } else "Root unavailable",
+                            enabled = rooted && !running,
+                            active = running && uid == 0,
                             onClick = {
                                 context.startActivity(
                                     Intent(context, StarterActivity::class.java)
@@ -598,31 +542,70 @@ fun HomeScreen(bottomPadding: Dp) {
                             }
                         )
                     }
-                    ExpressiveCard(
-                        icon = Icons.Rounded.AdminPanelSettings,
-                        title = stringResource(R.string.home_system_title),
-                        body = stringResource(R.string.home_system_summary),
-                        enabled = !running,
-                        onClick = {
-                            ShizukuReceiverStarter.start(
-                                context,
-                                userInitiated = true,
-                                startMethod = ShizukuSettings.StartMethod.SYSTEM
-                            )
-                        }
-                    )
-
-                    // Starting from a computer is the same kind of decision as the rest, so it
-                    // is a card as well: as a row underneath them it read as something else.
-                    ExpressiveCard(
-                        icon = Icons.Rounded.Computer,
-                        title = stringResource(R.string.intents_adb_command),
-                        // The command itself is long enough to swamp a card; it lives in the
-                        // dialog this opens, where it can be copied.
-                        body = stringResource(R.string.home_adb_command_summary),
-                        enabled = !running,
-                        onClick = { showAdbCommand = true }
-                    )
+                    item {
+                        StartMethodRow(
+                            icon = Icons.Rounded.AdminPanelSettings,
+                            title = stringResource(R.string.home_system_title),
+                            summary = if (running && uid == 1000) "Active now • UID 1000" else "Framework • UID 1000",
+                            enabled = !running,
+                            active = running && uid == 1000,
+                            onClick = {
+                                ShizukuReceiverStarter.start(
+                                    context,
+                                    userInitiated = true,
+                                    startMethod = ShizukuSettings.StartMethod.SYSTEM
+                                )
+                            }
+                        )
+                    }
+                    item {
+                        StartMethodRow(
+                            icon = Icons.Rounded.Wifi,
+                            title = stringResource(R.string.home_wireless_adb_title),
+                            summary = if (startStatus is StartStatus.Starting && ShizukuSettings.getForceWirelessDebugging()) {
+                                stringResource(R.string.home_wireless_adb_starting_without_wifi)
+                            } else "ADB • wireless",
+                            enabled = !running,
+                            active = running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS,
+                            onClick = {
+                                startWithLocalNetworkPermission(ShizukuSettings.StartMethod.WIRELESS) {
+                                    ShizukuReceiverStarter.start(
+                                        context,
+                                        userInitiated = true,
+                                        startMethod = ShizukuSettings.StartMethod.WIRELESS
+                                    )
+                                }
+                            }
+                        )
+                    }
+                    item {
+                        StartMethodRow(
+                            icon = Icons.Rounded.Usb,
+                            title = stringResource(R.string.home_usb_adb_title),
+                            summary = if (!EnvironmentUtils.isWifiConnected() && EnvironmentUtils.getAdbTcpPort() <= 0) {
+                                stringResource(R.string.home_usb_adb_needs_network)
+                            } else "ADB • USB / TCP",
+                            enabled = !running,
+                            active = running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB,
+                            onClick = {
+                                ShizukuReceiverStarter.start(
+                                    context,
+                                    userInitiated = true,
+                                    startMethod = ShizukuSettings.StartMethod.USB
+                                )
+                            }
+                        )
+                    }
+                    item {
+                        StartMethodRow(
+                            icon = Icons.Rounded.Computer,
+                            title = stringResource(R.string.intents_adb_command),
+                            summary = "ADB command • copy and run from computer",
+                            enabled = !running,
+                            active = false,
+                            onClick = { showAdbCommand = true }
+                        )
+                    }
                 }
             }
 
@@ -735,6 +718,54 @@ private fun HomeSectionHeader(title: String, subtitle: String) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
+}
+
+@Composable
+private fun StartMethodRow(
+    icon: ImageVector,
+    title: String,
+    summary: String,
+    enabled: Boolean,
+    active: Boolean,
+    onClick: () -> Unit
+) {
+    val accent = MaterialTheme.colorScheme.primary
+    ListItem(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, onClick = onClick)
+            .alpha(if (enabled || active) 1f else .52f),
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        leadingContent = {
+            Surface(
+                modifier = Modifier.size(42.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = if (active) accent.copy(alpha = .18f) else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = .72f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = if (active) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+        },
+        headlineContent = {
+            Text(title, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+        },
+        supportingContent = {
+            Text(summary, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        },
+        trailingContent = {
+            if (active) {
+                Text("ACTIVE", style = MaterialTheme.typography.labelMedium, color = accent)
+            } else {
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    )
 }
 
 @Composable
