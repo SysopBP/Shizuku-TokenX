@@ -37,6 +37,20 @@ val LocalTokenXGlass = staticCompositionLocalOf { TokenXGlassStyle() }
  * Custom-image persistence will use a persisted content URI rather than copying
  * arbitrary image bytes into SharedPreferences.
  */
+enum class TokenXAccent(val argb: Long, val label: String) {
+    TOKEN_PURPLE(0xFF8B5CF6, "Token Purple"),
+    SAMSUNG_BLUE(0xFF3B82F6, "Samsung Blue"),
+    CYAN(0xFF06B6D4, "Cyan"),
+    EMERALD(0xFF10B981, "Emerald"),
+    WINE_RED(0xFF8E244D, "Wine Red"),
+    CRIMSON(0xFFDC2626, "Crimson"),
+    ORANGE(0xFFF97316, "Orange"),
+    GOLD(0xFFEAB308, "Gold"),
+    PINK(0xFFEC4899, "Pink"),
+    ICE(0xFFCBD5E1, "Ice"),
+    GRAPHITE(0xFF64748B, "Graphite"),
+}
+
 object TokenXAppearanceKeys {
     const val GLASS_ENABLED = "tokenx_glass_enabled"
     const val GLASS_OPACITY = "tokenx_glass_opacity"
@@ -48,4 +62,5 @@ object TokenXAppearanceKeys {
     const val BACKGROUND_IMAGE_URI = "tokenx_background_image_uri"
     const val BACKGROUND_DIM = "tokenx_background_dim"
     const val ACCENT_COLOR = "tokenx_accent_color"
+    const val ACCENT_PRESET = "tokenx_accent_preset"
 }
