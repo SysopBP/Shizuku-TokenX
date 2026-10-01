@@ -4,6 +4,10 @@ import android.graphics.Color as AndroidColor
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.appcompat.widget.SwitchCompat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -25,6 +29,7 @@ fun AppearanceStudioScreen() {
     var border by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_BORDER, .18f)) }
     var dim by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.BACKGROUND_DIM, .18f)) }
     var colorHex by remember { mutableStateOf(String.format("#%08X", prefs.getLong(TokenXAppearanceKeys.BACKGROUND_COLOR, 0xFF090A0FFF))) }
+    var seslSwitch by remember { mutableStateOf(true) }
     var mode by remember { mutableStateOf(runCatching { BackgroundMode.valueOf(prefs.getString(TokenXAppearanceKeys.BACKGROUND_MODE, BackgroundMode.AMOLED_GRADIENT.name)!!) }.getOrDefault(BackgroundMode.AMOLED_GRADIENT)) }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -41,7 +46,7 @@ fun AppearanceStudioScreen() {
     fun refresh() = ThemeState.refresh()
     fun putFloat(key: String, v: Float) { prefs.edit().putFloat(key, v).apply(); refresh() }
 
-    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text("Appearance Studio", style = MaterialTheme.typography.headlineMedium)
         Text("Build your own TokenX look. Changes are saved as you make them.", color = MaterialTheme.colorScheme.onSurfaceVariant)
 
@@ -57,6 +62,29 @@ fun AppearanceStudioScreen() {
                 StudioSlider("Blur", blur, 0f..48f, " dp") { blur = it; putFloat(TokenXAppearanceKeys.GLASS_BLUR, it) }
                 StudioSlider("Corner radius", radius, 8f..40f, " dp") { radius = it; putFloat(TokenXAppearanceKeys.GLASS_RADIUS, it) }
                 StudioSlider("Border strength", border, 0f..0.5f) { border = it; putFloat(TokenXAppearanceKeys.GLASS_BORDER, it) }
+            }
+        }
+
+        Text("SESL Test Lab", style = MaterialTheme.typography.titleMedium)
+        Text("Live tribalfs SESL control hosted inside the TokenX Compose UI.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        TokenXGlassCard {
+            Row(
+                Modifier.fillMaxWidth().padding(18.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("SESL AppCompat switch", style = MaterialTheme.typography.titleSmall)
+                    Text("Native Android View • SESL-backed", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                AndroidView(
+                    factory = { ctx -> SwitchCompat(ctx).apply { isChecked = seslSwitch } },
+                    update = { view ->
+                        view.setOnCheckedChangeListener(null)
+                        view.isChecked = seslSwitch
+                        view.setOnCheckedChangeListener { _, checked -> seslSwitch = checked }
+                    }
+                )
             }
         }
 
