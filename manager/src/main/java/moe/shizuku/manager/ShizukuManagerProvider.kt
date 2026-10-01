@@ -21,6 +21,7 @@ class ShizukuManagerProvider : ShizukuProvider() {
 
     companion object {
         private const val EXTRA_BINDER = "moe.shizuku.privileged.api.intent.extra.BINDER"
+        private const val METHOD_SEND_BINDER = "sendBinder"
         private const val METHOD_SEND_USER_SERVICE = "sendUserService"
     }
 
@@ -32,7 +33,15 @@ class ShizukuManagerProvider : ShizukuProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         if (extras == null) return null
 
-        return if (method == METHOD_SEND_USER_SERVICE) {
+        return if (method == METHOD_SEND_BINDER) {
+            // Keep ShizukuProvider as the single owner of the binder handshake.
+            // The UID-1000 backend publishes through this provider method; delegating
+            // here avoids a second/competing manager-side binder implementation.
+            LOGGER.i("Receiving Shizuku binder handoff through manager provider")
+            super.call(method, arg, extras).also {
+                ShizukuStateMachine.update()
+            }
+        } else if (method == METHOD_SEND_USER_SERVICE) {
             try {
                 extras.classLoader = BinderContainer::class.java.classLoader
 
