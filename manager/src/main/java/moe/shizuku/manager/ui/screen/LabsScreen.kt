@@ -18,6 +18,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material.icons.outlined.Route
+import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.Article
+import androidx.compose.material.icons.outlined.DeveloperBoard
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ui.Detail
 import moe.shizuku.manager.ui.theme.LocalAmoledTheme
+import moe.shizuku.manager.ui.theme.LocalTokenXGlass
 
 /**
  * The things that are gone to rather than lived in.
@@ -104,6 +115,63 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                     onClick = { onOpenDetail(Detail.AUTOSTART) }
                 )
             }
+
+            item {
+                LabTile(
+                    icon = Icons.Outlined.Route,
+                    label = "TokenX Router",
+                    badge = "LIVE",
+                    onClick = { onOpenDetail(Detail.TOKENX) }
+                )
+            }
+            item {
+                LabTile(
+                    icon = Icons.Outlined.Shield,
+                    label = "Boot Guardian",
+                    badge = "TOKEN",
+                    onClick = { onOpenDetail(Detail.TOKENX) }
+                )
+            }
+            item {
+                LabTile(
+                    icon = Icons.Outlined.Memory,
+                    label = "System Server",
+                    badge = "UID 1000",
+                    onClick = { onOpenDetail(Detail.TOKENX) }
+                )
+            }
+            item {
+                LabTile(
+                    icon = Icons.Outlined.DeveloperBoard,
+                    label = "LSPosed Bridge",
+                    badge = "BRIDGE",
+                    onClick = { onOpenDetail(Detail.TOKENX) }
+                )
+            }
+            item {
+                LabTile(
+                    icon = Icons.Outlined.Key,
+                    label = "Root Console",
+                    badge = "UID 0",
+                    onClick = { onOpenDetail(Detail.TERMINAL) }
+                )
+            }
+            item {
+                LabTile(
+                    icon = Icons.Outlined.BugReport,
+                    label = "Diagnostics",
+                    badge = "TOOLS",
+                    onClick = { onOpenDetail(Detail.TOKENX) }
+                )
+            }
+            item {
+                LabTile(
+                    icon = Icons.Outlined.Article,
+                    label = "Live Logs",
+                    badge = "LOGS",
+                    onClick = { onOpenDetail(Detail.TERMINAL) }
+                )
+            }
         }
     }
 }
@@ -116,7 +184,7 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
  * colour is what the eye lands on first.
  */
 @Composable
-private fun LabTile(icon: ImageVector, label: String, onClick: () -> Unit) {
+private fun LabTile(icon: ImageVector, label: String, badge: String? = null, onClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -134,7 +202,7 @@ private fun LabTile(icon: ImageVector, label: String, onClick: () -> Unit) {
                 }
             ),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (LocalTokenXGlass.current.enabled) LocalTokenXGlass.current.opacity else 1f)
     ) {
         Column(
             modifier = Modifier
@@ -168,6 +236,15 @@ private fun LabTile(icon: ImageVector, label: String, onClick: () -> Unit) {
                 maxLines = 2,
                 textAlign = TextAlign.Center
             )
+            badge?.let {
+                Text(
+                    text = it,
+                    modifier = Modifier.padding(top = 5.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
