@@ -10,6 +10,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.RemoteException;
+import android.os.Process;
 import android.text.TextUtils;
 
 import androidx.annotation.RequiresApi;
@@ -172,6 +173,17 @@ public class BinderSender {
 
     public static void register(ShizukuService shizukuService) {
         sShizukuService = shizukuService;
+
+        // In the LSPosed embedded backend we already run inside system_server (UID 1000).
+        // Samsung Android 17 can deny registering an additional observer set from injected
+        // module code. Initial Binder delivery does not depend on these observers: the
+        // ShizukuService constructor immediately performs the normal provider handoff.
+        // Keep the standalone root/shell observer behavior unchanged.
+        if (Process.myUid() == Process.SYSTEM_UID) {
+            ServerLog.mark("embedded binder transport: provider handoff active; AMS observers skipped");
+            LOGGER.i("embedded system_server: skip AMS observer registration; using provider binder handoff");
+            return;
+        }
 
         try {
             ActivityManagerApis.registerProcessObserver(new ProcessObserver());
