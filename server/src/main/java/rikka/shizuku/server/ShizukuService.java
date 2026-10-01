@@ -114,6 +114,37 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }
     }
 
+    /** Start the full Shizuku service inside system_server while preserving UID 1000. */
+    public static synchronized void startEmbeddedSystemServer() {
+        if (Process.myUid() != Process.SYSTEM_UID) {
+            throw new SecurityException("Embedded backend requires system_server UID 1000");
+        }
+
+        ServerLog.mark("embedded system_server start, uid=" + Process.myUid());
+
+        final Looper mainLooper = Looper.getMainLooper();
+        if (mainLooper == null) {
+            throw new IllegalStateException("system_server main looper is not ready");
+        }
+
+        Runnable start = () -> {
+            try {
+                ServerLog.mark("embedded service constructing on system_server main looper");
+                new ShizukuService();
+                ServerLog.mark("embedded service constructed; binder handoff scheduled");
+            } catch (Throwable tr) {
+                ServerLog.mark("embedded startup failed: " + Log.getStackTraceString(tr));
+                LOGGER.e(tr, "embedded system_server startup failed");
+            }
+        };
+
+        if (Looper.myLooper() == mainLooper) {
+            start.run();
+        } else if (!new Handler(mainLooper).post(start)) {
+            throw new IllegalStateException("could not post embedded backend to system_server main looper");
+        }
+    }
+
     private static void waitSystemService(String name) {
         while (ServiceManager.getService(name) == null) {
             try {
