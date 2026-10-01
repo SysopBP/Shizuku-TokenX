@@ -261,11 +261,6 @@ fun HomeScreen(bottomPadding: Dp) {
         }    }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text(stringResource(R.string.app_name)) },
-            windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
-        )
-
         LazyColumn(
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = bottomPadding),
             verticalArrangement = Arrangement.spacedBy(13.dp)
@@ -1062,30 +1057,25 @@ private fun ServerActionButtons(
             }
         }
 
-        // Red: stopping is the destructive one, and the theme's error role stays red
-        // whatever the seed colour is.
         Button(
             modifier = Modifier.weight(1f),
             enabled = running,
             onClick = onStop,
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.error,
-                contentColor = MaterialTheme.colorScheme.onError
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                contentColor = MaterialTheme.colorScheme.onSurface
             )
         ) {
             Text(stringResource(R.string.action_stop))
         }
 
-        // Blue on purpose: Material 3 has no blue role and the palette is seeded from
-        // the wallpaper or the brand colour, so a role here would come out indigo or
-        // teal depending on the theme.
         Button(
             modifier = Modifier.weight(1f),
             enabled = running,
             onClick = onRestart,
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                contentColor = MaterialTheme.colorScheme.onSurface
             )
         ) {
             Text(stringResource(R.string.action_restart))
