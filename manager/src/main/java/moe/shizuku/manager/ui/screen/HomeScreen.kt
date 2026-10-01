@@ -99,6 +99,7 @@ import moe.shizuku.manager.start.startMethodLabelRes
 import moe.shizuku.manager.starter.Starter
 import moe.shizuku.manager.starter.StarterActivity
 import moe.shizuku.manager.ui.component.ExpressiveCard
+import moe.shizuku.manager.ui.component.TokenXDashboard
 import moe.shizuku.manager.ui.component.SegmentedColumn
 import moe.shizuku.manager.ui.theme.LocalAmoledTheme
 import moe.shizuku.manager.ui.component.SegmentedListItem
