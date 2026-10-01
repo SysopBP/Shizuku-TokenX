@@ -67,7 +67,10 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
     // wallpaper when the user enables system color. A fixed seed avoids a
     // washed-out grey palette on desaturated wallpapers.
     val savedAccent = prefs.getLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.TOKEN_PURPLE.argb)
-    // ACCENT_COLOR is stored as a conventional 32-bit ARGB value. Passing it to the\n    // packed-ULong Color constructor makes Compose interpret ARGB bits as a packed\n    // color-space value and can produce an invalid color-space index at startup.\n    val tokenAccent = Color(savedAccent.toInt())
+    // ACCENT_COLOR is stored as a conventional 32-bit ARGB value. Passing it to the
+    // packed-ULong Color constructor makes Compose interpret ARGB bits as a packed
+    // color-space value and can produce an invalid color-space index at startup.
+    val tokenAccent = Color(savedAccent.toInt())
     val seed = if (useSystemColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         (if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)).primary
     } else {
