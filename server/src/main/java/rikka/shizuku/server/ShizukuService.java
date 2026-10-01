@@ -121,6 +121,11 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     private final ShizukuConfigManager configManager;
     private final int managerAppId;
 
+    /** Starts the Shizuku server in the current system_server process. */
+    public static void startEmbeddedSystemServer() {
+        new ShizukuService();
+    }
+
     public ShizukuService() {
         super();
 
