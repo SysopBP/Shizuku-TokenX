@@ -108,6 +108,13 @@
         tools:remove="android:appComponentFactory"
         tools:targetApi="33">
 
+        <!-- LSPosed backend: scope this APK to Android/System Framework so the entry
+             point is loaded inside system_server (UID 1000). -->
+        <meta-data android:name="xposedmodule" android:value="true" />
+        <meta-data android:name="xposeddescription" android:value="Shizuku TokenX System Server backend" />
+        <meta-data android:name="xposedminversion" android:value="82" />
+        <meta-data android:name="xposedscope" android:value="android" />
+
         <activity
             android:name=".MainActivity"
             android:banner="@mipmap/banner"
