@@ -22,6 +22,13 @@ data class TokenXGlassStyle(
     val accent: Color = Color(0xFF8B5CF6),
 )
 
+enum class FloatingBarStyle {
+    FLOATING,
+    FROSTED,
+    SOLID,
+    CLEAR,
+}
+
 enum class BackgroundMode {
     SYSTEM,
     AMOLED,
@@ -59,6 +66,8 @@ object TokenXAppearanceKeys {
     const val GLASS_BORDER = "tokenx_glass_border"
     const val GLASS_TINT = "tokenx_glass_tint"
     const val TEXT_CONTRAST = "tokenx_text_contrast"
+    const val FLOATING_BAR_STYLE = "tokenx_floating_bar_style"
+    const val FLOATING_BAR_OPACITY = "tokenx_floating_bar_opacity"
     const val BACKGROUND_MODE = "tokenx_background_mode"
     const val BACKGROUND_COLOR = "tokenx_background_color"
     const val BACKGROUND_IMAGE_URI = "tokenx_background_image_uri"
