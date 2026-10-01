@@ -60,13 +60,13 @@ fun AppearanceStudioScreen() {
     fun putFloat(key: String, v: Float) { prefs.edit().putFloat(key, v).apply(); refresh() }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("Appearance Studio", style = MaterialTheme.typography.headlineMedium)
+        Text("Appearance Studio", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface)
         Text("Build your own TokenX look. Changes are saved as you make them.", color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         TokenXGlassCard {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Glass surfaces")
+                    Text("Glass surfaces", color = MaterialTheme.colorScheme.onSurface)
                     Switch(glass, onCheckedChange = {
                         glass = it; prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED, it).apply(); refresh()
                     })
@@ -79,7 +79,7 @@ fun AppearanceStudioScreen() {
             }
         }
 
-        Text("SESL Test Lab", style = MaterialTheme.typography.titleMedium)
+        Text("Advanced • SESL", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         Text("Live tribalfs SESL control hosted inside the TokenX Compose UI.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         TokenXGlassCard {
             Row(
@@ -102,7 +102,7 @@ fun AppearanceStudioScreen() {
             }
         }
 
-        Text("Floating navigation bar", style = MaterialTheme.typography.titleMedium)
+        Text("Floating navigation bar", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         Text("Choose a floating, frosted, solid or ultra-clear bottom bar.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             FloatingBarStyle.entries.forEach { candidate ->
@@ -122,7 +122,7 @@ fun AppearanceStudioScreen() {
             putFloat(TokenXAppearanceKeys.FLOATING_BAR_OPACITY, it)
         }
 
-        Text("Accent color", style = MaterialTheme.typography.titleMedium)
+        Text("Accent color", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         Text("Changes Material, TokenX glass highlights and active-state accents across the app.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             TokenXAccent.entries.forEach { preset ->
@@ -162,7 +162,7 @@ fun AppearanceStudioScreen() {
             }
         }) { Text("Apply custom accent") }
 
-        Text("Background", style = MaterialTheme.typography.titleMedium)
+        Text("Background", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             BackgroundMode.entries.forEach { candidate ->
                 FilterChip(
@@ -195,7 +195,7 @@ fun AppearanceStudioScreen() {
         }
         StudioSlider("Background dim", dim, 0f..0.8f) { dim = it; putFloat(TokenXAppearanceKeys.BACKGROUND_DIM, it) }
 
-        Text("Glass presets", style = MaterialTheme.typography.titleMedium)
+        Text("Glass presets", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         Text("Neutral glass keeps wallpaper colors intact while the accent stays on controls.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = {
@@ -233,7 +233,7 @@ fun AppearanceStudioScreen() {
 @Composable
 private fun StudioSlider(title: String, value: Float, range: ClosedFloatingPointRange<Float>, suffix: String = "", onChange: (Float) -> Unit) {
     Column {
-        Text(title + "  " + "%.2f".format(value) + suffix, style = MaterialTheme.typography.labelLarge)
+        Text(title + "  " + "%.2f".format(value) + suffix, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
         Slider(value = value, onValueChange = onChange, valueRange = range)
     }
 }
