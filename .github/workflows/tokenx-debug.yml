@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - tokenx-dev
+      - tokenx-recovery
     paths:
       - 'manager/**'
       - 'xposed/**'
