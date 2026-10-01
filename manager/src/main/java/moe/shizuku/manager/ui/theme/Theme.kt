@@ -109,7 +109,24 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
         }
     }
 
-    CompositionLocalProvider(LocalAmoledTheme provides amoled) {
+    val tokenXGlass = TokenXGlassStyle(
+        enabled = prefs.getBoolean(TokenXAppearanceKeys.GLASS_ENABLED, true),
+        opacity = prefs.getFloat(TokenXAppearanceKeys.GLASS_OPACITY, .72f),
+        blurRadiusDp = prefs.getFloat(TokenXAppearanceKeys.GLASS_BLUR, 22f),
+        cornerRadiusDp = prefs.getFloat(TokenXAppearanceKeys.GLASS_RADIUS, 28f),
+        borderOpacity = prefs.getFloat(TokenXAppearanceKeys.GLASS_BORDER, .18f),
+        backgroundMode = runCatching {
+            BackgroundMode.valueOf(
+                prefs.getString(TokenXAppearanceKeys.BACKGROUND_MODE, BackgroundMode.AMOLED_GRADIENT.name)
+                    ?: BackgroundMode.AMOLED_GRADIENT.name
+            )
+        }.getOrDefault(BackgroundMode.AMOLED_GRADIENT),
+    )
+
+    CompositionLocalProvider(
+        LocalAmoledTheme provides amoled,
+        LocalTokenXGlass provides tokenXGlass
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             motionScheme = MotionScheme.expressive(),
