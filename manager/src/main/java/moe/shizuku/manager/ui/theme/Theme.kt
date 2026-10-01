@@ -89,7 +89,24 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
     // roles that the cards and the navigation bar actually use kept the standard
     // dark greys a black page with grey cards. Spread the black across every
     // surface role; row dividers keep the list readable without the card shape.
-    val colorScheme = if (amoled) baseScheme.copy(
+    // TKN Boot keeps wallpaper/glass surfaces neutral. The selected accent is for
+    // controls and active state, not for repainting every card/container.
+    val neutralScheme = baseScheme.copy(
+        background = if (darkTheme) Color(0xFF090A0D) else Color(0xFFF7F7F9),
+        surface = if (darkTheme) Color(0xFF0D0F13) else Color(0xFFFFFFFF),
+        surfaceDim = if (darkTheme) Color(0xFF090A0D) else Color(0xFFE6E7EA),
+        surfaceBright = if (darkTheme) Color(0xFF25282E) else Color(0xFFFFFFFF),
+        surfaceContainerLowest = if (darkTheme) Color(0xFF090A0D) else Color(0xFFFFFFFF),
+        surfaceContainerLow = if (darkTheme) Color(0xFF101216) else Color(0xFFF4F4F6),
+        surfaceContainer = if (darkTheme) Color(0xFF14161B) else Color(0xFFF0F0F3),
+        surfaceContainerHigh = if (darkTheme) Color(0xFF191C21) else Color(0xFFE9E9ED),
+        surfaceContainerHighest = if (darkTheme) Color(0xFF202329) else Color(0xFFE2E3E7),
+        onBackground = if (darkTheme) Color(0xFFF5F5F7) else Color(0xFF17181B),
+        onSurface = if (darkTheme) Color(0xFFF5F5F7) else Color(0xFF17181B),
+        onSurfaceVariant = if (darkTheme) Color(0xFFC7C9D0) else Color(0xFF555861),
+    )
+
+    val colorScheme = if (amoled) neutralScheme.copy(
         background = Color.Black,
         surface = Color.Black,
         surfaceDim = Color.Black,
@@ -99,7 +116,7 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
         surfaceContainer = Color.Black,
         surfaceContainerHigh = Color.Black,
         surfaceContainerHighest = Color.Black,
-    ) else baseScheme
+    ) else neutralScheme
 
     // Match the status/navigation bar icons to the app's theme, not the system's;
     // otherwise a white in-app theme gets light icons on a white bar (invisible).
