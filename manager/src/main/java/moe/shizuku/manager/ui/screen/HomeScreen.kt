@@ -49,6 +49,8 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -464,6 +466,14 @@ fun HomeScreen(bottomPadding: Dp) {
             }
 
             item {
+                TokenXDashboard(
+                    running = running,
+                    uid = uid,
+                    rootAvailable = rooted
+                )
+            }
+
+            item {
                 StatusCard(
                     running = running,
                     uid = uid,
@@ -508,7 +518,7 @@ fun HomeScreen(bottomPadding: Dp) {
             item {
                 HomeSectionHeader(
                     title = "Start methods",
-                    subtitle = "Choose how the privilege engine should start"
+                    subtitle = "Root first, with System Server and ADB fallback paths"
                 )
             }
 
@@ -967,7 +977,6 @@ private fun StatusFact(fact: StatusFactEntry, modifier: Modifier = Modifier) {
 }
 
 /** Restart's blue see the note where it is used. */
-private val RestartBlue = Color(0xFF2563EB)
 
 /**
  * Start, Stop and Restart below the status card, all always visible. An action that
@@ -1027,8 +1036,8 @@ private fun ServerActionButtons(
             enabled = running,
             onClick = onRestart,
             colors = ButtonDefaults.buttonColors(
-                containerColor = RestartBlue,
-                contentColor = Color.White
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
         ) {
             Text(stringResource(R.string.action_restart))
