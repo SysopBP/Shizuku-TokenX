@@ -65,3 +65,4 @@
 -repackageclasses rikka.shizuku
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+\n# LSPosed loads this class by name from assets/xposed_init.\n-keep class moe.shizuku.manager.xposed.SystemServerEntry { *; }\n-keep class rikka.shizuku.server.ShizukuService { public static void startEmbeddedSystemServer(); }\n
