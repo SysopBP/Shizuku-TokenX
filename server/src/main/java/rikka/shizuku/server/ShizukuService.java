@@ -615,46 +615,50 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     static void sendBinderToManager(Binder binder, int userId) {
         ServerLog.mark("handing the binder to " + MANAGER_APPLICATION_ID + " in user " + userId);
-        boolean success = sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
-        ServerLog.mark(success
-                ? "the manager took the binder"
-                : "the manager did not take the binder: retrying, which force stops it first");
-        if (!success) {
-            // Nothing to retry in a user the manager is not installed in, and the retry force
-            // stops it: on a device with a work profile that is a force stop, on every start,
-            // of an app that was never in that user. Only the missing app is skipped, which
-            // is exactly the case where the retry could not have worked anyway.
-            boolean installed;
-            try {
-                installed = Android17Compat.getApplicationInfo(MANAGER_APPLICATION_ID, 0, userId) != null;
-            } catch (Throwable tr) {
-                // Not certain it is absent, so keep the retry rather than skip a user that
-                // needs it.
-                installed = true;
-            }
-            if (!installed) {
-                ServerLog.mark("not retrying in user " + userId + ": the manager is not installed there");
+
+        boolean installed;
+        try {
+            installed = Android17Compat.getApplicationInfo(MANAGER_APPLICATION_ID, 0, userId) != null;
+        } catch (Throwable tr) {
+            installed = true;
+        }
+        if (!installed) {
+            ServerLog.mark("not publishing in user " + userId + ": the manager is not installed there");
+            return;
+        }
+
+        // Android 17 / One UI 9 may keep shizuku_server alive while the manager's
+        // .shizuku provider is not ready yet. Keep the manager alive and retry only
+        // binder publication; force-stopping it here destroys the receiving provider
+        // and can leave an orphaned live server with no usable binder.
+        final int maxAttempts = 6;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            ServerLog.mark("BINDER_PUBLISH_BEGIN user=" + userId
+                    + " attempt=" + attempt + "/" + maxAttempts
+                    + " binderAlive=" + (binder != null && binder.isBinderAlive()));
+
+            boolean success = sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
+            if (success) {
+                ServerLog.mark("BINDER_PUBLISH_OK user=" + userId
+                        + " attempt=" + attempt + "/" + maxAttempts);
                 return;
             }
 
-            // For unknown reason, sometimes this could happens
-            // Kill Shizuku app and try again could work
-            try {
-                LOGGER.e("kill %s in user %d and try again", MANAGER_APPLICATION_ID, userId);
-                ActivityManagerApis.forceStopPackageNoThrow(MANAGER_APPLICATION_ID, userId);
+            ServerLog.mark("BINDER_PUBLISH_RETRY user=" + userId
+                    + " attempt=" + attempt + "/" + maxAttempts);
+            if (attempt < maxAttempts) {
                 try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {}
-                success = sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
-                if (success) {
-                    LOGGER.e("retry succeeded");
-                } else {
-                    LOGGER.e("retry failed");
+                    Thread.sleep(attempt < 3 ? 500L : 1000L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    ServerLog.mark("BINDER_PUBLISH_INTERRUPTED user=" + userId);
+                    return;
                 }
-            } catch (Throwable tr) {
-                LOGGER.e(tr, "retry failed");
             }
         }
+
+        ServerLog.mark("BINDER_PUBLISH_FAILED user=" + userId
+                + " attempts=" + maxAttempts + "; server remains alive for recovery");
     }
 
     static boolean sendBinderToUserApp(Binder binder, String packageName, int userId) {
