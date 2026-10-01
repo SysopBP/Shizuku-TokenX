@@ -211,8 +211,6 @@ dependencies {
     // isolated while Compose remains the primary UI; expand SESL module-by-module
     // after each CI/device compatibility check.
     implementation "sesl.androidx.appcompat:appcompat:1.8.0+1.0.21-sesl8+rev2"
-
-    implementation "dev.rikka.rikkax.appcompat:appcompat:1.6.1"
     implementation "dev.rikka.rikkax.compatibility:compatibility:2.0.0"
     implementation "dev.rikka.rikkax.core:core-ktx:1.4.1"
     implementation "dev.rikka.rikkax.material:material:2.7.2"
