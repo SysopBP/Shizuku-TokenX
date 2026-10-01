@@ -6,6 +6,7 @@ on:
     branches:
       - tokenx-dev
       - tokenx-recovery
+      - test/run91-system-server-binder-fix
     paths:
       - 'manager/**'
       - 'xposed/**'
