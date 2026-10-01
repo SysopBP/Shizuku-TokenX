@@ -41,6 +41,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -63,6 +66,8 @@ import rikka.shizuku.server.util.InstalledPackagesCompat;
 import rikka.shizuku.server.util.UserHandleCompat;
 
 public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuClientManager, ShizukuConfigManager> {
+
+    private static volatile boolean EMBEDDED_SYSTEM_SERVER = false;
 
     public static final String MANAGER_APPLICATION_ID;
 
@@ -120,29 +125,60 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             throw new SecurityException("Embedded backend requires system_server UID 1000");
         }
 
+        EMBEDDED_SYSTEM_SERVER = true;
         ServerLog.mark("embedded system_server start, uid=" + Process.myUid());
 
         final Looper mainLooper = Looper.getMainLooper();
         if (mainLooper == null) {
+            EMBEDDED_SYSTEM_SERVER = false;
             throw new IllegalStateException("system_server main looper is not ready");
         }
 
+        if (Looper.myLooper() == mainLooper) {
+            new ShizukuService();
+            ServerLog.mark("embedded system_server backend ready on main looper");
+            return;
+        }
+
+        final CountDownLatch ready = new CountDownLatch(1);
+        final AtomicReference<Throwable> failure = new AtomicReference<>();
         Runnable start = () -> {
             try {
                 ServerLog.mark("embedded service constructing on system_server main looper");
                 new ShizukuService();
                 ServerLog.mark("embedded service constructed; binder handoff scheduled");
             } catch (Throwable tr) {
+                failure.set(tr);
                 ServerLog.mark("embedded startup failed: " + Log.getStackTraceString(tr));
                 LOGGER.e(tr, "embedded system_server startup failed");
+            } finally {
+                ready.countDown();
             }
         };
 
-        if (Looper.myLooper() == mainLooper) {
-            start.run();
-        } else if (!new Handler(mainLooper).post(start)) {
+        if (!new Handler(mainLooper).post(start)) {
+            EMBEDDED_SYSTEM_SERVER = false;
             throw new IllegalStateException("could not post embedded backend to system_server main looper");
         }
+
+        try {
+            if (!ready.await(30, TimeUnit.SECONDS)) {
+                EMBEDDED_SYSTEM_SERVER = false;
+                throw new IllegalStateException("timed out constructing embedded backend");
+            }
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            EMBEDDED_SYSTEM_SERVER = false;
+            throw new IllegalStateException("interrupted while constructing embedded backend", ex);
+        }
+
+        Throwable startupFailure = failure.get();
+        if (startupFailure != null) {
+            EMBEDDED_SYSTEM_SERVER = false;
+            throw new IllegalStateException("embedded backend construction failed", startupFailure);
+        }
+
+        ServerLog.mark("embedded system_server backend ready; provider binder publication active");
     }
 
     private static void waitSystemService(String name) {
@@ -181,6 +217,9 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
         ApplicationInfo ai = getManagerApplicationInfo();
         if (ai == null) {
+            if (EMBEDDED_SYSTEM_SERVER) {
+                throw new IllegalStateException("TokenX manager APK is not installed");
+            }
             System.exit(ServerConstants.MANAGER_APP_NOT_FOUND);
         }
 
@@ -192,8 +231,12 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
         ApkChangedObservers.start(ai.sourceDir, () -> {
             if (getManagerApplicationInfo() == null) {
-                LOGGER.w("manager app is uninstalled in user 0, exiting...");
-                System.exit(ServerConstants.MANAGER_APP_NOT_FOUND);
+                if (EMBEDDED_SYSTEM_SERVER) {
+                    LOGGER.w("manager app is unavailable; embedded system_server backend stays alive");
+                } else {
+                    LOGGER.w("manager app is uninstalled in user 0, exiting...");
+                    System.exit(ServerConstants.MANAGER_APP_NOT_FOUND);
+                }
             }
         });
 
