@@ -2,6 +2,7 @@ package moe.shizuku.manager.xposed;
 
 import android.os.Process;
 import android.os.ServiceManager;
+import android.util.Log;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -21,6 +22,9 @@ import rikka.shizuku.server.ShizukuService;
 public final class SystemServerEntry implements IXposedHookLoadPackage {
 
     private static final AtomicBoolean STARTED = new AtomicBoolean(false);
+    private static final String TAG = "TokenX-SystemServer";
+    private static final int START_ATTEMPTS = 6;
+    private static final long START_RETRY_DELAY_MS = 1500L;
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) {
@@ -28,7 +32,7 @@ public final class SystemServerEntry implements IXposedHookLoadPackage {
             return;
         }
 
-        XposedBridge.log("TokenX: attached to system_server uid=" + Process.myUid());
+        checkpoint("TOKENX_HOOK_ENTER uid=" + Process.myUid() + " pid=" + Process.myPid());
 
         // Never block LSPosed's package-load callback. PackageManager/ActivityManager may
         // not all be published at this exact instant, so a tiny worker waits for the same
@@ -46,14 +50,34 @@ public final class SystemServerEntry implements IXposedHookLoadPackage {
                 }
 
                 if (!STARTED.compareAndSet(false, true)) {
+                    checkpoint("TOKENX_START_SKIPPED already started");
                     return;
                 }
 
-                ShizukuService.startEmbeddedSystemServer();
-                XposedBridge.log("TokenX: System Server backend ACTIVE (uid 1000)");
+                Throwable lastFailure = null;
+                for (int attempt = 1; attempt <= START_ATTEMPTS; attempt++) {
+                    try {
+                        checkpoint("TOKENX_START_ATTEMPT " + attempt + "/" + START_ATTEMPTS);
+                        ShizukuService.startEmbeddedSystemServer();
+                        checkpoint("TOKENX_SERVICE_REGISTERED uid=" + Process.myUid()
+                                + " pid=" + Process.myPid());
+                        return;
+                    } catch (Throwable t) {
+                        lastFailure = t;
+                        checkpoint("TOKENX_START_FAILED attempt=" + attempt + " error=" + t);
+                        XposedBridge.log(t);
+                        if (attempt < START_ATTEMPTS) {
+                            Thread.sleep(START_RETRY_DELAY_MS);
+                        }
+                    }
+                }
+
+                STARTED.set(false);
+                throw new IllegalStateException("TokenX system_server backend failed after "
+                        + START_ATTEMPTS + " attempts", lastFailure);
             } catch (Throwable t) {
                 STARTED.set(false);
-                XposedBridge.log("TokenX: System Server backend failed");
+                checkpoint("TOKENX_BACKEND_FAILED " + t);
                 XposedBridge.log(t);
             }
         }, "TokenX-SystemServer");
@@ -65,5 +89,11 @@ public final class SystemServerEntry implements IXposedHookLoadPackage {
         while (ServiceManager.getService(name) == null) {
             Thread.sleep(250L);
         }
+        checkpoint("TOKENX_DEP_READY " + name);
+    }
+
+    private static void checkpoint(String message) {
+        XposedBridge.log("TokenX: " + message);
+        Log.i(TAG, message);
     }
 }
