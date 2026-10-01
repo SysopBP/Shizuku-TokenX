@@ -205,7 +205,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
             // The embedded UID-1000 backend may be ready before the manager provider.
             // Retry Binder publication only; do not launch another Shizuku server.
-            if (EMBEDDED_SYSTEM_SERVER) {
+            if (Process.myUid() == Process.SYSTEM_UID) {
                 final long[] retryDelays = {500L, 1500L, 3000L, 5000L, 8000L, 12000L};
                 for (long retryDelay : retryDelays) {
                     mainHandler.postDelayed(() -> {
