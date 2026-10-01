@@ -22,7 +22,7 @@ class TokenXXposedEntry : XposedModule() {
         runCatching {
             if (ServiceManager.getService(SERVICE_NAME) == null) {
                 ServiceManager.addService(SERVICE_NAME, TokenXSystemServerBridge())
-                log(Log.INFO, TAG, "BOOT_TOKEN CONFIRMED: system_server bridge registered")
+                log(Log.INFO, TAG, "BOOT_TOKEN CONFIRMED: system_server bridge registered UID ${Process.myUid()} PID ${Process.myPid()}")
             }
         }.onFailure {
             log(Log.ERROR, TAG, "system_server bridge registration failed: ${it.javaClass.simpleName}: ${it.message}")
