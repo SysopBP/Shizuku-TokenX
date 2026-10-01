@@ -94,6 +94,16 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
         surfaceContainer = Color.Black,
         surfaceContainerHigh = Color.Black,
         surfaceContainerHighest = Color.Black,
+
+        // Keep every foreground role legible on the pure-black theme. Some expressive
+        // components resolve their text/icon colour from these roles instead of inheriting
+        // Surface contentColor; leaving a light-scheme foreground behind produced nearly
+        // black labels on the AMOLED cards.
+        onBackground = Color(0xFFE6E6E6),
+        onSurface = Color(0xFFE6E6E6),
+        onSurfaceVariant = Color(0xFFB8B8B8),
+        outline = Color(0xFF8A8A8A),
+        outlineVariant = Color(0xFF4A4A4A),
     ) else baseScheme
 
     // Match the status/navigation bar icons to the app's theme, not the system's;
