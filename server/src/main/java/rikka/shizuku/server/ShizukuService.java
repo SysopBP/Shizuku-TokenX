@@ -199,6 +199,33 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         mainHandler.post(() -> {
             sendBinderToClient();
             sendBinderToManager();
+
+            /*
+             * system_server can create the embedded backend before the manager process/provider
+             * is ready to accept the Binder. The normal standalone server eventually gets
+             * another opportunity through process/UID observers, but at early boot that can
+             * leave the UID-1000 backend alive forever without publishing a usable Binder.
+             *
+             * Keep the ordinary path unchanged. For the embedded backend only, retry the
+             * manager handoff from system_server's main looper. sendBinderToManager() already
+             * validates the provider and Binder transaction, so these are safe idempotent
+             * publication attempts rather than additional server launches.
+             */
+            if (EMBEDDED_SYSTEM_SERVER) {
+                final long[] retryDelays = {500L, 1500L, 3000L, 5000L, 8000L, 12000L};
+                for (long retryDelay : retryDelays) {
+                    mainHandler.postDelayed(() -> {
+                        try {
+                            ServerLog.mark("embedded binder handoff retry after " + retryDelay + "ms");
+                            sendBinderToManager();
+                        } catch (Throwable tr) {
+                            ServerLog.mark("embedded binder handoff retry failed: "
+                                    + Log.getStackTraceString(tr));
+                            LOGGER.e(tr, "embedded binder handoff retry failed");
+                        }
+                    }, retryDelay);
+                }
+            }
         });
     }
 
