@@ -25,6 +25,12 @@ dependencyResolutionManagement {
         mavenLocal()
         mavenCentral()
         maven {
+            url = "https://api.xposed.info/"
+            content {
+                includeGroup("de.robv.android.xposed")
+            }
+        }
+        maven {
             url = "https://jitpack.io"
             content {
                 includeGroup("com.github.topjohnwu.libsu")
