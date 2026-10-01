@@ -27,6 +27,9 @@
     <methods>;
 }
 
+# LSPosed reads this class name from assets/xposed_init, so R8 must not rename/remove it.
+-keep class moe.shizuku.manager.xposed.SystemServerEntry { *; }
+
 # Entrance of Shizuku service
 -keep class rikka.shizuku.server.ShizukuService {
     public static void main(java.lang.String[]);
