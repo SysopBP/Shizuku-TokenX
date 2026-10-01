@@ -127,7 +127,6 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             throw new SecurityException("Embedded backend requires system_server UID 1000");
         }
         EMBEDDED_SYSTEM_SERVER = true;
-        ServerLog.mark("embedded system_server start, uid=" + Process.myUid());
 
         /*
          * LSPosed invokes this from a worker thread inside system_server. Unlike the
@@ -152,11 +151,9 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         final Handler mainHandler = new Handler(mainLooper);
         if (!mainHandler.post(() -> {
             try {
-                ServerLog.mark("embedded service constructing on system_server main looper");
                 new ShizukuService();
                 ServerLog.mark("embedded service constructed; binder handoff scheduled");
             } catch (Throwable tr) {
-                ServerLog.mark("embedded startup failed: " + Log.getStackTraceString(tr));
                 LOGGER.e(tr, "embedded system_server startup failed");
             }
         })) {
