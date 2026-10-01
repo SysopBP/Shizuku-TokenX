@@ -57,6 +57,7 @@ jobs:
           # tribalfs SESL is hosted in another GitHub owner namespace. A repository
           # GITHUB_TOKEN cannot reliably read that package, so prefer a read-only PAT.
           # Add SESL_GITHUB_TOKEN in repository Actions secrets with read:packages.
+          GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.SESL_GITHUB_TOKEN || github.token }}
         run: ./gradlew :manager:assembleDebug --stacktrace
 
