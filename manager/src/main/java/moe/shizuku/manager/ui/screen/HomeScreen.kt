@@ -16,6 +16,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -52,6 +53,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -73,6 +75,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.Dispatchers
@@ -505,10 +508,16 @@ fun HomeScreen(bottomPadding: Dp) {
             }
 
             item {
-                // The ways to start, as cards rather than rows: each one is a decision with
-                // a reason attached, so it gets an icon to be recognised by and a body that
-                // says the trade. The start options are disabled while Shizuku is running,
-                // because starting again does nothing and Restart is how you relaunch it.
+                HomeSectionHeader(
+                    title = "Start methods",
+                    subtitle = "Choose how the privilege engine should start"
+                )
+            }
+
+            item {
+                // Keep the proven start handlers intact while presenting them as a modern,
+                // clearly grouped Shizuku section. A later pass can compact the individual
+                // method cards without changing any startup behavior.
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     ExpressiveCard(
                         icon = Icons.Rounded.Wifi,
@@ -612,6 +621,13 @@ fun HomeScreen(bottomPadding: Dp) {
             }
 
             item {
+                HomeSectionHeader(
+                    title = "Device & runtime",
+                    subtitle = "Manager, kernel and Android security state"
+                )
+            }
+
+            item {
                 SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
                     // Same rows KernelSU's manager shows, so the device is described the
                     // same way in both apps.
@@ -688,6 +704,29 @@ fun HomeScreen(bottomPadding: Dp) {
                     Text(stringResource(android.R.string.cancel))
                 }
             }
+        )
+    }
+}
+
+
+@Composable
+private fun HomeSectionHeader(title: String, subtitle: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 4.dp, top = 6.dp, end = 4.dp, bottom = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
