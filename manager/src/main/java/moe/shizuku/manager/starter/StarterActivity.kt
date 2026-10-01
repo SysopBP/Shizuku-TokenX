@@ -296,6 +296,26 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 if (waiting) Starter.waitForBinder({ log(it) })
             } catch (e: TimeoutException) {
+                // A privileged/system-UID launch can successfully execute the native starter
+                // yet still fail to hand its Binder back to the manager (notably on newer
+                // Samsung/Android builds). Do not strand the user on a one-minute timeout:
+                // when root is available, immediately retry through the known-good root
+                // backend. This also replaces any half-started shizuku_server.
+                if (isSystem && Shell.getShell().isRoot) {
+                    log("\nSystem start did not deliver the Binder; falling back to root...\n")
+                    ShizukuSettings.setRunningStartMethod(ShizukuSettings.StartMethod.ROOT)
+                    runCatching { startRoot() }
+                        .onFailure { log("Root fallback launch failed: ${it.message}\n") }
+
+                    try {
+                        Starter.waitForBinder({ log(it) })
+                        log("\nRoot fallback is active.\n")
+                        return@launch
+                    } catch (_: TimeoutException) {
+                        log("\nRoot fallback also failed to deliver the Binder.\n")
+                    }
+                }
+
                 val starter = starterLog()
                 if (starter != null) {
                     log(
