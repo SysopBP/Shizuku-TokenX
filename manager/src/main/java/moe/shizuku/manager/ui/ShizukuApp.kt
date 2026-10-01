@@ -392,10 +392,11 @@ private fun MainTabs(
 
                 HorizontalFloatingToolbar(
                     expanded = true,
-                    modifier = Modifier
-                        .clip(barShape)
-                        .background(barSurface)
-                        .border(1.dp, barBorder, barShape),
+                    modifier = Modifier,
+                    colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
+                        toolbarContainerColor = Color.Transparent,
+                        toolbarContentColor = MaterialTheme.colorScheme.onSurface
+                    ),
                     contentPadding = PaddingValues(0.dp),
                     scrollBehavior = scrollBehavior
                 ) {
