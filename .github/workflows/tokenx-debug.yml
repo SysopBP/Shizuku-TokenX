@@ -1,0 +1,74 @@
+name: TokenX Debug Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - tokenx-dev
+    paths:
+      - 'manager/**'
+      - 'common/**'
+      - 'server/**'
+      - 'shell/**'
+      - 'starter/**'
+      - 'api'
+      - 'build.gradle'
+      - 'build.gradle.compileSdk36'
+      - 'settings.gradle'
+      - 'gradle.properties'
+      - 'gradle/**'
+      - '.github/workflows/tokenx-debug.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tokenx-debug-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  debug:
+    name: Build TokenX Debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout TokenX
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - name: Build debug APK
+        run: ./gradlew :manager:assembleDebug --stacktrace
+
+      - name: Collect APK
+        id: apk
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="$(find manager/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          test -n "$FILE"
+          mkdir -p tokenx-artifacts
+          cp "$FILE" tokenx-artifacts/Shizuku-TokenX-debug.apk
+          echo "apk=tokenx-artifacts/Shizuku-TokenX-debug.apk" >> "$GITHUB_OUTPUT"
+
+      - name: Upload TokenX debug APK
+        uses: actions/upload-artifact@v6
+        with:
+          name: Shizuku-TokenX-debug
+          path: ${{ steps.apk.outputs.apk }}
+          if-no-files-found: error
+          retention-days: 14
