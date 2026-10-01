@@ -1,5 +1,8 @@
 package moe.shizuku.manager.ui.screen
 
+import android.graphics.Color as AndroidColor
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,6 +16,7 @@ import moe.shizuku.manager.ui.theme.ThemeState
 
 @Composable
 fun AppearanceStudioScreen() {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = ShizukuSettings.getPreferences()
     var glass by remember { mutableStateOf(prefs.getBoolean(TokenXAppearanceKeys.GLASS_ENABLED, true)) }
     var opacity by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_OPACITY, .72f)) }
@@ -20,6 +24,18 @@ fun AppearanceStudioScreen() {
     var radius by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_RADIUS, 28f)) }
     var border by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_BORDER, .18f)) }
     var dim by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.BACKGROUND_DIM, .18f)) }
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            runCatching { context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+            prefs.edit()
+                .putString(TokenXAppearanceKeys.BACKGROUND_IMAGE_URI, uri.toString())
+                .putString(TokenXAppearanceKeys.BACKGROUND_MODE, BackgroundMode.CUSTOM_IMAGE.name)
+                .apply()
+            mode = BackgroundMode.CUSTOM_IMAGE
+            ThemeState.refresh()
+        }
+    }
+    var colorHex by remember { mutableStateOf(String.format("#%08X", prefs.getLong(TokenXAppearanceKeys.BACKGROUND_COLOR, 0xFF090A0FFF))) }
     var mode by remember { mutableStateOf(runCatching { BackgroundMode.valueOf(prefs.getString(TokenXAppearanceKeys.BACKGROUND_MODE, BackgroundMode.AMOLED_GRADIENT.name)!!) }.getOrDefault(BackgroundMode.AMOLED_GRADIENT)) }
 
     fun refresh() = ThemeState.refresh()
@@ -57,6 +73,23 @@ fun AppearanceStudioScreen() {
                     label = { Text(candidate.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }) }
                 )
             }
+        }
+        if (mode == BackgroundMode.CUSTOM_COLOR) {
+            OutlinedTextField(
+                value = colorHex,
+                onValueChange = { colorHex = it.take(9) },
+                label = { Text("Background color (#AARRGGBB)") },
+                singleLine = true
+            )
+            Button(onClick = {
+                runCatching { AndroidColor.parseColor(colorHex) }.onSuccess { parsed ->
+                    prefs.edit().putLong(TokenXAppearanceKeys.BACKGROUND_COLOR, parsed.toLong() and 0xFFFFFFFFL).apply()
+                    refresh()
+                }
+            }) { Text("Apply color") }
+        }
+        if (mode == BackgroundMode.CUSTOM_IMAGE) {
+            Button(onClick = { imagePicker.launch(arrayOf("image/*")) }) { Text("Choose background image") }
         }
         StudioSlider("Background dim", dim, 0f..0.8f) { dim = it; putFloat(TokenXAppearanceKeys.BACKGROUND_DIM, it) }
 
