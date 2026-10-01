@@ -719,6 +719,31 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                     item {
                         SegmentedListItem(
                             centerSlots = true,
+                            leadingContent = { SettingsIcon(Icons.Outlined.DeveloperMode) },
+                            headlineContent = { Text(stringResource(R.string.about_developer)) },
+                            supportingContent = { Text(stringResource(R.string.about_developer_name)) }
+                        )
+                    }
+                    item {
+                        SegmentedListItem(
+                            centerSlots = true,
+                            leadingContent = { SettingsIcon(Icons.Outlined.Link) },
+                            headlineContent = { Text(stringResource(R.string.about_github)) },
+                            supportingContent = { Text(stringResource(R.string.about_github_summary)) },
+                            trailingContent = {
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                            },
+                            onClick = {
+                                CustomTabsHelper.launchUrlOrCopy(
+                                    context,
+                                    context.getString(R.string.about_github_url)
+                                )
+                            }
+                        )
+                    }
+                    item {
+                        SegmentedListItem(
+                            centerSlots = true,
                             leadingContent = { SettingsIcon(Icons.Outlined.SystemUpdate) },
                             headlineContent = { Text(stringResource(R.string.check_for_updates)) },
                             supportingContent = {
