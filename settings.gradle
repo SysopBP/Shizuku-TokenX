@@ -25,6 +25,33 @@ dependencyResolutionManagement {
         google()
         mavenLocal()
         mavenCentral()
+
+        // TokenX SESL bridge: tribalfs publishes SESL through GitHub Packages.
+        // Local builds: export GITHUB_ACTOR and GITHUB_TOKEN (classic PAT with read:packages).
+        // CI uses the repository GITHUB_TOKEN where package access permits it.
+        def ghActor = System.getenv("GITHUB_ACTOR") ?: providers.gradleProperty("gpr.user").orNull
+        def ghToken = System.getenv("GITHUB_TOKEN") ?: providers.gradleProperty("gpr.key").orNull
+        if (ghActor && ghToken) {
+            maven {
+                name = "TribalfsSeslAndroidx"
+                url = uri("https://maven.pkg.github.com/tribalfs/sesl-androidx")
+                credentials {
+                    username = ghActor
+                    password = ghToken
+                }
+                content { includeGroupByRegex("sesl\\.androidx(\\..*)?") }
+            }
+            maven {
+                name = "TribalfsSeslMaterial"
+                url = uri("https://maven.pkg.github.com/tribalfs/sesl-material-components-android")
+                credentials {
+                    username = ghActor
+                    password = ghToken
+                }
+                content { includeGroupByRegex("sesl\\.com\\.google\\.android\\.material") }
+            }
+        }
+
         maven {
             url = "https://jitpack.io"
             content {
