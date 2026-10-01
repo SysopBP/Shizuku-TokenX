@@ -88,6 +88,10 @@
 
     <queries>
         <package android:name="moe.shizuku.privileged.api" />
+        <!-- TokenX only uses these for framework-presence discovery. An installed manager is not an active bridge. -->
+        <package android:name="org.lsposed.manager" />
+        <package android:name="org.meowcat.edxposed.manager" />
+        <package android:name="de.robv.android.xposed.installer" />
     </queries>
 
     <application
