@@ -64,6 +64,13 @@ import rikka.shizuku.server.util.UserHandleCompat;
 
 public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuClientManager, ShizukuConfigManager> {
 
+    /**
+     * True only when LSPosed loaded the server into system_server. In this mode System.exit
+     * would reboot/kill Android's core process, so every standalone-server exit path must be
+     * suppressed.
+     */
+    private static volatile boolean EMBEDDED_SYSTEM_SERVER = false;
+
     public static final String MANAGER_APPLICATION_ID;
 
     static {
@@ -88,9 +95,25 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         } catch (Throwable tr) {
             LOGGER.w("Couldn't get manager package name from CLASSPATH", tr);
         }
-        MANAGER_APPLICATION_ID = packageName;
+        // system_server has no Shizuku CLASSPATH. The generated server BuildConfig already
+        // contains the manager package id, so use it as the embedded-backend fallback.
+        MANAGER_APPLICATION_ID = packageName != null
+                ? packageName
+                : moe.shizuku.server.BuildConfig.MANAGER_APPLICATION_ID;
     }
 
+    /**
+     * Starts the existing Shizuku binder implementation inside system_server. Called only
+     * from the LSPosed entry point after it has verified Process.SYSTEM_UID.
+     */
+    public static synchronized void startEmbeddedSystemServer() {
+        if (Process.myUid() != Process.SYSTEM_UID) {
+            throw new SecurityException("Embedded backend requires system_server UID 1000");
+        }
+        EMBEDDED_SYSTEM_SERVER = true;
+        ServerLog.mark("embedded system_server start, uid=" + Process.myUid());
+        new ShizukuService();
+    }
 
     public static void main(String[] args) {
         // First, and before anything can fail: from here on the manager can read what this
@@ -150,6 +173,9 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
         ApplicationInfo ai = getManagerApplicationInfo();
         if (ai == null) {
+            if (EMBEDDED_SYSTEM_SERVER) {
+                throw new IllegalStateException("TokenX manager APK is not installed");
+            }
             System.exit(ServerConstants.MANAGER_APP_NOT_FOUND);
         }
 
@@ -161,8 +187,14 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
         ApkChangedObservers.start(ai.sourceDir, () -> {
             if (getManagerApplicationInfo() == null) {
-                LOGGER.w("manager app is uninstalled in user 0, exiting...");
-                System.exit(ServerConstants.MANAGER_APP_NOT_FOUND);
+                if (EMBEDDED_SYSTEM_SERVER) {
+                    // Never terminate system_server. The bridge becomes inert until the next
+                    // framework restart / module reload if its manager APK is removed.
+                    LOGGER.w("manager app is uninstalled in user 0; embedded backend stays alive");
+                } else {
+                    LOGGER.w("manager app is uninstalled in user 0, exiting...");
+                    System.exit(ServerConstants.MANAGER_APP_NOT_FOUND);
+                }
             }
         });
 
@@ -219,6 +251,12 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     @Override
     public void exit() {
         enforceManagerPermission("exit");
+        if (EMBEDDED_SYSTEM_SERVER) {
+            // A normal Shizuku server owns its process; the embedded backend does not.
+            // Killing this process would kill system_server and force a framework restart.
+            LOGGER.w("exit ignored for embedded system_server backend");
+            return;
+        }
         LOGGER.i("exit");
         System.exit(0);
     }
