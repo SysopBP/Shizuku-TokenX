@@ -30,7 +30,9 @@ on:
 
 jobs:
   upload:
-    if: github.event_name == 'push' || inputs.seed_translations
+    # A fork may not carry the upstream Crowdin credential. In that case translation sync is
+    # optional and must not turn an otherwise valid app change red.
+    if: (github.event_name == 'push' || inputs.seed_translations) && secrets.CROWDIN_PERSONAL_TOKEN != ''
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -54,7 +56,7 @@ jobs:
   download:
     # Not on a seeding run: that run exists to push a language up, and pulling straight back
     # down in the same breath would only race the import it just asked for.
-    if: github.event_name != 'push' && !inputs.seed_translations
+    if: github.event_name != 'push' && !inputs.seed_translations && secrets.CROWDIN_PERSONAL_TOKEN != ''
     runs-on: ubuntu-latest
     permissions:
       contents: write
