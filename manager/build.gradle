@@ -153,7 +153,14 @@ tasks.withType(CompileArtProfileTask.class).configureEach {
     enabled = false
 }
 configurations.configureEach {
+    // SESL forks retain AndroidX namespaces, so stock counterparts must not
+    // coexist in the manager runtime graph.
     exclude group: "androidx.appcompat", module: "appcompat"
+    exclude group: "androidx.core", module: "core"
+    exclude group: "androidx.fragment", module: "fragment"
+    exclude group: "androidx.customview", module: "customview"
+    exclude group: "androidx.drawerlayout", module: "drawerlayout"
+    exclude group: "androidx.viewpager", module: "viewpager"
     exclude group: "androidx.profileinstaller", module: "profileinstaller"
 }
 
@@ -189,8 +196,6 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling"
 
     implementation "androidx.browser:browser:1.8.0"
-    implementation "androidx.core:core-ktx:1.16.0"
-    implementation "androidx.fragment:fragment-ktx:1.8.7"
     implementation "androidx.recyclerview:recyclerview:1.4.0"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.0"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.9.0"
