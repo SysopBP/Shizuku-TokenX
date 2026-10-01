@@ -101,7 +101,7 @@ fun AppearanceStudioScreen() {
                     Box(
                         Modifier
                             .size(44.dp)
-                            .background(Color(preset.argb.toULong()), CircleShape)
+                            .background(Color(preset.argb.toInt()), CircleShape)
                             .clickable {
                                 prefs.edit()
                                     .putLong(TokenXAppearanceKeys.ACCENT_COLOR, preset.argb)
