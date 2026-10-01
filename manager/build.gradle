@@ -182,6 +182,7 @@ dependencies {
     implementation "androidx.compose.material:material-icons-extended"
     implementation "com.materialkolor:material-kolor:3.0.1"
     implementation "androidx.compose.runtime:runtime-livedata"
+    implementation "io.coil-kt:coil-compose:2.7.0"
     implementation "androidx.lifecycle:lifecycle-runtime-compose:2.9.0"
 
     // The first tests in this module: the shell's suggestion rules turn on the shape of a word
