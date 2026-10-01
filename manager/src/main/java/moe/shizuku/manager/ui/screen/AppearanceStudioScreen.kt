@@ -1,0 +1,87 @@
+package moe.shizuku.manager.ui.screen
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.ui.component.TokenXGlassCard
+import moe.shizuku.manager.ui.theme.BackgroundMode
+import moe.shizuku.manager.ui.theme.TokenXAppearanceKeys
+import moe.shizuku.manager.ui.theme.ThemeState
+
+@Composable
+fun AppearanceStudioScreen() {
+    val prefs = ShizukuSettings.getPreferences()
+    var glass by remember { mutableStateOf(prefs.getBoolean(TokenXAppearanceKeys.GLASS_ENABLED, true)) }
+    var opacity by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_OPACITY, .72f)) }
+    var blur by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_BLUR, 22f)) }
+    var radius by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_RADIUS, 28f)) }
+    var border by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_BORDER, .18f)) }
+    var dim by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.BACKGROUND_DIM, .18f)) }
+    var mode by remember { mutableStateOf(runCatching { BackgroundMode.valueOf(prefs.getString(TokenXAppearanceKeys.BACKGROUND_MODE, BackgroundMode.AMOLED_GRADIENT.name)!!) }.getOrDefault(BackgroundMode.AMOLED_GRADIENT)) }
+
+    fun refresh() = ThemeState.refresh()
+    fun putFloat(key: String, v: Float) { prefs.edit().putFloat(key, v).apply(); refresh() }
+
+    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Text("Appearance Studio", style = MaterialTheme.typography.headlineMedium)
+        Text("Build your own TokenX look. Changes are saved as you make them.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        TokenXGlassCard {
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Glass surfaces")
+                    Switch(glass, onCheckedChange = {
+                        glass = it; prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED, it).apply(); refresh()
+                    })
+                }
+                StudioSlider("Opacity", opacity, .25f..1f) { opacity = it; putFloat(TokenXAppearanceKeys.GLASS_OPACITY, it) }
+                StudioSlider("Blur", blur, 0f..48f, " dp") { blur = it; putFloat(TokenXAppearanceKeys.GLASS_BLUR, it) }
+                StudioSlider("Corner radius", radius, 8f..40f, " dp") { radius = it; putFloat(TokenXAppearanceKeys.GLASS_RADIUS, it) }
+                StudioSlider("Border strength", border, 0f..0.5f) { border = it; putFloat(TokenXAppearanceKeys.GLASS_BORDER, it) }
+            }
+        }
+
+        Text("Background", style = MaterialTheme.typography.titleMedium)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            BackgroundMode.entries.forEach { candidate ->
+                FilterChip(
+                    selected = mode == candidate,
+                    onClick = {
+                        mode = candidate
+                        prefs.edit().putString(TokenXAppearanceKeys.BACKGROUND_MODE, candidate.name).apply()
+                        refresh()
+                    },
+                    label = { Text(candidate.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }) }
+                )
+            }
+        }
+        StudioSlider("Background dim", dim, 0f..0.8f) { dim = it; putFloat(TokenXAppearanceKeys.BACKGROUND_DIM, it) }
+
+        Text("Presets", style = MaterialTheme.typography.titleMedium)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = {
+                glass=true; opacity=.42f; blur=10f; radius=30f; border=.24f
+                prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_BLUR,blur).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).apply(); refresh()
+            }) { Text("Clear") }
+            Button(onClick = {
+                glass=true; opacity=.72f; blur=28f; radius=28f; border=.18f
+                prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_BLUR,blur).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).apply(); refresh()
+            }) { Text("Frosted") }
+            Button(onClick = {
+                mode=BackgroundMode.AMOLED; opacity=.58f; border=.12f
+                prefs.edit().putString(TokenXAppearanceKeys.BACKGROUND_MODE,mode.name).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).apply(); refresh()
+            }) { Text("AMOLED") }
+        }
+    }
+}
+
+@Composable
+private fun StudioSlider(title: String, value: Float, range: ClosedFloatingPointRange<Float>, suffix: String = "", onChange: (Float) -> Unit) {
+    Column {
+        Text(title + "  " + "%.2f".format(value) + suffix, style = MaterialTheme.typography.labelLarge)
+        Slider(value = value, onValueChange = onChange, valueRange = range)
+    }
+}
