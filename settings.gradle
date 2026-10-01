@@ -26,6 +26,15 @@ dependencyResolutionManagement {
         google()
         mavenLocal()
         mavenCentral()
+        // Xposed API is a compileOnly dependency for the manager/LSPosed hooks.
+        // pluginManagement repositories do not participate in project dependency
+        // resolution, so declare the Xposed Maven repository here as well.
+        maven {
+            url = "https://api.xposed.info/"
+            content {
+                includeGroup("de.robv.android.xposed")
+            }
+        }
         maven {
             url = "https://jitpack.io"
             content {
