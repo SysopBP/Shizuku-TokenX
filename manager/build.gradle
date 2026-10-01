@@ -162,6 +162,8 @@ configurations.configureEach {
     exclude group: "androidx.drawerlayout", module: "drawerlayout"
     exclude group: "androidx.viewpager", module: "viewpager"
     exclude group: "androidx.profileinstaller", module: "profileinstaller"
+    // Legacy Rikka wrapper also owns the androidx.appcompat namespace; SESL replaces it.
+    exclude group: "dev.rikka.rikkax.appcompat", module: "appcompat"
 }
 
 dependencies {
