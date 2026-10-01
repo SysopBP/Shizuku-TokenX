@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ui.theme.LocalAmoledTheme
+import moe.shizuku.manager.ui.theme.LocalTokenXGlass
 
 /**
  * A Material 3 list rendered as a single rounded container with dividers between
@@ -43,6 +44,7 @@ fun SegmentedColumn(
     // shape disappears and the grouping is lost. A hairline outline in the same tone
     // as the row dividers brings it back without lighting the page up.
     val outlined = LocalAmoledTheme.current
+    val glass = LocalTokenXGlass.current
 
     Surface(
         modifier = modifier
@@ -59,7 +61,7 @@ fun SegmentedColumn(
                 }
             ),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
+        color = if (glass.enabled) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = glass.opacity) else MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
         val scope = SegmentedColumnScope()
         Column { scope.content() }
@@ -94,7 +96,7 @@ fun SegmentedCard(
                 }
             ),
         shape = MaterialTheme.shapes.large,
-        color = color
+        color = if (LocalTokenXGlass.current.enabled) color.copy(alpha = LocalTokenXGlass.current.opacity) else color
     ) {
         content()
     }
