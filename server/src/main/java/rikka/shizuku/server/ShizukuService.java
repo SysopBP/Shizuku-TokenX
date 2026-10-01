@@ -43,6 +43,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import kotlin.collections.ArraysKt;
 import moe.shizuku.api.BinderContainer;
@@ -134,18 +137,41 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }
 
         final Handler mainHandler = new Handler(mainLooper);
+        final CountDownLatch startupComplete = new CountDownLatch(1);
+        final AtomicReference<Throwable> startupFailure = new AtomicReference<>();
+
+        ServerLog.mark("TOKENX_BINDER_CREATE_REQUEST pid=" + Process.myPid());
         if (!mainHandler.post(() -> {
             try {
-                ServerLog.mark("embedded service constructing on system_server main looper");
+                ServerLog.mark("TOKENX_BINDER_CREATE_ENTER on system_server main looper");
                 new ShizukuService();
-                ServerLog.mark("embedded service constructed; binder handoff scheduled");
+                ServerLog.mark("TOKENX_BINDER_CREATED; manager handoff scheduled");
             } catch (Throwable tr) {
-                ServerLog.mark("embedded startup failed: " + Log.getStackTraceString(tr));
+                startupFailure.set(tr);
+                ServerLog.mark("TOKENX_BINDER_CREATE_FAILED: " + Log.getStackTraceString(tr));
                 LOGGER.e(tr, "embedded system_server startup failed");
+            } finally {
+                startupComplete.countDown();
             }
         })) {
             throw new IllegalStateException("could not post embedded backend to system_server main looper");
         }
+
+        try {
+            if (!startupComplete.await(20, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("timed out waiting for TokenX binder construction");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("interrupted waiting for TokenX binder construction", e);
+        }
+
+        Throwable failure = startupFailure.get();
+        if (failure != null) {
+            throw new IllegalStateException("TokenX binder construction failed", failure);
+        }
+
+        ServerLog.mark("TOKENX_SERVICE_REGISTERED construction confirmed");
     }
 
     public static void main(String[] args) {
@@ -232,10 +258,13 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         });
 
         BinderSender.register(this);
+        ServerLog.mark("TOKENX_BINDER_SENDER_REGISTERED");
 
         mainHandler.post(() -> {
+            ServerLog.mark("TOKENX_HANDOFF_BEGIN");
             sendBinderToClient();
             sendBinderToManager();
+            ServerLog.mark("TOKENX_HANDOFF_SENT");
         });
     }
 
