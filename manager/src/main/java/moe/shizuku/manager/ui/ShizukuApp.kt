@@ -82,6 +82,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import moe.shizuku.manager.R
+import moe.shizuku.manager.ui.component.TokenXBackground
 import moe.shizuku.manager.ui.screen.AppsScreen
 import moe.shizuku.manager.ui.screen.AppearanceStudioScreen
 import moe.shizuku.manager.ui.screen.HomeScreen
@@ -141,10 +142,11 @@ fun ShizukuApp() {
         // Detail screens are shown outside the Scaffold, so wrap everything in a
         // Surface otherwise LocalContentColor falls back to black and plain
         // Text becomes unreadable in dark themes.
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
+        TokenXBackground {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = Color.Transparent
+            ) {
             // Apply the status bar inset exactly once for every screen: the app
             // bars themselves have no insets, and the Scaffold opts out too.
             Column(
@@ -205,6 +207,7 @@ fun ShizukuApp() {
                 } else {
                     MainTabs(pagerState = pagerState, onOpenDetail = { detail = it })
                 }
+            }
             }
         }
     }
