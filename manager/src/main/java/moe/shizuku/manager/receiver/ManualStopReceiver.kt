@@ -20,6 +20,20 @@ class ManualStopReceiver : AuthenticatedReceiver() {
 
         if (!ShizukuStateMachine.isRunning()) return
 
+        // UID 1000 is hosted by Android's system_server. Shizuku.exit() ultimately asks
+        // the server process to terminate; doing that from this backend terminates
+        // system_server itself and causes a framework/phone restart. TokenX never owns
+        // that host process, so "Stop" means detach locally and suppress automatic restart.
+        val serverUid = runCatching { Shizuku.getUid() }.getOrDefault(-1)
+        if (serverUid == 1000) {
+            android.util.Log.w(
+                moe.shizuku.manager.AppConstants.TAG,
+                "TOKENX_SYSTEM_SERVER_STOP_GUARDED: refusing Shizuku.exit() for UID 1000"
+            )
+            ShizukuStateMachine.update()
+            return
+        }
+
         ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
         runCatching { Shizuku.exit() }
     }
