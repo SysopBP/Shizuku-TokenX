@@ -9,14 +9,24 @@ import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material.icons.rounded.Token
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import moe.shizuku.manager.shell.SystemUidProvisioner
 
 @Composable
 fun TokenXDashboard(
@@ -25,6 +35,30 @@ fun TokenXDashboard(
     rootAvailable: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val scope = rememberCoroutineScope()
+    var provisionStatus by remember { mutableStateOf<String?>(null) }
+    var provisioning by remember { mutableStateOf(false) }
+
+    fun runProvision(action: () -> SystemUidProvisioner.Result) {
+        if (provisioning) return
+        provisioning = true
+        provisionStatus = "Working…"
+        scope.launch {
+            val result = withContext(Dispatchers.IO) { action() }
+            provisionStatus = buildString {
+                append(if (result.success) "SUCCESS" else "FAILED")
+                append(" (exit ")
+                append(result.exitCode)
+                append(")")
+                if (result.output.isNotBlank()) {
+                    append("\n")
+                    append(result.output.trim())
+                }
+            }
+            provisioning = false
+        }
+    }
+
     TokenXGlassCard(modifier) {
         Column(
             modifier = Modifier.padding(20.dp),
