@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Parcel
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.Manifest
+import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.utils.Logger.LOGGER
 import moe.shizuku.manager.utils.ShizukuSystemApis
 import rikka.shizuku.server.ServerConstants
@@ -18,6 +19,61 @@ object AuthorizationManager {
     private const val FLAG_ALLOWED = 1 shl 1
     private const val FLAG_DENIED = 1 shl 2
     private const val MASK_PERMISSION = FLAG_ALLOWED or FLAG_DENIED
+    private const val PREF_DESIRED_GRANTS = "tokenx_desired_grants"
+    private const val GRANT_SEPARATOR = "|"
+
+    private fun grantKey(packageName: String, uid: Int): String =
+        packageName + GRANT_SEPARATOR + (uid / 100000)
+
+    private fun desiredGrants(): Set<String> =
+        ShizukuSettings.getPreferences()
+            .getStringSet(PREF_DESIRED_GRANTS, emptySet())
+            .orEmpty()
+            .toSet()
+
+    private fun rememberGrant(packageName: String, uid: Int, enabled: Boolean) {
+        val desired = desiredGrants().toMutableSet()
+        val key = grantKey(packageName, uid)
+        if (enabled) desired.add(key) else desired.remove(key)
+        ShizukuSettings.getPreferences().edit()
+            .putStringSet(PREF_DESIRED_GRANTS, desired)
+            .commit()
+    }
+
+    /**
+     * Replays the user's desired app grants into whichever Shizuku/TokenX server is
+     * currently attached. The desired list is deliberately separate from server flags:
+     * a soft reboot may destroy system_server (and its in-memory flags) without meaning
+     * that the user revoked every app.
+     *
+     * The active server decides the effective execution identity (system/Serv.apk, root,
+     * or shell). App authorization therefore survives backend changes instead of being
+     * tied to the backend that happened to be running when the switch was pressed.
+     */
+    fun restoreDesiredGrants() {
+        if (!Shizuku.pingBinder()) return
+        val desired = desiredGrants()
+        if (desired.isEmpty()) return
+
+        runCatching {
+            getPackages().forEach { pi ->
+                val uid = pi.applicationInfo?.uid ?: return@forEach
+                if (grantKey(pi.packageName, uid) !in desired) return@forEach
+
+                if (Shizuku.isPreV11()) {
+                    ShizukuSystemApis.grantRuntimePermission(
+                        pi.packageName,
+                        Manifest.permission.API_V23,
+                        uid / 100000
+                    )
+                } else {
+                    Shizuku.updateFlagsForUid(uid, MASK_PERMISSION, FLAG_ALLOWED)
+                }
+            }
+        }.onFailure {
+            LOGGER.w(it, "restoreDesiredGrants")
+        }
+    }
 
     private fun getApplications(userId: Int): List<PackageInfo> {
         val data = Parcel.obtain()
@@ -72,6 +128,9 @@ object AuthorizationManager {
     }
 
     fun grant(packageName: String, uid: Int) {
+        // Persist intent first. A server/system_server restart must never turn a transient
+        // disconnect into a permanent revoke.
+        rememberGrant(packageName, uid, true)
         if (Shizuku.isPreV11()) {
             ShizukuSystemApis.grantRuntimePermission(packageName, Manifest.permission.API_V23, uid / 100000)
         } else {
@@ -80,6 +139,7 @@ object AuthorizationManager {
     }
 
     fun revoke(packageName: String, uid: Int) {
+        rememberGrant(packageName, uid, false)
         if (Shizuku.isPreV11()) {
             ShizukuSystemApis.revokeRuntimePermission(packageName, Manifest.permission.API_V23, uid / 100000)
         } else {
