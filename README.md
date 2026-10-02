@@ -421,7 +421,7 @@ the one thing none of the above fixes is the first start after a reboot, because
 The fork's own name and icon the fox in [`docs/logo.png`](docs/logo.png) are this project's. Everything
 underneath is the work credited below.
 
-## 📝 User Guide
+## 🧩 System UID Backend\n\nThe optional external UID 1000 companion has a separate root provisioning procedure. See **[System UID Backend — Installation](SYSTEM_UID_INSTALL.md)** for the tested `Serv.apk` / `Serv.dex` setup, verification steps, architecture, and troubleshooting. The companion APK and DEX are not bundled with TokenX.\n\n## 📝 User Guide
 
 Please read the [wiki](https://github.com/thedjchi/Shizuku/wiki) for setup, info, and troubleshooting steps it belongs to the fork this one is based on, and documents the same behaviour, because the features and the server come from there.
 
