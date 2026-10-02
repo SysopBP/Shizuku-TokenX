@@ -26,11 +26,13 @@ class TokenXXposedEntry : XposedModule() {
             // module ClassLoader, whose native lookup does not reliably resolve librish.so
             // from the APK. Point Rish at PackageManager's extracted nativeLibraryDir before
             // ShizukuService is constructed so RishConfig uses System.load(absolutePath).
-            val ai = Android17Compat.getApplicationInfo(MANAGER_PACKAGE, 0, 0)
-                ?: throw IllegalStateException("TokenX manager APK is not installed")
-            val nativeDir = ai.nativeLibraryDir
+            val nativeDir = Android17Compat.getApplicationInfo(MANAGER_PACKAGE, 0, 0)
+                ?.nativeLibraryDir
                 ?.takeIf { it.isNotBlank() }
-                ?: throw IllegalStateException("TokenX nativeLibraryDir is unavailable")
+                ?: findExtractedNativeLibraryDir()
+                ?: throw IllegalStateException(
+                    "TokenX nativeLibraryDir is unavailable during early system_server startup"
+                )
             val rish = File(nativeDir, "librish.so")
             if (!rish.isFile) {
                 throw UnsatisfiedLinkError("librish.so missing from extracted nativeLibraryDir: $nativeDir")
@@ -54,6 +56,29 @@ class TokenXXposedEntry : XposedModule() {
         }.onFailure {
             log(Log.ERROR, TAG, "embedded system_server startup failed: ${it.javaClass.simpleName}: ${it.message}\n${Log.getStackTraceString(it)}")
         }
+    }
+
+    /**
+     * PackageManager can legitimately be unavailable this early in system_server startup.
+     * The manager APK uses legacy JNI packaging, so Android extracts librish.so below its
+     * /data/app install directory. Resolve that directory without requiring PackageManager
+     * to be ready, then let later Shizuku startup use the normal package/provider path.
+     */
+    private fun findExtractedNativeLibraryDir(): String? {
+        val dataApp = File("/data/app")
+        return runCatching {
+            dataApp.walkTopDown()
+                .maxDepth(6)
+                .firstOrNull { file ->
+                    file.isFile &&
+                        file.name == "librish.so" &&
+                        file.absolutePath.contains(MANAGER_PACKAGE)
+                }
+                ?.parentFile
+                ?.absolutePath
+        }.onFailure {
+            log(Log.WARN, TAG, "early native library scan failed: ${it.javaClass.simpleName}: ${it.message}")
+        }.getOrNull()
     }
 
     private companion object {
