@@ -6,6 +6,7 @@ on:
     branches:
       - tokenx-dev
       - tokenx-recovery
+      - tkn-ui-setup-107
     paths:
       - 'manager/**'
       - 'xposed/**'
