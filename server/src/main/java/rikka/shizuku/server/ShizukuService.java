@@ -639,6 +639,25 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     @Override
     public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
+        // Rish transactions are handled by server-shared's RishService. When TokenX is
+        // embedded directly in system_server, handling them under the incoming app Binder
+        // identity makes framework calls inherit the terminal app UID. Android 17 then
+        // rejects user queries with QUERY_USERS/MANAGE_USERS before the shell can start.
+        //
+        // Authenticate the original caller first, then clear only the nested Rish Binder
+        // identity. This keeps Shizuku's client permission boundary intact while making
+        // framework calls/fork setup execute as the UID-1000 backend.
+        if (EMBEDDED_SYSTEM_SERVER && code >= 30000 && code <= 30002) {
+            enforceCallingPermission("rish");
+            final long token = Binder.clearCallingIdentity();
+            try {
+                ServerLog.mark("RISH_TKN: dispatch code=" + code + " as uid=" + Process.myUid());
+                return super.onTransact(code, data, reply, flags);
+            } finally {
+                Binder.restoreCallingIdentity(token);
+            }
+        }
+
         //LOGGER.d("transact: code=%d, calling uid=%d", code, Binder.getCallingUid());
         if (code == ServerConstants.BINDER_TRANSACTION_getApplications) {
             data.enforceInterface(ShizukuApiConstants.BINDER_DESCRIPTOR);
