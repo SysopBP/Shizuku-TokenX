@@ -67,6 +67,37 @@ import rikka.shizuku.server.util.UserHandleCompat;
 public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuClientManager, ShizukuConfigManager> {
 
     private static volatile boolean EMBEDDED_SYSTEM_SERVER = false;
+    private static final String TOKENX_SYSTEM_SERVER_SERVICE = "tokenx_system_server";
+    private static final String TOKENX_SYSTEM_SERVER_DESCRIPTOR = "moe.shizuku.tokenx.ISystemServerBridge";
+    private static final Binder TOKENX_SYSTEM_SERVER_HEALTH_BINDER = new Binder() {
+        @Override
+        protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
+            if (code == IBinder.FIRST_CALL_TRANSACTION) {
+                data.enforceInterface(TOKENX_SYSTEM_SERVER_DESCRIPTOR);
+                reply.writeNoException();
+                reply.writeInt(Process.myUid());
+                return true;
+            }
+            return super.onTransact(code, data, reply, flags);
+        }
+    };
+
+    private static void publishTokenXSystemServerHealthBinder() {
+        if (Process.myUid() != Process.SYSTEM_UID) return;
+        try {
+            IBinder existing = ServiceManager.getService(TOKENX_SYSTEM_SERVER_SERVICE);
+            if (existing == null) {
+                ServiceManager.addService(TOKENX_SYSTEM_SERVER_SERVICE, TOKENX_SYSTEM_SERVER_HEALTH_BINDER);
+                ServerLog.mark("TOKENX_BINDER_PUBLISHED: " + TOKENX_SYSTEM_SERVER_SERVICE
+                        + " uid=" + Process.myUid() + " pid=" + Process.myPid());
+            } else {
+                ServerLog.mark("TOKENX_BINDER_PRESENT: " + TOKENX_SYSTEM_SERVER_SERVICE);
+            }
+        } catch (Throwable tr) {
+            ServerLog.mark("TOKENX_BINDER_PUBLISH_FAILED: " + Log.getStackTraceString(tr));
+            LOGGER.e(tr, "failed to publish TokenX system_server health Binder");
+        }
+    }
 
     public static final String MANAGER_APPLICATION_ID;
 
@@ -155,6 +186,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }
 
         EMBEDDED_SYSTEM_SERVER = true;
+        publishTokenXSystemServerHealthBinder();
         ServerLog.mark("SYSTEM_SERVER_HOOK: embedded start uid=" + Process.myUid()
                 + ", pid=" + Process.myPid());
         ServerLog.mark("NATIVE_READY: embedded backend does not require librish");
