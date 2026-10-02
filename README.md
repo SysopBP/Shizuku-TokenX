@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/logo.png" width="132" alt="TokenX">
+<img src="docs/tokenx-app-icon.png" width="132" alt="TokenX app icon">
 
 # TokenX
 
