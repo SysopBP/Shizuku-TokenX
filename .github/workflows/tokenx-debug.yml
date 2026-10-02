@@ -46,102 +46,46 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 <<'PY'
+          FILE="api/rish/src/main/cpp/rikka_rish_RishHost.cpp"
+          python3 - "$FILE" <<'PY'
           from pathlib import Path
-          import re
+          import sys
 
-          path = Path("api/rish/src/main/cpp/rikka_rish_RishHost.cpp")
-          s = path.read_text()
+          p = Path(sys.argv[1])
+          s = p.read_text()
+          old = '        if (setsid() < 0) {\n            PLOGE("setsid");\n            exit(1);\n        }'
+          new = '        if (setsid() < 0) {\n            _exit(126);\n        }'
+          if old not in s:
+              raise SystemExit("setsid anchor not found")
+          s = s.replace(old, new, 1)
 
-          # Resolve the PTY slave name before fork. The child must not call
-          # logging/JNI/Binder-adjacent runtime code inherited from system_server.
-          needle = "    auto pid = fork();\n"
-          insert = """    char pts_slave[PATH_MAX]{0};
-    if (tty && ptsname_r(ptmx, pts_slave, PATH_MAX - 1) == -1) {
-        releaseBytes(env, argBlock, pargBlock);
-        releaseBytes(env, envBlock, penvBlock);
-        releaseBytes(env, dirBlock, pdir);
-        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), "Unable to resolve pts");
-        return nullptr;
-    }
+          replacements = {
+              '                PLOGE("ptsname_r");\n                exit(1);':
+                  '                _exit(126);',
+              '                PLOGE("execv");\n                exit(1);':
+                  '                _exit(127);',
+          }
+          for old_text, new_text in replacements.items():
+              if old_text not in s:
+                  raise SystemExit("expected rish child anchor not found")
+              s = s.replace(old_text, new_text)
 
-    auto pid = fork();
-"""
-          if needle not in s:
-              raise SystemExit("TokenX rish patch: fork anchor not found")
-          s = s.replace(needle, insert, 1)
-
-          child = r'''    } else {
-        // TokenX embeds RishService in system_server. libbinder marks ProcessState
-        // unusable in a post-fork child, so keep this path syscall-only until exec.
-        // In particular: no LOG/PLOG, JNI, Binder, access(), execvp/execvpe, or exit().
-        if (setsid() < 0) {
-            _exit(126);
-        }
-
-        if (pdir && chdir(pdir) == -1) {
-            // Preserve historical behavior: an invalid cwd is non-fatal.
-        }
-
-        int pts = -1;
-        if (tty) {
-            pts = open(pts_slave, O_RDWR);
-            if (pts == -1) {
-                _exit(126);
-            }
-        }
-
-        if (in_tty) {
-            if (dup2(pts, STDIN_FILENO) == -1) _exit(126);
-        } else {
-            if (dup2(stdin_pipe[0], STDIN_FILENO) == -1) _exit(126);
-            close(stdin_pipe[1]);
-        }
-
-        if (out_tty) {
-            if (dup2(pts, STDOUT_FILENO) == -1) _exit(126);
-        } else {
-            if (dup2(stdout_pipe[1], STDOUT_FILENO) == -1) _exit(126);
-            close(stdout_pipe[0]);
-        }
-
-        if (err_tty) {
-            if (dup2(pts, STDERR_FILENO) == -1) _exit(126);
-        } else {
-            if (dup2(stderr_pipe[1], STDERR_FILENO) == -1) _exit(126);
-            close(stderr_pipe[0]);
-        }
-
-        if (pts != -1) close(pts);
-        if (ptmx != -1) close(ptmx);
-
-        if (!in_tty) close(stdin_pipe[0]);
-        if (!out_tty) close(stdout_pipe[1]);
-        if (!err_tty) close(stderr_pipe[1]);
-
-        extern char **environ;
-        char *const *child_env = envv
-                ? (char *const *) envv
-                : environ;
-
-        execve("/system/bin/sh", (char *const *) argv, child_env);
-        _exit(127);
-    }
-}'''
-
-          pattern = re.compile(
-              r"    \} else \{\n        if \(setsid\(\) < 0\) \{.*?\n    \}\n\}\n(?=\nstatic void RishHost_setWindowSize)",
-              re.S,
-          )
-          s2, n = pattern.subn(child, s, count=1)
-          if n != 1:
-              raise SystemExit(f"TokenX rish patch: child block matches={n}")
-
-          path.write_text(s2)
-          print("TokenX Android 17 fork-safe rish child patch applied")
+          # Logging in the post-fork child can indirectly touch inherited Android
+          # runtime state. Remove LOG/PLOG calls only from the child branch.
+          marker = "    } else {\n        if (setsid() < 0)"
+          child_start = s.index(marker)
+          child_end = s.index("\n    }\n}\n\nstatic void RishHost_setWindowSize", child_start)
+          child = s[child_start:child_end]
+          lines = []
+          for line in child.splitlines():
+              if "LOGD(" in line or "PLOGE(" in line:
+                  continue
+              lines.append(line)
+          s = s[:child_start] + "\n".join(lines) + s[child_end:]
+          p.write_text(s)
+          print("TokenX post-fork logging/exit hardening applied")
           PY
-
-          grep -nE 'fork\(\)|execve|_exit|pts_slave' api/rish/src/main/cpp/rikka_rish_RishHost.cpp
+          grep -nE 'fork\(\)|setsid\(\)|_exit\(' "$FILE"
 
       - name: Setup Java 21
         uses: actions/setup-java@v5
