@@ -502,6 +502,23 @@ fun HomeScreen(bottomPadding: Dp) {
                         ShizukuSettings.setManuallyStopped(true)
                         ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
                         runCatching { Shizuku.exit() }
+
+                        // Keep UID-1000/System Server provisioning intact. Stop only the
+                        // live runtime, then re-probe the binder so the UI cannot keep a
+                        // cached ACTIVE state after the runtime has actually stopped.
+                        scope.launch {
+                            repeat(20) {
+                                if (!Shizuku.pingBinder()) {
+                                    ShizukuStateMachine.update()
+                                    refresh()
+                                    return@launch
+                                }
+                                kotlinx.coroutines.delay(100)
+                            }
+                            // Never fake STOPPED: the final live probe remains authoritative.
+                            ShizukuStateMachine.update()
+                            refresh()
+                        }
                     },
                     // A bounce: forceStart replaces the running server instead of
                     // being ignored as "already running".
