@@ -366,7 +366,12 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             return;
         }
 
-        ServerLog.mark("TOKENX_CLIENT_ATTACH: package=" + requestPackageName\n                + ", callingUid=" + Binder.getCallingUid()\n                + ", callingPid=" + Binder.getCallingPid()\n                + ", backendUid=" + Process.myUid()\n                + ", backendPid=" + Process.myPid()\n                + ", embedded=" + EMBEDDED_SYSTEM_SERVER);
+        ServerLog.mark("TOKENX_CLIENT_ATTACH: package=" + requestPackageName
+                + ", callingUid=" + Binder.getCallingUid()
+                + ", callingPid=" + Binder.getCallingPid()
+                + ", backendUid=" + Process.myUid()
+                + ", backendPid=" + Process.myPid()
+                + ", embedded=" + EMBEDDED_SYSTEM_SERVER);
         int apiVersion = args.getInt(ATTACH_APPLICATION_API_VERSION, -1);
 
         int callingPid = Binder.getCallingPid();
