@@ -569,8 +569,8 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                         SegmentedListItem(
                             centerSlots = true,
                             leadingContent = { SettingsIcon(Icons.Outlined.VerifiedUser) },
-                            headlineContent = { Text(stringResource(R.string.settings_permissions)) },
-                            supportingContent = { Text(stringResource(R.string.settings_permissions_summary)) },
+                            headlineContent = { Text("TKN Setup & Permissions") },
+                            supportingContent = { Text("System backend, Accessibility, permissions and UID 1000 verification") },
                             trailingContent = {
                                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
                             },
