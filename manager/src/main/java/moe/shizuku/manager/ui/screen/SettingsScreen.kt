@@ -780,13 +780,12 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                         SegmentedListItem(
                             centerSlots = true,
                             leadingContent = { SettingsIcon(Icons.Outlined.MenuBook) },
-                            headlineContent = { Text(stringResource(R.string.settings_help)) },
+                            headlineContent = { Text("TokenX Guide") },
+                            supportingContent = { Text("Purpose, setup, usage, backends, System Server safety and troubleshooting") },
                             trailingContent = {
                                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
                             },
-                            onClick = {
-                                CustomTabsHelper.launchUrlOrCopy(context, context.getString(R.string.help_url))
-                            }
+                            onClick = { onOpenDetail(Detail.GUIDE) }
                         )
                     }
                     item {
