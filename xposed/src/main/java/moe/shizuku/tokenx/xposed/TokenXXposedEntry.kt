@@ -35,8 +35,12 @@ class TokenXXposedEntry : XposedModule() {
             if (!rish.isFile) {
                 throw UnsatisfiedLinkError("librish.so missing from extracted nativeLibraryDir: $nativeDir")
             }
+            // Preload by absolute path while we are still in TokenX's module context. This avoids
+            // LspModuleClassLoader falling back to System.loadLibrary("rish"), which cannot
+            // reliably discover APK JNI libraries from injected system_server on Samsung A17.
+            System.load(rish.absolutePath)
             RishConfig.setLibraryPath(nativeDir)
-            log(Log.INFO, TAG, "NATIVE_READY: librish.so resolved from $nativeDir")
+            log(Log.INFO, TAG, "NATIVE_READY: librish.so preloaded from ${rish.absolutePath}")
 
             // Samsung Android 17 blocks custom servicemanager registrations from injected
             // system_server code. Start the embedded backend directly and retain Shizuku's
@@ -48,7 +52,7 @@ class TokenXXposedEntry : XposedModule() {
                 "BOOT_TOKEN CONFIRMED: embedded Shizuku backend started in system_server UID ${Process.myUid()} PID ${Process.myPid()} via provider binder handoff"
             )
         }.onFailure {
-            log(Log.ERROR, TAG, "embedded system_server startup failed: ${it.javaClass.simpleName}: ${it.message}")
+            log(Log.ERROR, TAG, "embedded system_server startup failed: ${it.javaClass.simpleName}: ${it.message}\n${Log.getStackTraceString(it)}")
         }
     }
 
