@@ -472,6 +472,12 @@ the one thing none of the above fixes is the first start after a reboot, because
 The fork's own name and icon the fox in [`docs/logo.png`](docs/logo.png) are this project's. Everything
 underneath is the work credited below.
 
+## 🪄 Systemless mounting
+
+The **TokenX System Server Bridge** is used with [Meta Magic Mount RS](https://github.com/Tools-cx-app/meta-magic_mount-rs) for the module's systemless mount layer on the current KernelSU setup. Meta Magic Mount RS provides systemless modification support for KernelSU/APatch using a Magic Mount metamodule.
+
+Meta Magic Mount RS is a separate GPL-3.0 project by its respective contributors; it is not part of TokenX.
+
 ## 🧩 System UID Backend
 
 The optional external UID 1000 companion has a separate root provisioning procedure. See **[System UID Backend — Installation](SYSTEM_UID_INSTALL.md)** for the tested `Serv.apk` / `Serv.dex` setup, verification steps, architecture, and troubleshooting. The companion APK and DEX are not bundled with TokenX.
