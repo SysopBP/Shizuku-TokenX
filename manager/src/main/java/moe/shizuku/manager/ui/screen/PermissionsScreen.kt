@@ -27,6 +27,8 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.Wifi
+import androidx.compose.material.icons.rounded.SettingsSuggest
+import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,6 +54,9 @@ import androidx.lifecycle.Lifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
+import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.utils.ShizukuStateMachine
+import rikka.shizuku.Shizuku
 import moe.shizuku.manager.home.isAccessibilityEnabled
 import moe.shizuku.manager.start.hasPermission
 import moe.shizuku.manager.start.isPermissionPermanentlyDenied
@@ -145,10 +150,44 @@ fun PermissionsScreen(onBack: () -> Unit) {
             }
         )
 
+        val systemSelected = ShizukuSettings.getStartMethod() == ShizukuSettings.StartMethod.SYSTEM
+        val systemUidActive = ShizukuStateMachine.isRunning() &&
+            runCatching { Shizuku.getUid() == 1000 }.getOrDefault(false)
+
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
+            item {
+                Text("TKN System Setup", style = MaterialTheme.typography.titleLarge)
+            }
+            item {
+                Text(
+                    "Complete these checks for the System Server / UID 1000 path. TKN keeps each state visible so setup can be verified after returning from Android settings.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            item {
+                PermissionRow(
+                    icon = Icons.Rounded.SettingsSuggest,
+                    headline = "System start method",
+                    reason = if (systemSelected) "System is selected as the TKN start backend" else "Select System as the start method in TKN Settings",
+                    granted = systemSelected,
+                    actionLabel = "Settings",
+                    onAction = onBack
+                )
+            }
+            item {
+                PermissionRow(
+                    icon = Icons.Rounded.Security,
+                    headline = "System UID verification",
+                    reason = if (systemUidActive) "TKN privilege engine is active as UID 1000" else "Start TKN with the System backend, then return here to verify UID 1000",
+                    granted = systemUidActive,
+                    actionLabel = "Home",
+                    onAction = onBack
+                )
+            }
             item {
                 PermissionRow(
                     icon = Icons.Rounded.Notifications,
