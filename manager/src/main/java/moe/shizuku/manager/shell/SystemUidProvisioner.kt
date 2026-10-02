@@ -57,7 +57,9 @@ object SystemUidProvisioner {
         val packageName = q(LIVE_PACKAGE)
         val script = listOf(
             "echo '=== TokenX System Server bridge ==='",
-            "pm path " + packageName,
+            // Samsung/Android 17 can return FAILED_TRANSACTION from pm path even while
+            // PackageManager has a valid UID-1000 record. Keep it as diagnostic only.
+            "(pm path " + packageName + " 2>&1 || true) | sed 's/^/pm_path=/'",
             "cmd package list packages -U | grep -F 'package:" + LIVE_PACKAGE + " uid:1000'",
             "dumpsys package " + packageName + " | grep -m1 -F 'pkg=Package{'",
             "dumpsys activity processes | grep -m1 -E '[0-9]+:system/1000'",
