@@ -81,6 +81,47 @@ fun TokenXDashboard(
                 StatusLine(Icons.Rounded.AdminPanelSettings, "LSPosed", "Bridge discovery", Modifier.weight(1f))
                 StatusLine(Icons.Rounded.Terminal, "TokenX Router", "Multi-backend", Modifier.weight(1f))
             }
+
+            Text(
+                "System UID Backend",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                "External Serv.apk + Serv.dex provisioning. Files remain separate from TokenX.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { runProvision { SystemUidProvisioner.install() } },
+                    enabled = rootAvailable && !provisioning,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(if (provisioning) "Working…" else "Install")
+                }
+                Button(
+                    onClick = { runProvision { SystemUidProvisioner.verify() } },
+                    enabled = rootAvailable && !provisioning,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Verify")
+                }
+            }
+            if (!rootAvailable) {
+                Text(
+                    "Root is required for System UID provisioning.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+            provisionStatus?.let { status ->
+                Text(
+                    status,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
