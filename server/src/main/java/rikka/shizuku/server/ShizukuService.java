@@ -344,6 +344,18 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     @Override
     public void exit() {
         enforceManagerPermission("exit");
+
+        // TokenX can run this service embedded inside Android's real system_server.
+        // System.exit() is valid for the traditional standalone Shizuku process, but
+        // from UID 1000/system_server it terminates the Android framework and causes
+        // an immediate soft reboot. Never allow the normal Shizuku/TokenX Stop action
+        // to kill its host process.
+        if (Process.myUid() == Process.SYSTEM_UID) {
+            LOGGER.w("exit requested for embedded system_server backend; refusing to terminate system_server");
+            ServerLog.mark("embedded stop requested: system_server protected; process exit skipped");
+            return;
+        }
+
         LOGGER.i("exit");
         System.exit(0);
     }
