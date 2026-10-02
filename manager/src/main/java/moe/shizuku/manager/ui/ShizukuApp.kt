@@ -403,16 +403,14 @@ private fun MainTabs(
                     Row(
                         modifier = Modifier
                             .heightIn(min = FloatingToolbarDefaults.ContainerSize)
-                            .then(
-                                if (LocalAmoledTheme.current) {
-                                    Modifier.border(
-                                        width = 1.dp,
-                                        color = MaterialTheme.colorScheme.outlineVariant,
-                                        shape = FloatingToolbarDefaults.ContainerShape
-                                    )
-                                } else {
-                                    Modifier
-                                }
+                            .background(
+                                color = barSurface,
+                                shape = barShape
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = barBorder,
+                                shape = barShape
                             )
                             .padding(FloatingToolbarDefaults.ContentPadding)
                             // Last in the chain on purpose: the padding sits outside the Row, so
