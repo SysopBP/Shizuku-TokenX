@@ -659,14 +659,16 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         // identity. This keeps Shizuku's client permission boundary intact while making
         // framework calls/fork setup execute as the UID-1000 backend.
         if (EMBEDDED_SYSTEM_SERVER && code >= 30000 && code <= 30002) {
+            // Android 17 libbinder deliberately aborts when a process that has already
+            // initialized ProcessState forks and the child subsequently touches Binder.
+            // system_server is permanently Binder-initialized, so rish's native fork/exec
+            // host is not a safe execution path here. Fail closed instead of allowing a
+            // terminal request to take down a system_server child/process.
             enforceCallingPermission("rish");
-            final long token = Binder.clearCallingIdentity();
-            try {
-                ServerLog.mark("RISH_TKN: dispatch code=" + code + " as uid=" + Process.myUid());
-                return super.onTransact(code, data, reply, flags);
-            } finally {
-                Binder.restoreCallingIdentity(token);
-            }
+            ServerLog.mark("RISH_TKN_BLOCKED: embedded system_server cannot fork rish safely on Android 17; code="
+                    + code + ", uid=" + Process.myUid());
+            throw new RemoteException(
+                    "TokenX embedded system_server rish is disabled: Android 17 forbids Binder use after fork");
         }
 
         //LOGGER.d("transact: code=%d, calling uid=%d", code, Binder.getCallingUid());
