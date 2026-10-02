@@ -523,14 +523,19 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
                             if (selectionMode) {
                                 selected = if (isSelected) selected - pi.packageName else selected + pi.packageName
                             } else {
-                                val result = runCatching {
-                                    if (granted) AuthorizationManager.revoke(pi.packageName, uid)
-                                    else AuthorizationManager.grant(pi.packageName, uid)
+                                // Permission changes are Binder round trips. Never block the
+                                // Compose/main thread here: under the UID 1000 bridge a slow or
+                                // reconnecting client can otherwise freeze the Enabled Apps UI.
+                                scope.launch {
+                                    val error = withContext(Dispatchers.IO) {
+                                        runCatching {
+                                            if (granted) AuthorizationManager.revoke(pi.packageName, uid)
+                                            else AuthorizationManager.grant(pi.packageName, uid)
+                                        }.exceptionOrNull()
+                                    }
+                                    if (error is SecurityException) permissionLimited = true
+                                    version++
                                 }
-                                if (result.exceptionOrNull() is SecurityException) {
-                                    permissionLimited = true
-                                }
-                                version++
                             }
                         },
                         onLongClick = {
@@ -564,14 +569,16 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
                                 ExpressiveSwitch(
                                     checked = granted,
                                     onCheckedChange = { checked ->
-                                        val result = runCatching {
-                                            if (checked) AuthorizationManager.grant(pi.packageName, uid)
-                                            else AuthorizationManager.revoke(pi.packageName, uid)
+                                        scope.launch {
+                                            val error = withContext(Dispatchers.IO) {
+                                                runCatching {
+                                                    if (checked) AuthorizationManager.grant(pi.packageName, uid)
+                                                    else AuthorizationManager.revoke(pi.packageName, uid)
+                                                }.exceptionOrNull()
+                                            }
+                                            if (error is SecurityException) permissionLimited = true
+                                            version++
                                         }
-                                        if (result.exceptionOrNull() is SecurityException) {
-                                            permissionLimited = true
-                                        }
-                                        version++
                                     }
                                 )
                             }
