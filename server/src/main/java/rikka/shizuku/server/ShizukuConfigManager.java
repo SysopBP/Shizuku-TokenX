@@ -5,6 +5,7 @@ import static rikka.shizuku.server.ServerConstants.PERMISSION;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Process;
 import android.util.AtomicFile;
 
 import androidx.annotation.Nullable;
@@ -38,9 +39,20 @@ public class ShizukuConfigManager extends ConfigManager {
             .setVersion(ShizukuConfig.LATEST_VERSION)
             .create();
 
-    private static final long WRITE_DELAY = 10 * 1000;
+    // TokenX can run either as the traditional shell/root app_process backend or embedded
+    // directly in system_server (UID 1000).  The upstream shell-owned path is not a reliable
+    // persistence location for the embedded backend on Android 17/SELinux, which made app
+    // authorization switches appear to work for the live session and then disappear after a
+    // TokenX restart/reboot.
+    //
+    // Keep a system_server-owned config when embedded.  Standalone/fallback mode retains the
+    // normal shell path.  A short write delay also closes the window where a quick restart can
+    // happen before an authorization change reaches disk.
+    private static final long WRITE_DELAY = 500;
 
-    private static final File FILE = new File("/data/user_de/0/com.android.shell/shizuku.json");
+    private static final File FILE = Process.myUid() == Process.SYSTEM_UID
+            ? new File("/data/system/shizuku-tokenx.json")
+            : new File("/data/user_de/0/com.android.shell/shizuku.json");
     private static final AtomicFile ATOMIC_FILE = new AtomicFile(FILE);
 
     public static ShizukuConfig load() {
