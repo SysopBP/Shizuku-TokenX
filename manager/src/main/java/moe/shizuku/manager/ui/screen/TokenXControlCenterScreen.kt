@@ -69,13 +69,13 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.Token, null)
                         Column(Modifier.padding(start = 12.dp).weight(1f)) {
-                            Text("Unified Privilege Engine", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text("Unified Privilege Engine", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             Text("Shizuku compatibility + TokenX multi-backend architecture", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         AssistChip(onClick = {}, label = { Text(if (running) "ACTIVE" else "OFFLINE") })
                     }
                     HorizontalDivider()
-                    Text("Current server  •  " + if (uid >= 0) "UID $uid" else "Not connected")
+                    Text("Current server  •  " + if (uid >= 0) "UID $uid" else "Not connected", color = MaterialTheme.colorScheme.onSurface)
                 }
             }
 
@@ -92,7 +92,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
             SectionTitle("Execution Router")
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Router preferences", style = MaterialTheme.typography.titleMedium)
+                    Text("Router preferences", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                     Text("Live capability routes are calculated from the backends that are actually available now.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                         listOf("Automatic", "Capability").forEachIndexed { index, mode ->
@@ -164,7 +164,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
         Column(Modifier.padding(start = 12.dp).weight(1f)) {
-            Text(name, fontWeight = FontWeight.SemiBold)
+            Text(name, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
             Text("$uid • $detail", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -174,7 +174,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Column(Modifier.padding(start = 12.dp)) {
-            Text(title, fontWeight = FontWeight.Medium)
+            Text(title, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
             Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -182,7 +182,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
 
 @Composable private fun CapabilityLine(label: String, route: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyMedium)
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
         Text(route, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
     }
 }
