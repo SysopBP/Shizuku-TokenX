@@ -52,51 +52,17 @@ object SystemUidProvisioner {
     }
 
     fun verify(): Result {
-        // com.vikram.exp is the live package attached to Android's persistent
-        // system process. com.vikram.shell can exist as a legacy/synthetic
-        // PackageManager record and must not be used as the readiness signal.
+        // Verify the live package and Android's real persistent system_server.
+        // The legacy com.vikram.shell synthetic record is not a readiness signal.
+        val packageName = q(LIVE_PACKAGE)
         val script = listOf(
             "echo '=== TokenX System Server bridge ==='",
-            "APK=\$(pm path ${q(LIVE_PACKAGE)} 2>/dev/null | head -n 1)",
-            "UID=\$(cmd package list packages -U 2>/dev/null | grep '^package:${LIVE_PACKAGE} uid:1000
-    private fun runRoot(script: String): Result {
-        val command = listOf("su", "-c", script)
-        return try {
-            val process = ProcessBuilder(command)
-                .redirectErrorStream(true)
-                .start()
-
-            val output = BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
-                buildString {
-                    var line: String?
-                    while (reader.readLine().also { line = it } != null) {
-                        appendLine(line)
-                    }
-                }
-            }
-
-            val exitCode = process.waitFor()
-            Result(exitCode == 0, exitCode, output, command.joinToString(" "))
-        } catch (t: Throwable) {
-            Result(false, -1, "${t.javaClass.simpleName}: ${t.message}", command.joinToString(" "))
-        }
-    }
-
-    private fun q(value: String): String =
-        "'" + value.replace("'", "'\\''") + "'"
-}
- || true)",
-            "PKG=\$(dumpsys package ${q(LIVE_PACKAGE)} 2>/dev/null | grep -m1 'pkg=Package{' || true)",
-            "PROC=\$(dumpsys activity processes 2>/dev/null | grep -m1 -E '[0-9]+:system/1000' || true)",
-            "DOMAIN=\$(ps -AZ 2>/dev/null | grep -m1 'u:r:system_server:s0.*system_server' || true)",
-            "printf 'package=%s\\nuid=%s\\nparsed=%s\\nprocess=%s\\ndomain=%s\\n' \"\$APK\" \"\$UID\" \"\$PKG\" \"\$PROC\" \"\$DOMAIN\"",
-            "test -n \"\$APK\"",
-            "test -n \"\$UID\"",
-            "test -n \"\$PKG\"",
-            "test -n \"\$PROC\"",
-            "test -n \"\$DOMAIN\"",
+            "pm path " + packageName,
+            "cmd package list packages -U | grep -F 'package:" + LIVE_PACKAGE + " uid:1000'",
+            "dumpsys package " + packageName + " | grep -m1 -F 'pkg=Package{'",
+            "dumpsys activity processes | grep -m1 -E '[0-9]+:system/1000'",
+            "ps -AZ | grep -m1 -E 'u:r:system_server:s0.*system_server'",
         ).joinToString("; ")
-
         return runRoot(script)
     }
 
