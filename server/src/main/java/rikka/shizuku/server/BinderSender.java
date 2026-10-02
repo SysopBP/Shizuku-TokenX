@@ -174,15 +174,14 @@ public class BinderSender {
     public static void register(ShizukuService shizukuService) {
         sShizukuService = shizukuService;
 
-        // In the LSPosed embedded backend we already run inside system_server (UID 1000).
-        // Samsung Android 17 can deny registering an additional observer set from injected
-        // module code. Initial Binder delivery does not depend on these observers: the
-        // ShizukuService constructor immediately performs the normal provider handoff.
-        // Keep the standalone root/shell observer behavior unchanged.
+        // TokenX embedded system_server must keep the normal Shizuku process/UID
+        // observers active. The constructor's provider handoff only reaches clients that
+        // are already running when the UID-1000 backend starts. Apps launched later
+        // (for example Galaxy Island) need these observers so their .shizuku provider
+        // receives the current Binder and can call attachApplication().
         if (Process.myUid() == Process.SYSTEM_UID) {
-            ServerLog.mark("embedded binder transport: provider handoff active; AMS observers skipped");
-            LOGGER.i("embedded system_server: skip AMS observer registration; using provider binder handoff");
-            return;
+            ServerLog.mark("embedded binder transport: registering AMS observers for late-start clients");
+            LOGGER.i("embedded system_server: registering process/UID observers for client binder delivery");
         }
 
         try {
