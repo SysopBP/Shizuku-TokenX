@@ -99,6 +99,7 @@ import moe.shizuku.manager.ui.screen.ShellScreen
 import moe.shizuku.manager.ui.screen.StealthScreen
 import moe.shizuku.manager.ui.screen.TerminalScreen
 import moe.shizuku.manager.ui.screen.TokenXControlCenterScreen
+import moe.shizuku.manager.ui.screen.TokenXGuideScreen
 import moe.shizuku.manager.ui.theme.LocalAmoledTheme
 import moe.shizuku.manager.ui.theme.FloatingBarStyle
 import moe.shizuku.manager.ui.theme.TokenXAppearanceKeys
@@ -113,7 +114,7 @@ import moe.shizuku.manager.ui.theme.ShizukuTheme
  * the bar spent its whole width on five icons while the two screens behind two of them were
  * mostly empty when you arrived.
  */
-enum class Detail { APP_OPS, SHELL, FIREWALL, AUTOSTART, STEALTH, TERMINAL, INTENTS, PERMISSIONS, APPEARANCE, TOKENX }
+enum class Detail { APP_OPS, SHELL, FIREWALL, AUTOSTART, STEALTH, TERMINAL, INTENTS, PERMISSIONS, APPEARANCE, TOKENX, GUIDE }
 
 /**
  * On wide windows (tablets, foldables, desktop mode, mirrored displays) a
@@ -209,6 +210,7 @@ fun ShizukuApp() {
                             Detail.PERMISSIONS -> PermissionsScreen(onBack = { detail = null })
                             Detail.APPEARANCE -> AppearanceStudioScreen()
                             Detail.TOKENX -> TokenXControlCenterScreen(onBack = { detail = null })
+                            Detail.GUIDE -> TokenXGuideScreen(onBack = { detail = null })
                         }
                     }
                 } else {
