@@ -50,6 +50,55 @@ Releases of **this fork** are on the [releases page](https://github.com/rushiran
 
 The fork this is based on publishes its own releases [on his repository](https://github.com/thedjchi/Shizuku/releases). Because the two are signed with different keys, neither can replace the other: uninstall the one you have before installing the other.
 
+## 🚀 TokenX — October 2, 2026 update
+
+TokenX is evolving from a single-start-method Shizuku fork into a **multi-backend Android privilege engine**. The manager keeps Shizuku API compatibility while coordinating the strongest available execution path.
+
+### Current architecture
+
+```text
+Client app
+   ↓
+TokenX authorization / Binder
+   ↓
+Backend selection
+   ├─ System / Serv.apk (UID 1000 bridge)
+   ├─ Root
+   └─ Shell / Shizuku
+   ↓
+Android system services
+```
+
+- **System Server Bridge:** the optional KernelSU bridge provisions and verifies the TokenX `Serv.apk` system companion and publishes bridge health so the manager can distinguish an attached bridge from a stale status marker.
+- **UID 1000 path:** the system companion can run as Android's system UID where the device supports the configured bridge. TokenX reports the effective backend separately from the manager package identity; UID 1000 by itself is not treated as proof that code is executing inside the `system_server` process.
+- **D2-safe startup:** the KernelSU bridge supports the Kiosk D2 gate so the privileged companion is not deliberately released before the D2 boot lock has released it. Devices without D2 can continue through the normal path.
+- **Legacy migration:** obsolete `com.vikram.shell` provisioning is removed/migrated and the legacy DEX payload is disabled in the current bridge path.
+- **Persistent enabled apps:** app authorization is now desired state rather than server-process state. TokenX stores the enabled package together with its Android user and replays the grant whenever a TokenX/Shizuku server Binder reconnects.
+- **Soft-reboot recovery:** restarting `system_server` or losing a Binder connection no longer means that every enabled app was intentionally revoked. A temporary backend outage must not overwrite the persisted desired-grant list.
+- **Backend-independent authorization:** an enabled app stays enabled while the active execution backend changes. System/Serv, root, and shell are execution paths; they are not separate copies of the user's authorization list.
+- **Automatic fallback direction:** TokenX is designed to use the best currently available backend while preserving explicit start/backend controls for testing and recovery.
+- **Diagnostics:** the bridge keeps module-local boot, provisioning, migration, and verification state/logs so failures can be separated into provisioning, bridge attachment, Binder health, and client authorization problems.
+
+### Enabled-app lifecycle
+
+```text
+Enable app
+   ↓
+Persist package + Android user
+   ↓
+Apply grant to active TokenX/Shizuku server
+   ↓
+server / system_server restarts
+   ↓
+new Binder received
+   ↓
+replay persisted grant
+```
+
+This is specifically intended to keep the **Apps → Granted** state stable across a soft reboot while allowing the server underneath it to change.
+
+> **Development status:** the System/Serv, root and shell paths have different Android privilege boundaries. TokenX therefore verifies and displays runtime state rather than assuming that one backend can perform every operation another backend can.
+
 ## ✨ Added Features
 
 Everything below is either inherited from the fork this is based on or added here. The two are kept apart
