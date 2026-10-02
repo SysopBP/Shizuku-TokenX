@@ -488,6 +488,30 @@ fun HomeScreen(bottomPadding: Dp) {
                         ShizukuSettings.setManuallyStopped(true)
                         ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
                         runCatching { Shizuku.exit() }
+
+                        // A UID-1000/system package can remain provisioned after its live
+                        // TokenX/Shizuku binder has gone away. Binder-death delivery is not
+                        // guaranteed to arrive before Compose redraws, so never leave the
+                        // home screen displaying the cached RUNNING state after Stop.
+                        //
+                        // Do not touch the UID-1000 package or system-server bridge here:
+                        // Stop is runtime-only. Re-probe the live binder until it disappears,
+                        // then refresh every status fact from that runtime result.
+                        scope.launch {
+                            repeat(20) {
+                                if (!Shizuku.pingBinder()) {
+                                    ShizukuStateMachine.update()
+                                    refresh()
+                                    return@launch
+                                }
+                                kotlinx.coroutines.delay(100)
+                            }
+                            // Final authoritative probe even if shutdown took longer than
+                            // expected. If the binder is genuinely still alive, update()
+                            // deliberately leaves the UI RUNNING instead of faking STOPPED.
+                            ShizukuStateMachine.update()
+                            refresh()
+                        }
                     },
                     // A bounce: forceStart replaces the running server instead of
                     // being ignored as "already running".
