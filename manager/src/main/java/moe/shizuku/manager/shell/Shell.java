@@ -18,13 +18,35 @@ public class Shell extends Rish {
 
     private static final int SYSTEM_UID = 1000;
 
-    private static void runRootFallback(String[] args) {
+    private static boolean canLaunchSystemUidWorker() {
+        try {
+            ProcessBuilder probe = new ProcessBuilder("su", "1000", "-c", "id -u");
+            probe.redirectErrorStream(true);
+            java.lang.Process process = probe.start();
+            java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(process.getInputStream()));
+            String line = reader.readLine();
+            int exitCode = process.waitFor();
+            return exitCode == 0 && "1000".equals(line != null ? line.trim() : "");
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    private static void runSystemUidWorkerOrRootFallback(String[] args) {
+        final boolean systemWorkerReady = canLaunchSystemUidWorker();
         final List<String> command = new ArrayList<>();
         command.add("su");
-        command.addAll(Arrays.asList(args));
 
-        System.err.println("TokenX: System Server backend is active (UID 1000).");
-        System.err.println("TokenX: Android 17 cannot safely host rish fork/Binder inside system_server; routing this shell to ROOT.");
+        System.err.println("TokenX: DIRECT BINDER connected to System Server backend (UID 1000).");
+        if (systemWorkerReady) {
+            command.add("1000");
+            System.err.println("TokenX: launching isolated UID-1000 shell worker outside system_server.");
+        } else {
+            System.err.println("TokenX: UID-1000 worker preflight failed; using KernelSU ROOT fallback.");
+        }
+
+        command.addAll(Arrays.asList(args));
         System.err.flush();
 
         try {
@@ -36,7 +58,7 @@ public class Shell extends Rish {
             int exitCode = process.waitFor();
             System.exit(exitCode);
         } catch (Throwable tr) {
-            System.err.println("TokenX: ROOT fallback failed: " + tr.getClass().getSimpleName() + ": " + tr.getMessage());
+            System.err.println("TokenX: shell worker failed: " + tr.getClass().getSimpleName() + ": " + tr.getMessage());
             tr.printStackTrace(System.err);
             System.err.flush();
             System.exit(1);
@@ -79,7 +101,7 @@ public class Shell extends Rish {
             System.err.flush();
 
             if (serverUid == SYSTEM_UID) {
-                runRootFallback(args);
+                runSystemUidWorkerOrRootFallback(args);
                 return;
             }
 
