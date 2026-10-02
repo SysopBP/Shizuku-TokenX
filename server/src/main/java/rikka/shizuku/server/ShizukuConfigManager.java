@@ -5,6 +5,7 @@ import static rikka.shizuku.server.ServerConstants.PERMISSION;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Process;
 import android.util.AtomicFile;
 
 import androidx.annotation.Nullable;
@@ -38,9 +39,14 @@ public class ShizukuConfigManager extends ConfigManager {
             .setVersion(ShizukuConfig.LATEST_VERSION)
             .create();
 
-    private static final long WRITE_DELAY = 10 * 1000;
+    // TokenX UID 1000 runs inside system_server. Persist its authorization state in a
+    // system-owned location; the shell-owned Shizuku path is not reliable for this backend.
+    // Keep the normal path for shell/root fallback backends.
+    private static final long WRITE_DELAY = 500;
 
-    private static final File FILE = new File("/data/user_de/0/com.android.shell/shizuku.json");
+    private static final File FILE = Process.myUid() == Process.SYSTEM_UID
+            ? new File("/data/system/shizuku-tokenx.json")
+            : new File("/data/user_de/0/com.android.shell/shizuku.json");
     private static final AtomicFile ATOMIC_FILE = new AtomicFile(FILE);
 
     public static ShizukuConfig load() {
