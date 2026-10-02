@@ -972,12 +972,12 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
             options = buildList {
                 add(ShizukuSettings.StartMethod.WIRELESS.toString() to stringResource(R.string.start_method_wireless))
                 add(ShizukuSettings.StartMethod.USB.toString() to stringResource(R.string.start_method_usb))
-                add(ShizukuSettings.StartMethod.SYSTEM.toString() to stringResource(R.string.start_method_system))
-                // Offered only where it can work the same rule the home screen's root
-                // row follows.
+                // Keep the two privileged backends together. Root is offered only where
+                // KernelSU/su is actually available, then System remains the UID-1000 path.
                 if (rootAvailable) {
                     add(ShizukuSettings.StartMethod.ROOT.toString() to stringResource(R.string.start_method_root))
                 }
+                add(ShizukuSettings.StartMethod.SYSTEM.toString() to stringResource(R.string.start_method_system))
                 // Offered only while the experiment behind it is on, which is what it is: the
                 // wireless start with that fight switched on. Turning the experiment off takes
                 // the default back to wireless debugging, so this cannot be chosen and then
