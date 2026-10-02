@@ -10,7 +10,9 @@
 
 #
 
-**TKN Boot** extends the Shizuku foundation with Token Boot coordination and the TokenX multi-backend privilege engine, while preserving Shizuku compatibility.\n\nAn Android app that allows other apps to use system-level APIs that require ADB/root privileges.
+**TKN Boot** extends the Shizuku foundation with Token Boot coordination and the TokenX multi-backend privilege engine, while preserving Shizuku compatibility.
+
+An Android app that allows other apps to use system-level APIs that require ADB/root privileges.
 
 **Shizuku Next is a fork of [thedjchi's Shizuku](https://github.com/thedjchi/Shizuku), which is itself a fork of
 [RikkaApps' Shizuku](https://github.com/RikkaApps/Shizuku).** Shizuku the server, the API, the shell and
@@ -470,7 +472,11 @@ the one thing none of the above fixes is the first start after a reboot, because
 The fork's own name and icon the fox in [`docs/logo.png`](docs/logo.png) are this project's. Everything
 underneath is the work credited below.
 
-## 🧩 System UID Backend\n\nThe optional external UID 1000 companion has a separate root provisioning procedure. See **[System UID Backend — Installation](SYSTEM_UID_INSTALL.md)** for the tested `Serv.apk` / `Serv.dex` setup, verification steps, architecture, and troubleshooting. The companion APK and DEX are not bundled with TokenX.\n\n## 📝 User Guide
+## 🧩 System UID Backend
+
+The optional external UID 1000 companion has a separate root provisioning procedure. See **[System UID Backend — Installation](SYSTEM_UID_INSTALL.md)** for the tested `Serv.apk` / `Serv.dex` setup, verification steps, architecture, and troubleshooting. The companion APK and DEX are not bundled with TokenX.
+
+## 📝 User Guide
 
 Please read the [wiki](https://github.com/thedjchi/Shizuku/wiki) for setup, info, and troubleshooting steps it belongs to the fork this one is based on, and documents the same behaviour, because the features and the server come from there.
 
