@@ -430,30 +430,41 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     @Override
     public void showPermissionConfirmation(int requestCode, @NonNull ClientRecord clientRecord, int callingUid, int callingPid, int userId) {
-        ApplicationInfo ai = Android17Compat.getApplicationInfo(clientRecord.packageName, 0, userId);
-        if (ai == null) {
-            return;
-        }
+        /*
+         * TokenX can host Shizuku directly inside system_server (UID 1000). Binder keeps
+         * the rish/client identity while this callback runs. Android 17 enforces
+         * QUERY_USERS/MANAGE_USERS for getUserInfo(), so perform framework lookups under
+         * the service identity while retaining the captured caller uid/pid for the grant.
+         */
+        final long identity = Binder.clearCallingIdentity();
+        try {
+            ApplicationInfo ai = Android17Compat.getApplicationInfo(clientRecord.packageName, 0, userId);
+            if (ai == null) {
+                return;
+            }
 
-        PackageInfo pi = Android17Compat.getPackageInfo(MANAGER_APPLICATION_ID, 0, userId);
-        UserInfo userInfo = UserManagerApis.getUserInfo(userId);
-        boolean isWorkProfileUser = BuildUtils.atLeast30() ?
-                "android.os.usertype.profile.MANAGED".equals(userInfo.userType) :
-                (userInfo.flags & UserInfo.FLAG_MANAGED_PROFILE) != 0;
-        if (pi == null && !isWorkProfileUser) {
-            LOGGER.w("Manager not found in non work profile user %d. Revoke permission", userId);
-            clientRecord.dispatchRequestPermissionResult(requestCode, false);
-            return;
-        }
+            PackageInfo pi = Android17Compat.getPackageInfo(MANAGER_APPLICATION_ID, 0, userId);
+            UserInfo userInfo = UserManagerApis.getUserInfo(userId);
+            boolean isWorkProfileUser = BuildUtils.atLeast30() ?
+                    "android.os.usertype.profile.MANAGED".equals(userInfo.userType) :
+                    (userInfo.flags & UserInfo.FLAG_MANAGED_PROFILE) != 0;
+            if (pi == null && !isWorkProfileUser) {
+                LOGGER.w("Manager not found in non work profile user %d. Revoke permission", userId);
+                clientRecord.dispatchRequestPermissionResult(requestCode, false);
+                return;
+            }
 
-        Intent intent = new Intent(ServerConstants.REQUEST_PERMISSION_ACTION)
-                .setPackage(MANAGER_APPLICATION_ID)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
-                .putExtra("uid", callingUid)
-                .putExtra("pid", callingPid)
-                .putExtra("requestCode", requestCode)
-                .putExtra("applicationInfo", ai);
-        ActivityManagerApis.startActivityNoThrow(intent, null, isWorkProfileUser ? 0 : userId);
+            Intent intent = new Intent(ServerConstants.REQUEST_PERMISSION_ACTION)
+                    .setPackage(MANAGER_APPLICATION_ID)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
+                    .putExtra("uid", callingUid)
+                    .putExtra("pid", callingPid)
+                    .putExtra("requestCode", requestCode)
+                    .putExtra("applicationInfo", ai);
+            ActivityManagerApis.startActivityNoThrow(intent, null, isWorkProfileUser ? 0 : userId);
+        } finally {
+            Binder.restoreCallingIdentity(identity);
+        }
     }
 
     @Override
