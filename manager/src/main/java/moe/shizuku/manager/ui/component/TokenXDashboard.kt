@@ -117,12 +117,12 @@ fun TokenXDashboard(
             }
 
             Text(
-                "System UID Backend",
+                "System Server Bridge",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "External Serv.apk + Serv.dex provisioning. Files remain separate from TokenX.",
+                "Serv.apk + Serv.dex attach com.vikram.exp to Android\'s system process. Interactive rish remains isolated through the Android 17 root fallback.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -132,7 +132,7 @@ fun TokenXDashboard(
                     enabled = rootAvailable && !provisioning,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(if (provisioning) "Working…" else "Install")
+                    Text(if (provisioning) "Working…" else "Provision")
                 }
                 Button(
                     onClick = { runProvision { SystemUidProvisioner.verify() } },
