@@ -72,26 +72,45 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     static {
         String packageName = null;
-        try {
-            String apk = System.getenv("CLASSPATH");
 
-            int lastSlash = apk.lastIndexOf(File.separatorChar);
-            String parentDir = apk.substring(0, lastSlash);
+        // TokenX can run in two very different processes:
+        //  1. the normal standalone server, where CLASSPATH points at the manager APK; and
+        //  2. LSPosed's system_server hook (UID 1000), where CLASSPATH belongs to Android
+        //     framework/services and therefore cannot identify the TokenX manager.
+        //
+        // The old code parsed system_server's CLASSPATH and later concluded that the manager
+        // APK was not installed. Use TokenX's real manager package in the embedded path and
+        // retain the upstream CLASSPATH discovery for root/shell standalone launches.
+        if (Process.myUid() == Process.SYSTEM_UID) {
+            packageName = "moe.shizuku.privileged.api";
+            LOGGER.i("Embedded system_server manager package is " + packageName);
+            ServerLog.mark("MANAGER_RESOLVED: embedded system_server -> " + packageName);
+        } else {
+            try {
+                String apk = System.getenv("CLASSPATH");
+                if (apk == null || apk.isEmpty()) {
+                    throw new IllegalStateException("CLASSPATH is empty");
+                }
 
-            int secondLastSlash = parentDir.lastIndexOf(File.separatorChar);
-            String dirName = parentDir.substring(secondLastSlash + 1);
+                int lastSlash = apk.lastIndexOf(File.separatorChar);
+                String parentDir = apk.substring(0, lastSlash);
 
-            int dash = dirName.indexOf('-');
-            if (dash > 0) {
-                packageName = dirName.substring(0, dash);
-            } else {
-                packageName = dirName;
+                int secondLastSlash = parentDir.lastIndexOf(File.separatorChar);
+                String dirName = parentDir.substring(secondLastSlash + 1);
+
+                int dash = dirName.indexOf('-');
+                if (dash > 0) {
+                    packageName = dirName.substring(0, dash);
+                } else {
+                    packageName = dirName;
+                }
+
+                LOGGER.i("Manager package name is " + packageName);
+            } catch (Throwable tr) {
+                LOGGER.w("Couldn't get manager package name from CLASSPATH", tr);
             }
-
-            LOGGER.i("Manager package name is " + packageName);
-        } catch (Throwable tr) {
-            LOGGER.w("Couldn't get manager package name from CLASSPATH", tr);
         }
+
         MANAGER_APPLICATION_ID = packageName;
     }
 
