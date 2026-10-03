@@ -124,6 +124,10 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
     var updateMode by remember { mutableStateOf(ShizukuSettings.getUpdateMode()) }
     var nightMode by remember { mutableStateOf(ShizukuSettings.getNightMode()) }
     var themeDialog by remember { mutableStateOf(false) }
+    var themeStyleDialog by remember { mutableStateOf(false) }
+    var themeStyle by remember {
+        mutableStateOf(ShizukuSettings.getPreferences().getString("tokenx_theme_style", "MATERIAL") ?: "MATERIAL")
+    }
     var useSystemColor by remember {
         mutableStateOf(ShizukuSettings.getPreferences().getBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false))
     }
@@ -645,6 +649,20 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                         SegmentedListItem(
                             centerSlots = true,
                             leadingContent = { SettingsIcon(Icons.Outlined.Palette) },
+                            headlineContent = { Text("Theme style") },
+                            supportingContent = {
+                                Text(if (themeStyle == "MIUIX") "MIUIX" else "Material Expressive")
+                            },
+                            trailingContent = {
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                            },
+                            onClick = { themeStyleDialog = true }
+                        )
+                    }
+                    item {
+                        SegmentedListItem(
+                            centerSlots = true,
+                            leadingContent = { SettingsIcon(Icons.Outlined.Palette) },
                             headlineContent = { Text(stringResource(R.string.settings_use_system_color)) },
                             switchState = useSystemColor,
                             onSwitchChange =
@@ -884,6 +902,25 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                 TextButton(onClick = { batteryPrompt = null }) {
                     Text(stringResource(android.R.string.cancel))
                 }
+            }
+        )
+    }
+
+    if (themeStyleDialog) {
+        ChoiceDialog(
+            title = "Theme style",
+            options = listOf(
+                "MATERIAL" to "Material Expressive",
+                "MIUIX" to "MIUIX",
+            ),
+            selected = themeStyle,
+            onDismiss = { themeStyleDialog = false },
+            onSelect = {
+                ShizukuSettings.getPreferences().edit()
+                    .putString("tokenx_theme_style", it).apply()
+                themeStyle = it
+                ThemeState.refresh()
+                themeStyleDialog = false
             }
         )
     }
