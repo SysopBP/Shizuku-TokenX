@@ -235,6 +235,26 @@ fun HomeScreen(bottomPadding: Dp) {
     suspend fun refresh() {
         ShizukuStateMachine.update()
         running = ShizukuStateMachine.isRunning()
+
+        // A backend switch can deliver the replacement Binder before Compose observes
+        // the state-machine transition. Treat the live Binder UID as authoritative here
+        // so the switching dialog cannot remain stuck after BinderSender has already
+        // handed the requested server to this manager.
+        if (running && startStatus is StartStatus.Starting) {
+            val expectedUid = when (StartStatusReporter.targetMethod) {
+                ShizukuSettings.StartMethod.ROOT -> 0
+                ShizukuSettings.StartMethod.SYSTEM -> 1000
+                ShizukuSettings.StartMethod.WIRELESS,
+                ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK,
+                ShizukuSettings.StartMethod.USB -> 2000
+                else -> -1
+            }
+            val liveUid = runCatching { Shizuku.getUid() }.getOrDefault(-1)
+            if (liveUid == expectedUid) {
+                StartStatusReporter.succeeded()
+            }
+        }
+
         batteryIgnored = SettingsHelper.isIgnoringBatteryOptimizations(context)
         developerOptionsOn = context.isDeveloperOptionsEnabled()
         // Root can be gone since the method was chosen; the card would otherwise keep
