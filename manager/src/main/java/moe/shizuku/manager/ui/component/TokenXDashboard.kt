@@ -284,8 +284,13 @@ fun TokenXDashboard(
                     .fillMaxWidth(.82f)
                     .align(Alignment.CenterHorizontally)
             ) {
-                Icon(Icons.Rounded.Search, contentDescription = null, Modifier.size(20.dp))
-                Text(if (provisioning) "Scanning Vault…" else "Scan Provisioning Vault", Modifier.padding(start = 10.dp), style = MaterialTheme.typography.labelLarge)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(Icons.Rounded.Search, contentDescription = null, Modifier.size(18.dp))
+                    Text(if (provisioning) "Scanning Vault…" else "Scan Provisioning Vault", style = MaterialTheme.typography.labelLarge)
+                }
             }
 
             Text(
@@ -306,8 +311,13 @@ fun TokenXDashboard(
                         .fillMaxWidth(.82f)
                         .align(Alignment.CenterVertically)
                 ) {
-                    Icon(Icons.Rounded.VerifiedUser, contentDescription = null, Modifier.size(20.dp))
-                    Text("Verify System Bridge", Modifier.padding(start = 10.dp), style = MaterialTheme.typography.labelLarge)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(Icons.Rounded.VerifiedUser, contentDescription = null, Modifier.size(18.dp))
+                        Text("Verify System Bridge", style = MaterialTheme.typography.labelLarge)
+                    }
                 }
             }
             if (!rootAvailable) {
