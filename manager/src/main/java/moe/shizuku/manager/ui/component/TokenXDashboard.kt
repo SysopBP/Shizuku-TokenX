@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -69,6 +70,7 @@ fun TokenXDashboard(
     var dialogTitle by remember { mutableStateOf("Provisioning Vault • Live") }
     var dialogMode by remember { mutableStateOf("vault") }
     var showTechnicalConsole by remember { mutableStateOf(false) }
+    var showVaultDetails by remember { mutableStateOf(false) }
     var liveStage by remember { mutableStateOf<SystemUidProvisioner.Progress?>(null) }
 
     LaunchedEffect(provisioning) {
@@ -196,8 +198,8 @@ fun TokenXDashboard(
 
     TokenXGlassCard(modifier) {
         Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.Token, contentDescription = null)
@@ -253,6 +255,7 @@ fun TokenXDashboard(
                 StatusLine(Icons.Rounded.Terminal, "TokenX Router", "Multi-backend", Modifier.weight(1f))
             }
 
+            HorizontalDivider(Modifier.padding(vertical = 2.dp))
             Text(
                 "Provisioning Vault",
                 style = MaterialTheme.typography.titleMedium,
@@ -271,11 +274,20 @@ fun TokenXDashboard(
                 StatusLine(Icons.Rounded.Lock, "D2 Gate", "Dual gate", Modifier.weight(1f))
                 StatusLine(Icons.Rounded.Security, "Receiver Compatibility", "Xposed", Modifier.weight(1f))
             }
-            Text(
-                "The audit is read-only: it checks Serv, FOTA, shared-system identity, live FOTA SELinux state, the provisioning DEX fallback, and TokenX Receiver Compatibility integration without executing the DEX, launching FOTA, or invoking update_engine.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            TextButton(
+                onClick = { showVaultDetails = !showVaultDetails },
+                modifier = Modifier.align(Alignment.Start)
+            ) {
+                Icon(Icons.Rounded.Info, contentDescription = null, Modifier.size(16.dp))
+                Text(if (showVaultDetails) " Hide details" else " Details")
+            }
+            if (showVaultDetails) {
+                Text(
+                    "Read-only audit of Serv, FOTA, shared-system identity, FOTA SELinux state, the provisioning DEX fallback, and Receiver Compatibility. It does not execute the DEX, launch FOTA, or invoke update_engine.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             TokenXGlassButton(
                 onClick = { runProvision("Provisioning Vault • Live") {
                     SystemUidProvisioner.verifyProvisionedPayloads { progress ->
@@ -297,6 +309,7 @@ fun TokenXDashboard(
                 }
             }
 
+            HorizontalDivider(Modifier.padding(vertical = 2.dp))
             Text(
                 "System Server Bridge",
                 style = MaterialTheme.typography.titleMedium,
@@ -329,13 +342,6 @@ fun TokenXDashboard(
                     "Root is required for provisioning and vault verification.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
-                )
-            }
-            provisionStatus?.let { status ->
-                Text(
-                    status,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
