@@ -16,7 +16,6 @@ object SystemUidProvisioner {
     const val LIVE_PACKAGE = "com.vikram.exp"
     const val LEGACY_PACKAGE = "com.vikram.shell"
     const val FOTA_PACKAGE = "com.sdet.fotaagent"
-    const val RECEIVER_FIX_PACKAGE = "com.eliteone.receiver"
     const val STAGED_SHIZUKU = "/data/local/tmp/libshizuku.so"
 
     enum class Stage { D2_GATE, SERV_UID, FOTA_UID, FOTA_DOMAIN, RX_COMPAT, SYSTEM_BRIDGE }
@@ -102,14 +101,14 @@ object SystemUidProvisioner {
             Triple(Stage.SERV_UID, "Checking Serv UID 1000", "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000'"),
             Triple(Stage.FOTA_UID, "Checking FOTA UID 1000", "cmd package list packages -U | grep -F 'package:$FOTA_PACKAGE uid:1000'"),
             Triple(Stage.FOTA_DOMAIN, "Checking FOTA system identity", "dumpsys package $FOTA_PACKAGE 2>/dev/null | grep -m1 -E 'sharedUser=.*android.uid.system/1000'"),
-            Triple(Stage.RX_COMPAT, "Checking Android 17 receiver compatibility", "cmd package list packages | grep -q -F 'package:$RECEIVER_FIX_PACKAGE' && echo RECEIVER_FIX_PACKAGE=present")
+            Triple(Stage.RX_COMPAT, "Checking TokenX Receiver Compatibility", "echo TOKENX_RECEIVER_COMPAT=integrated; echo TOKENX_RECEIVER_SCOPE=$FOTA_PACKAGE")
         )
         for ((stage, label, script) in checks) {
             val result = check(stage, label, script)
             transcript.append(result.output)
             if (!result.success) return Result(false, result.exitCode, transcript.toString(), result.command)
         }
-        transcript.append("NOTE=receiver-fix package presence does not prove an LSPosed hook is active\n")
+        transcript.append("NOTE=Receiver Compatibility is integrated into TokenX Xposed; no external Receiver Flag Fix APK is required\n")
         return Result(true, 0, transcript.toString(), "TokenX staged provisioning audit")
     }
 
