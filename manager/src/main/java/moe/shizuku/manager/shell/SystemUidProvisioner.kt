@@ -15,6 +15,8 @@ object SystemUidProvisioner {
 
     const val LIVE_PACKAGE = "com.vikram.exp"
     const val LEGACY_PACKAGE = "com.vikram.shell"
+    const val FOTA_PACKAGE = "com.sdet.fotaagent"
+    const val RECEIVER_FIX_PACKAGE = "com.eliteone.receiver"
     const val STAGED_SHIZUKU = "/data/local/tmp/libshizuku.so"
 
     data class Result(
@@ -76,6 +78,28 @@ object SystemUidProvisioner {
         val staged = stageShizukuUid1000(context)
         if (!staged.success) return staged
         return startShizukuUid1000(context)
+    }
+
+    /**
+     * Non-destructive provisioning audit for the two UID-1000 payloads. This deliberately
+     * does not launch FOTA, reboot, enter recovery, factory-reset, or invoke update_engine.
+     * The KernelSU module remains the installer; the manager reports exactly what survived.
+     */
+    fun verifyProvisionedPayloads(): Result {
+        val script = listOf(
+            "echo '=== TokenX provisioned payloads ==='",
+            "echo '-- Serv --'",
+            "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000' || echo 'SERV_UID1000=0'",
+            "dumpsys package $LIVE_PACKAGE 2>/dev/null | grep -m1 -F 'sharedUser=SharedUserSetting' || true",
+            "echo '-- FOTA --'",
+            "cmd package list packages -U | grep -F 'package:$FOTA_PACKAGE uid:1000' || echo 'FOTA_UID1000=0'",
+            "dumpsys package $FOTA_PACKAGE 2>/dev/null | grep -m1 -E 'sharedUser=.*android.uid.system/1000' || true",
+            "PID=\\$(pidof $FOTA_PACKAGE 2>/dev/null || true); if [ -n \"\\$PID\" ]; then echo FOTA_PID=\\$PID; ps -AZ | grep -F '$FOTA_PACKAGE' | head -n1; else echo FOTA_PID=stopped; fi",
+            "echo '-- Android 17 receiver compatibility --'",
+            "if cmd package list packages | grep -q -F 'package:$RECEIVER_FIX_PACKAGE'; then echo RECEIVER_FIX_PACKAGE=present; else echo RECEIVER_FIX_PACKAGE=absent; fi",
+            "echo 'NOTE=receiver-fix package presence does not prove an LSPosed hook is active'",
+        ).joinToString("; ")
+        return runRoot(script)
     }
 
     fun verify(): Result {
