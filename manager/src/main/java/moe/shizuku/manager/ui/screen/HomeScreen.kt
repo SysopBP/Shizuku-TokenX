@@ -164,6 +164,7 @@ fun HomeScreen(bottomPadding: Dp) {
                     TextButton(onClick = { pendingDeviceRestart = DeviceRestartAction.FULL; showDeviceRestartMenu = false }) { Text("Full Reboot") }
                     TextButton(onClick = { pendingDeviceRestart = DeviceRestartAction.SOFT; showDeviceRestartMenu = false }) { Text("Soft Reboot") }
                     TextButton(onClick = { pendingDeviceRestart = DeviceRestartAction.SYSTEM_UI; showDeviceRestartMenu = false }) { Text("UI Reboot") }
+                    TextButton(onClick = { pendingDeviceRestart = DeviceRestartAction.TOKENX_APP; showDeviceRestartMenu = false }) { Text("Restart TokenX") }
                 }
             },
             confirmButton = {},
@@ -345,6 +346,11 @@ fun HomeScreen(bottomPadding: Dp) {
                 ShizukuSettings.StartMethod.USB -> 2000
                 else -> -1
             }
+            // A switch is successful only after the replacement Binder answers and
+            // reports the requested UID. Never leave the modal spinning forever: if the
+            // replacement Binder is not usable within 12 seconds, keep whatever live
+            // backend is still answering and surface a real failure.
+            val deadline = android.os.SystemClock.elapsedRealtime() + 12_000L
             while (StartStatusReporter.status.value is StartStatus.Starting) {
                 val binderReady = runCatching { Shizuku.pingBinder() }.getOrDefault(false)
                 val liveUid = if (binderReady) runCatching { Shizuku.getUid() }.getOrDefault(-1) else -1
@@ -353,6 +359,23 @@ fun HomeScreen(bottomPadding: Dp) {
                     uid = liveUid
                     ShizukuStateMachine.set(ShizukuStateMachine.State.RUNNING)
                     StartStatusReporter.succeeded()
+                    break
+                }
+                if (android.os.SystemClock.elapsedRealtime() >= deadline) {
+                    // Re-probe instead of marking the requested route active. This keeps
+                    // UID 1000 selected when a UID 0 handoff never becomes reachable.
+                    val fallbackReady = runCatching { Shizuku.pingBinder() }.getOrDefault(false)
+                    val fallbackUid = if (fallbackReady) runCatching { Shizuku.getUid() }.getOrDefault(-1) else -1
+                    running = fallbackReady
+                    uid = fallbackUid
+                    ShizukuStateMachine.update()
+                    StartStatusReporter.failed(
+                        if (fallbackReady) {
+                            "The requested UID $expectedUid Binder did not become active. UID $fallbackUid remains connected."
+                        } else {
+                            "The requested UID $expectedUid Binder did not become active. Restart TokenX or retry the privilege engine."
+                        }
+                    )
                     break
                 }
                 delay(250)
@@ -1370,5 +1393,11 @@ private enum class DeviceRestartAction(
         "Restart SystemUI only. Android framework and the kernel remain running.",
         "Restart UI",
         "pkill -TERM -f com.android.systemui || killall com.android.systemui"
+    ),
+    TOKENX_APP(
+        "Restart TokenX",
+        "Restart only the TokenX manager app. The active privilege backend is left running.",
+        "Restart TokenX",
+        "(sleep 1; am force-stop moe.shizuku.privileged.api; sleep 1; monkey -p moe.shizuku.privileged.api -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1) >/dev/null 2>&1 &"
     )
 }
