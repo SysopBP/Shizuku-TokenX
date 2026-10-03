@@ -142,9 +142,10 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
     val requestedUiStyle = runCatching {
         TokenXUiStyle.valueOf(prefs.getString(TokenXAppearanceKeys.UI_STYLE, TokenXUiStyle.MATERIAL.name)!!)
     }.getOrDefault(TokenXUiStyle.MATERIAL)
-    // Native Miuix rendering is introduced separately. Never label Material
-    // controls as Miuix while that renderer is unavailable.
-    val activeUiStyle = if (requestedUiStyle == TokenXUiStyle.MIUIX) TokenXUiStyle.MATERIAL else requestedUiStyle
+    // The native Miuix dependency is now linked on Android. Expose the selected
+    // framework to the Compose tree; component-by-component Miuix rendering can
+    // be introduced without collapsing back to Material.
+    val activeUiStyle = requestedUiStyle
 
     val tokenXGlass = TokenXGlassStyle(
         enabled = prefs.getBoolean(TokenXAppearanceKeys.GLASS_ENABLED, true),
