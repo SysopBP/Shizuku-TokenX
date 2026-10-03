@@ -113,6 +113,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 import moe.shizuku.manager.R
 import moe.shizuku.manager.shell.ShellBackend
 import moe.shizuku.manager.shell.LibraryCommand
@@ -129,6 +130,7 @@ import moe.shizuku.manager.ui.component.AppIcon
 import moe.shizuku.manager.ui.component.appLabel
 import moe.shizuku.manager.shell.ShellLine
 import moe.shizuku.manager.shell.ShellSession
+import moe.shizuku.manager.shell.SystemUidProvisioner
 import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import rikka.shizuku.Shizuku
@@ -697,7 +699,46 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
             )
             FilterChip(
                 selected = backend == ShellBackend.SSERVER,
-                onClick = { backend = ShellBackend.SSERVER },
+                onClick = {
+                    if (running) return@FilterChip
+                    running = true
+                    scope.launch {
+                        val start = withContext(Dispatchers.IO) {
+                            SystemUidProvisioner.prepareAndStartShizukuUid1000(context)
+                        }
+                        if (!start.success) {
+                            feed(ShellLine(
+                                "Sserver start failed (exit ${start.exitCode}): ${start.output.trim()}",
+                                ShellLine.Kind.ERROR
+                            ))
+                            running = false
+                            return@launch
+                        }
+
+                        // The starter returning only means app_process was launched. Binder
+                        // receipt is the authoritative handoff signal.
+                        var verifiedUid = -1
+                        repeat(30) {
+                            ShizukuStateMachine.update()
+                            verifiedUid = runCatching {
+                                if (Shizuku.pingBinder()) Shizuku.getUid() else -1
+                            }.getOrDefault(-1)
+                            if (verifiedUid == 1000) return@repeat
+                            delay(250)
+                        }
+                        uid = verifiedUid
+                        if (verifiedUid == 1000) {
+                            backend = ShellBackend.SSERVER
+                            feed(ShellLine("Sserver ready • live Shizuku Binder UID 1000", ShellLine.Kind.INFO))
+                        } else {
+                            feed(ShellLine(
+                                "Sserver started but UID-1000 Binder was not received.",
+                                ShellLine.Kind.ERROR
+                            ))
+                        }
+                        running = false
+                    }
+                },
                 label = { Text(stringResource(R.string.shell_backend_sserver)) }
             )
             // Never disabled: a chip that cannot be pressed is also a chip that cannot ask
