@@ -113,7 +113,7 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                 LabTile(
                     icon = Icons.Outlined.Route,
                     label = "TokenX Control Center",
-                    badge = "ROUTER · BOOT · UID 1000 · LSPOSED",
+                    badge = "PULSE · VAULT · D2 · UID 1000",
                     onClick = { onOpenDetail(Detail.TOKENX) }
                 )
             }
@@ -128,8 +128,8 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
             item {
                 LabTile(
                     icon = Icons.Outlined.BugReport,
-                    label = "Diagnostics & Logs",
-                    badge = "TOKENX",
+                    label = "Secure Chain Monitor",
+                    badge = "LIVE · SERV · FOTA",
                     onClick = { onOpenDetail(Detail.TOKENX) }
                 )
             }
