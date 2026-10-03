@@ -25,6 +25,7 @@ import moe.shizuku.manager.ui.theme.TokenXAppearanceKeys
 import moe.shizuku.manager.ui.theme.TokenXAccent
 import moe.shizuku.manager.ui.theme.TokenXThemePreset
 import moe.shizuku.manager.ui.theme.TokenXThemeEngine
+import moe.shizuku.manager.ui.theme.TokenXHapticStrength
 import moe.shizuku.manager.ui.theme.FloatingBarStyle
 import moe.shizuku.manager.ui.theme.FloatingBarShape
 import moe.shizuku.manager.ui.theme.FloatingBarSelection
@@ -83,6 +84,7 @@ fun AppearanceStudioScreen() {
     var dim by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.BACKGROUND_DIM, .18f)) }
     var colorHex by remember { mutableStateOf(String.format("#%08X", prefs.getLong(TokenXAppearanceKeys.BACKGROUND_COLOR, 0xFF090A0FFF))) }
     var seslSwitch by remember { mutableStateOf(true) }
+    var hapticStrength by remember { mutableStateOf(runCatching { TokenXHapticStrength.valueOf(prefs.getString(TokenXAppearanceKeys.HAPTIC_STRENGTH, TokenXHapticStrength.STANDARD.name)!!) }.getOrDefault(TokenXHapticStrength.STANDARD)) }
     var mode by remember { mutableStateOf(runCatching { BackgroundMode.valueOf(prefs.getString(TokenXAppearanceKeys.BACKGROUND_MODE, BackgroundMode.AMOLED_GRADIENT.name)!!) }.getOrDefault(BackgroundMode.AMOLED_GRADIENT)) }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -253,6 +255,26 @@ fun AppearanceStudioScreen() {
                         view.setOnCheckedChangeListener { _, checked -> seslSwitch = checked }
                     }
                 )
+            }
+        }
+
+        Text("Haptics", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+        Text("Tune tactile feedback for TokenX controls and privileged actions.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        TokenXGlassCard {
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TokenXHapticStrength.entries.forEach { strength ->
+                        FilterChip(
+                            selected = hapticStrength == strength,
+                            onClick = {
+                                hapticStrength = strength
+                                prefs.edit().putString(TokenXAppearanceKeys.HAPTIC_STRENGTH, strength.name).apply()
+                            },
+                            label = { Text(strength.label) }
+                        )
+                    }
+                }
+                Text("Standard is the default. Off disables TokenX-specific tactile feedback.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
