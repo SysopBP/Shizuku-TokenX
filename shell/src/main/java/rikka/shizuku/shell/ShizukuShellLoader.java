@@ -222,7 +222,7 @@ public class ShizukuShellLoader {
         StringBuilder out = new StringBuilder();
         for (String arg : args) {
             if (out.length() > 0) out.append(' ');
-            out.append(''').append(arg.replace("'", "'\\''")).append(''');
+            out.append("\'").append(arg.replace("\'", "\'\\\\\'\'")).append("\'");
         }
         return out.toString();
     }
