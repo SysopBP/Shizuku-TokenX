@@ -17,6 +17,10 @@ import rikka.shizuku.Shizuku
  */
 data class TokenXRuntimeState(
     val backendState: TokenXBackendState,
+    /** Serv.apk is provisioned as UID 1000 and associated with the live system process. */
+    val systemServerBridgeAttached: Boolean,
+    /** A TokenX Binder transaction completed inside system_server as UID 1000. */
+    val systemServerBridgeActive: Boolean,
     val xposedFrameworkDetected: Boolean,
     val xposedBridgeActive: Boolean,
     val routes: Map<TokenXCapability, TokenXRoute>,
@@ -38,8 +42,12 @@ object TokenXRuntime {
 
         // A package/manager being installed is not enough. Trust the UID 1000
         // backend only after the Binder service in system_server answers our ping.
-        val bridgeActive = pingSystemServerBridge()
+        // Keep provisioning/attachment separate from live execution. A UID-1000 package
+        // association proves that the bridge is attached to Android's system process, but
+        // ACTIVE is reserved for a successful TokenX Binder transaction in system_server.
         val servUid1000 = isServUid1000()
+        val bridgeAttached = servUid1000 && isServAssociatedWithSystemServer()
+        val bridgeActive = bridgeAttached && pingSystemServerBridge()
         // Sserver is READY only when the live Shizuku Binder itself belongs to UID 1000.
         // Serv.apk being UID 1000 means the environment is provisioned, not that the
         // UID-1000 Shizuku server has actually published a usable Binder.
@@ -63,6 +71,8 @@ object TokenXRuntime {
 
         return TokenXRuntimeState(
             backendState = state,
+            systemServerBridgeAttached = bridgeAttached,
+            systemServerBridgeActive = bridgeActive,
             xposedFrameworkDetected = xposedDetected,
             xposedBridgeActive = bridgeActive,
             routes = TokenXCapability.entries.associateWith { TokenXRouter.route(it, state, preferredBackend) },
@@ -89,6 +99,13 @@ object TokenXRuntime {
     private fun isServUid1000(): Boolean = runCatching {
         val result = Shell.cmd("cmd package list packages -U | grep -F 'package:com.vikram.exp uid:1000'").exec()
         result.isSuccess && result.out.any { it.contains("package:com.vikram.exp uid:1000") }
+    }.getOrDefault(false)
+
+    private fun isServAssociatedWithSystemServer(): Boolean = runCatching {
+        val result = Shell.cmd(
+            "dumpsys activity processes | grep -A16 -m1 -E '[0-9]+:system/1000' | grep -F 'com.vikram.exp'"
+        ).exec()
+        result.isSuccess && result.out.any { it.contains("com.vikram.exp") }
     }.getOrDefault(false)
 
     private fun isInstalled(pm: PackageManager, packageName: String): Boolean =
