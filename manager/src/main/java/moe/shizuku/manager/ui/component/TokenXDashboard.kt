@@ -9,6 +9,9 @@ import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material.icons.rounded.Token
+import androidx.compose.material.icons.rounded.SystemSecurityUpdateGood
+import androidx.compose.material.icons.rounded.VerifiedUser
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -117,6 +120,37 @@ fun TokenXDashboard(
             }
 
             Text(
+                "Provisioning Vault",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                "D2-protected privileged payload inspector",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StatusLine(Icons.Rounded.VerifiedUser, "Serv", "UID 1000", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.SystemSecurityUpdateGood, "FOTA", "UID 1000", Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StatusLine(Icons.Rounded.Lock, "D2 Gate", "Dual gate", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.Security, "A17 Fix", "Audit", Modifier.weight(1f))
+            }
+            Text(
+                "The audit is read-only: it checks Serv, FOTA, shared-system identity, live FOTA SELinux state, and Receiver Flag Fix presence without launching FOTA or invoking update_engine.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Button(
+                onClick = { runProvision { SystemUidProvisioner.verifyProvisionedPayloads() } },
+                enabled = rootAvailable && !provisioning,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (provisioning) "Scanning Vault…" else "Scan Provisioning Vault")
+            }
+
+            Text(
                 "System Server Bridge",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
@@ -137,7 +171,7 @@ fun TokenXDashboard(
             }
             if (!rootAvailable) {
                 Text(
-                    "Root is required for System UID provisioning.",
+                    "Root is required for provisioning and vault verification.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
