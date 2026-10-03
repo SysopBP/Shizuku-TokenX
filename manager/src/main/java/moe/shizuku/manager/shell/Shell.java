@@ -17,6 +17,28 @@ import rikka.shizuku.ShizukuApiConstants;
 public class Shell extends Rish {
 
     private static final int SYSTEM_UID = 1000;
+    private static final String TOKENX_SYSTEM_PACKAGE = "com.vikram.exp";
+
+    private static List<String> systemUidWorkerCommand(String[] args) {
+        final List<String> command = new ArrayList<>();
+        command.add("su");
+        command.add("1000");
+
+        /*
+         * Keep the proven build-173 UID-1000 worker unchanged for normal commands.
+         * Android 17 SettingsProvider additionally validates package attribution on
+         * mutations. Export the TokenX system package identity only for the settings
+         * CLI so other Binder/service routes retain build-173 behavior.
+         */
+        if (args.length > 0 && "settings".equals(args[0])) {
+            command.add("env");
+            command.add("TOKENX_CALLING_PACKAGE=" + TOKENX_SYSTEM_PACKAGE);
+            System.err.println("TokenX: SettingsProvider UID-1000 attribution=" + TOKENX_SYSTEM_PACKAGE);
+        }
+
+        command.addAll(Arrays.asList(args));
+        return command;
+    }
 
     private static boolean canLaunchSystemUidWorker() {
         try {
@@ -35,18 +57,18 @@ public class Shell extends Rish {
 
     private static void runSystemUidWorkerOrRootFallback(String[] args) {
         final boolean systemWorkerReady = canLaunchSystemUidWorker();
-        final List<String> command = new ArrayList<>();
-        command.add("su");
+        final List<String> command;
 
         System.err.println("TokenX: DIRECT BINDER connected to System Server backend (UID 1000).");
         if (systemWorkerReady) {
-            command.add("1000");
+            command = systemUidWorkerCommand(args);
             System.err.println("TokenX: launching isolated UID-1000 shell worker outside system_server.");
         } else {
+            command = new ArrayList<>();
+            command.add("su");
+            command.addAll(Arrays.asList(args));
             System.err.println("TokenX: UID-1000 worker preflight failed; using KernelSU ROOT fallback.");
         }
-
-        command.addAll(Arrays.asList(args));
         System.err.flush();
 
         try {
