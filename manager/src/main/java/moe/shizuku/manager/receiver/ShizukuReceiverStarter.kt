@@ -9,6 +9,10 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.topjohnwu.superuser.Shell
@@ -33,6 +37,8 @@ import moe.shizuku.manager.tokenx.TokenXBootOwner
 import moe.shizuku.manager.tokenx.TokenXBootSession
 
 object ShizukuReceiverStarter {
+
+    private val startScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     const val NOTIFICATION_ID = 1447
     private const val CHANNEL_ID = "AdbStartWorker"
@@ -103,7 +109,11 @@ object ShizukuReceiverStarter {
         ShizukuSettings.setRunningStartMethod(method)
 
         when (method) {
-            ShizukuSettings.StartMethod.ROOT -> rootStart(context)
+            // libsu shell acquisition and the starter command can block while KernelSU
+            // grants/refreshes root. Never perform either from a Compose click/receiver thread.
+            ShizukuSettings.StartMethod.ROOT -> startScope.launch {
+                rootStart(context.applicationContext)
+            }
             ShizukuSettings.StartMethod.SYSTEM -> systemStart(context)
             else -> adbStart(context, userInitiated, method)
         }
