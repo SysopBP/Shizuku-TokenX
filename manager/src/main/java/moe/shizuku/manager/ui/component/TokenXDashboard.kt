@@ -74,6 +74,7 @@ fun TokenXDashboard(
     var dialogMode by remember { mutableStateOf("vault") }
     var showTechnicalConsole by remember { mutableStateOf(false) }
     var showVaultDetails by remember { mutableStateOf(false) }
+    var showBridgeDetails by remember { mutableStateOf(false) }
     var liveStage by remember { mutableStateOf<SystemUidProvisioner.Progress?>(null) }
 
     LaunchedEffect(provisioning) {
@@ -371,7 +372,7 @@ fun TokenXDashboard(
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "Serv.apk provides the current TokenX System Server Bridge for com.vikram.exp (UID 1000). Interactive rish remains isolated through the Android 17 root fallback.",
+                "TokenX uses Serv.apk (UID 1000) for supported system-level operations.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -390,6 +391,20 @@ fun TokenXDashboard(
                         Text("Verify System Bridge", style = MaterialTheme.typography.labelLarge)
                     }
                 }
+            TextButton(
+                onClick = { showBridgeDetails = !showBridgeDetails },
+                modifier = Modifier.align(Alignment.Start)
+            ) {
+                Icon(Icons.Rounded.Info, contentDescription = null, Modifier.size(16.dp))
+                Text(if (showBridgeDetails) " Hide details" else " Details")
+            }
+            if (showBridgeDetails) {
+                Text(
+                    "Serv.apk remains UID 1000 and provides the TokenX System Server Bridge for supported framework operations. Interactive rish sessions remain isolated from system_server for stability and safety. Use Verify System Bridge to confirm the live bridge before relying on system-level operations.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             if (!rootAvailable) {
                 Text(
                     "Root is required for provisioning and vault verification.",
