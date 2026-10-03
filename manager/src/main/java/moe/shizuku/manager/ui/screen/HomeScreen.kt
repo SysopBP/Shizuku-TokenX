@@ -203,14 +203,23 @@ fun HomeScreen(bottomPadding: Dp) {
         // Root can be gone since the method was chosen; the card would otherwise keep
         // promising a start the device can no longer run.
         startMethod = StartMethodGuard.resolve()
-        // A start that is already running has nothing left to report; without this a
-        // "starting" state from a path that finishes elsewhere would stick.
-        if (running) StartStatusReporter.clear()
-
         withContext(Dispatchers.IO) {
             // Reset rather than keep: the card must not show the uid of a server that is
             // gone.
             uid = if (running) runCatching { Shizuku.getUid() }.getOrDefault(-1) else -1
+            if (running && startStatus is StartStatus.Starting) {
+                val expectedUid = when (StartStatusReporter.targetMethod) {
+                    ShizukuSettings.StartMethod.ROOT -> 0
+                    ShizukuSettings.StartMethod.SYSTEM -> 1000
+                    ShizukuSettings.StartMethod.WIRELESS,
+                    ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK,
+                    ShizukuSettings.StartMethod.USB -> 2000
+                    else -> -1
+                }
+                if (uid == expectedUid) {
+                    StartStatusReporter.succeeded()
+                }
+            }
             // Shell.getShell() can block and triggers the root request.
             rooted = runCatching { EnvironmentUtils.isRooted() }.getOrDefault(false)
             val (selinux, seccomp) = readDeviceStatus()
@@ -264,6 +273,31 @@ fun HomeScreen(bottomPadding: Dp) {
         if (updateAvailable) {
             runCatching { UpdateHelper.updateLastPromptedVersion() }
         }    }
+
+    if (startStatus is StartStatus.Starting) {
+        val targetLabel = StartStatusReporter.targetMethod?.let { context.getString(startMethodLabelRes(it)) } ?: "backend"
+        val targetUid = when (StartStatusReporter.targetMethod) {
+            ShizukuSettings.StartMethod.ROOT -> 0
+            ShizukuSettings.StartMethod.SYSTEM -> 1000
+            else -> 2000
+        }
+        AlertDialog(
+            onDismissRequest = {},
+            confirmButton = {},
+            title = { Text("Switching privilege engine") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    LoadingIndicator()
+                    Text("Connecting to $targetLabel")
+                    Text(
+                        "UID ${StartStatusReporter.sourceUid.takeIf { it >= 0 } ?: "—"}  →  UID $targetUid",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text("Waiting for the new Binder to become active…", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
