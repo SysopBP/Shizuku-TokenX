@@ -110,6 +110,48 @@ object ShizukuReceiverStarter {
     }
 
     /**
+     * Switch the live TokenX/Shizuku runtime to another backend.
+     *
+     * UID 1000 is hosted by system_server and must never be killed. A switch away from
+     * System therefore starts the requested backend as a replacement and accepts the
+     * handoff only after the published Binder reports the requested UID.
+     */
+    fun switchMode(
+        context: Context,
+        @ShizukuSettings.StartMethod targetMethod: Int,
+        userInitiated: Boolean = true,
+    ) {
+        ShizukuSettings.setStartMethod(targetMethod)
+        val targetUid = when (targetMethod) {
+            ShizukuSettings.StartMethod.ROOT -> 0
+            ShizukuSettings.StartMethod.SYSTEM -> 1000
+            else -> 2000
+        }
+        val liveUid = if (rikka.shizuku.Shizuku.pingBinder()) {
+            runCatching { rikka.shizuku.Shizuku.getUid() }.getOrDefault(-1)
+        } else -1
+
+        if (liveUid == targetUid) {
+            ShizukuSettings.setRunningStartMethod(targetMethod)
+            Log.i(AppConstants.TAG, "TokenX mode switch already satisfied: UID $targetUid")
+            return
+        }
+
+        Log.i(AppConstants.TAG, "TOKENX_MODE_SWITCH: UID $liveUid -> UID $targetUid method=$targetMethod")
+
+        // Never call Shizuku.exit() against UID 1000: that Binder is hosted by
+        // system_server. Root/ADB starters publish the replacement Binder themselves.
+        if (liveUid != 1000 && liveUid >= 0) {
+            ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
+            runCatching { rikka.shizuku.Shizuku.exit() }
+        }
+
+        // forceStart bypasses the stale RUNNING observation while the old Binder is
+        // being replaced. The actual running method is corrected by Binder confirmation.
+        start(context, forceStart = true, userInitiated = userInitiated, startMethod = targetMethod)
+    }
+
+    /**
      * The system start runs the built-in exploit (or an external command) through
      * [StarterActivity], which needs the app in the foreground a background start
      * such as boot or the watchdog cannot drive it.
