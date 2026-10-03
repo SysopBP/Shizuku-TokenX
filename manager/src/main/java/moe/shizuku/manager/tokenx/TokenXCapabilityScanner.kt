@@ -8,6 +8,10 @@ import com.topjohnwu.superuser.Shell
 data class TokenXCapabilityProbe(
     val writeSecureSettings: Boolean,
     val writeSettings: Boolean,
+    /** Effective Settings.Secure write proved by a reversible runtime round-trip. */
+    val secureSettingsRuntimeVerified: Boolean,
+    /** Route that satisfied the effective secure-settings probe. */
+    val secureSettingsRoute: String?,
     val dumpViaRoot: Boolean,
     val packageManagerViaRoot: Boolean,
     val systemPropertiesViaRoot: Boolean,
@@ -32,9 +36,34 @@ object TokenXCapabilityScanner {
                 .out.firstOrNull()?.trim()?.takeIf { it.isNotEmpty() }
         }.getOrNull()
 
+        val directWriteSecureSettings = granted(android.Manifest.permission.WRITE_SECURE_SETTINGS)
+        val writeSettings = Settings.System.canWrite(context)
+
+        // Keep the direct PackageManager grant separate from effective capability.
+        // When no direct grant is present, prove the privileged route with a reversible
+        // Settings.Secure write/delete instead of inferring capability from UID/root alone.
+        val secureProbeKey = "tokenx_capability_probe"
+        val secureProbeValue = "tokenx"
+        val secureSettingsViaRoot = if (!directWriteSecureSettings) runCatching {
+            val result = Shell.cmd(
+                "settings put secure $secureProbeKey $secureProbeValue && " +
+                    "test \"$(settings get secure $secureProbeKey)\" = \"$secureProbeValue\"; " +
+                    "rc=$?; settings delete secure $secureProbeKey >/dev/null 2>&1; exit $rc"
+            ).exec()
+            result.isSuccess
+        }.getOrDefault(false) else false
+        val secureRuntimeVerified = directWriteSecureSettings || secureSettingsViaRoot
+        val secureRoute = when {
+            directWriteSecureSettings -> "Direct package grant"
+            secureSettingsViaRoot -> "Via Root"
+            else -> null
+        }
+
         return TokenXCapabilityProbe(
-            writeSecureSettings = granted(android.Manifest.permission.WRITE_SECURE_SETTINGS),
-            writeSettings = Settings.System.canWrite(context),
+            writeSecureSettings = directWriteSecureSettings,
+            writeSettings = writeSettings,
+            secureSettingsRuntimeVerified = secureRuntimeVerified,
+            secureSettingsRoute = secureRoute,
             dumpViaRoot = rootProbe("dumpsys activity activities >/dev/null"),
             packageManagerViaRoot = rootProbe("cmd package list packages >/dev/null"),
             systemPropertiesViaRoot = rootProbe("getprop ro.build.version.release >/dev/null"),
