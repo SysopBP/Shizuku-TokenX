@@ -41,6 +41,9 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Computer
 import androidx.compose.material.icons.rounded.Numbers
 import androidx.compose.material.icons.rounded.StopCircle
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.Usb
 import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material3.AlertDialog
@@ -1069,51 +1072,89 @@ private fun ServerActionButtons(
     onStop: () -> Unit,
     onRestart: () -> Unit
 ) {
+    val glass = LocalTokenXGlass.current
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Button(
-            modifier = Modifier.weight(1f),
+        GlassServerAction(
+            label = stringResource(R.string.action_start),
+            icon = Icons.Rounded.PlayArrow,
             enabled = !running && !starting,
+            emphasized = !running,
+            loading = starting,
+            modifier = Modifier.weight(1f),
             onClick = onStart
+        )
+        GlassServerAction(
+            label = stringResource(R.string.action_stop),
+            icon = Icons.Rounded.Stop,
+            enabled = running && !starting,
+            emphasized = running,
+            modifier = Modifier.weight(1f),
+            onClick = onStop
+        )
+        GlassServerAction(
+            label = stringResource(R.string.action_restart),
+            icon = Icons.Rounded.Refresh,
+            enabled = running && !starting,
+            emphasized = running,
+            modifier = Modifier.weight(1f),
+            onClick = onRestart
+        )
+    }
+}
+
+@Composable
+private fun GlassServerAction(
+    label: String,
+    icon: ImageVector,
+    enabled: Boolean,
+    emphasized: Boolean,
+    modifier: Modifier = Modifier,
+    loading: Boolean = false,
+    onClick: () -> Unit
+) {
+    val glass = LocalTokenXGlass.current
+    val accent = MaterialTheme.colorScheme.primary
+    val shape = RoundedCornerShape(18.dp)
+    val alpha = when {
+        !enabled && !loading -> .46f
+        glass.enabled -> 1f
+        else -> 1f
+    }
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .height(58.dp)
+            .alpha(alpha)
+            .border(
+                width = 1.dp,
+                color = if (emphasized && enabled) accent.copy(alpha = .34f)
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (glass.enabled) .72f else .55f),
+                shape = shape
+            ),
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
+            alpha = if (glass.enabled) glass.opacity.coerceIn(.28f, .82f) else .92f
+        ),
+        contentColor = if (emphasized && enabled) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+        tonalElevation = if (glass.enabled) 2.dp else 0.dp,
+        shadowElevation = if (glass.enabled) 3.dp else 0.dp
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            if (starting) {
-                // The morphing loader rather than a ring: it is the shape Material 3
-                // gives an action that is running, and it is legible at button size.
-                LoadingIndicator(
-                    modifier = Modifier.size(22.dp),
-                    // The button is disabled while starting, so pick a colour that
-                    // still reads against the disabled container.
-                    color = MaterialTheme.colorScheme.primary
-                )
+            if (loading) {
+                LoadingIndicator(modifier = Modifier.size(20.dp), color = accent)
             } else {
-                Text(stringResource(R.string.action_start))
+                Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
             }
-        }
-
-        Button(
-            modifier = Modifier.weight(1f),
-            enabled = running,
-            onClick = onStop,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                contentColor = MaterialTheme.colorScheme.onSurface
-            )
-        ) {
-            Text(stringResource(R.string.action_stop))
-        }
-
-        Button(
-            modifier = Modifier.weight(1f),
-            enabled = running,
-            onClick = onRestart,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                contentColor = MaterialTheme.colorScheme.onSurface
-            )
-        ) {
-            Text(stringResource(R.string.action_restart))
+            Spacer(Modifier.width(7.dp))
+            Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
         }
     }
 }
