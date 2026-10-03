@@ -161,7 +161,7 @@ fun TokenXDashboard(
                         VaultChainRow("D2 Gate", stageLabel(SystemUidProvisioner.Stage.D2_GATE, liveStage, provisioning, "OPEN"), modeColor)
                         VaultChainRow("Serv", stageLabel(SystemUidProvisioner.Stage.SERV_UID, liveStage, provisioning, "UID 1000"), modeColor)
                         VaultChainRow("FOTA", stageLabel(SystemUidProvisioner.Stage.FOTA_UID, liveStage, provisioning, "UID 1000"), modeColor)
-                        VaultChainRow("A17 Compatibility", stageLabel(SystemUidProvisioner.Stage.RX_COMPAT, liveStage, provisioning, "AUDITED"), modeColor)
+                        VaultChainRow("Receiver Compatibility", stageLabel(SystemUidProvisioner.Stage.RX_COMPAT, liveStage, provisioning, "INTEGRATED"), modeColor)
                         if (dialogMode == "bridge") VaultChainRow("System Bridge", if (provisioning) "HANDSHAKE" else "VERIFIED", modeColor)
                     }
                     HorizontalDivider()
@@ -265,10 +265,10 @@ fun TokenXDashboard(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatusLine(Icons.Rounded.Lock, "D2 Gate", "Dual gate", Modifier.weight(1f))
-                StatusLine(Icons.Rounded.Security, "A17 Fix", "Audit", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.Security, "Receiver Compatibility", "Xposed", Modifier.weight(1f))
             }
             Text(
-                "The audit is read-only: it checks Serv, FOTA, shared-system identity, live FOTA SELinux state, and Receiver Flag Fix presence without launching FOTA or invoking update_engine.",
+                "The audit is read-only: it checks Serv, FOTA, shared-system identity, live FOTA SELinux state, and TokenX Receiver Compatibility integration without launching FOTA or invoking update_engine.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
