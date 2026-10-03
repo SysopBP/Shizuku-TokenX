@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.ui.component.TokenXGlassCard
+import moe.shizuku.manager.ui.component.TokenXGlassSlider
+import moe.shizuku.manager.ui.component.TokenXGlassButton
 import moe.shizuku.manager.ui.theme.BackgroundMode
 import moe.shizuku.manager.ui.theme.TokenXAppearanceKeys
 import moe.shizuku.manager.ui.theme.TokenXAccent
@@ -395,7 +397,7 @@ fun AppearanceStudioScreen() {
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Button(shape = RoundedCornerShape(10.dp), onClick = {
+                    TokenXGlassButton(shape = RoundedCornerShape(10.dp), onClick = {
                         runCatching { AndroidColor.parseColor(customAccent) }.onSuccess { parsed ->
                             prefs.edit()
                                 .putLong(TokenXAppearanceKeys.ACCENT_COLOR, parsed.toLong() and 0xFFFFFFFFL)
@@ -430,7 +432,7 @@ fun AppearanceStudioScreen() {
                 label = { Text("Background color (#AARRGGBB)") },
                 singleLine = true
             )
-            Button(shape = RoundedCornerShape(10.dp), onClick = {
+            TokenXGlassButton(shape = RoundedCornerShape(10.dp), onClick = {
                 runCatching { AndroidColor.parseColor(colorHex) }.onSuccess { parsed ->
                     prefs.edit().putLong(TokenXAppearanceKeys.BACKGROUND_COLOR, parsed.toLong() and 0xFFFFFFFFL).apply()
                     refresh()
@@ -438,7 +440,7 @@ fun AppearanceStudioScreen() {
             }) { Text("Apply color") }
         }
         if (mode == BackgroundMode.CUSTOM_IMAGE) {
-            Button(shape = RoundedCornerShape(10.dp), onClick = { imagePicker.launch(arrayOf("image/*")) }) { Text("Choose background image") }
+            TokenXGlassButton(shape = RoundedCornerShape(10.dp), onClick = { imagePicker.launch(arrayOf("image/*")) }) { Text("Choose background image") }
         }
         StudioSlider("Background dim", dim, 0f..0.8f) { dim = it; putFloat(TokenXAppearanceKeys.BACKGROUND_DIM, it) }
 
@@ -539,48 +541,9 @@ private fun TonalAccentSwatch(
 
 @Composable
 private fun StudioSlider(title: String, value: Float, range: ClosedFloatingPointRange<Float>, suffix: String = "", onChange: (Float) -> Unit) {
-    val view = LocalView.current
-    var lastDetent by remember(title, range.start, range.endInclusive) { mutableIntStateOf(-1) }
-    val span = (range.endInclusive - range.start).coerceAtLeast(0.0001f)
-    val fraction = ((value - range.start) / span).coerceIn(0f, 1f)
-    val detent = (fraction * 20f).toInt()
-
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(title + "  " + "%.2f".format(value) + suffix, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = .46f),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
-        ) {
-            Slider(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                value = value,
-                onValueChange = { next ->
-                    val nextFraction = ((next - range.start) / span).coerceIn(0f, 1f)
-                    val nextDetent = (nextFraction * 20f).toInt()
-                    if (nextDetent != lastDetent) {
-                        ViewCompat.performHapticFeedback(
-                            view,
-                            if (nextDetent == 0 || nextDetent == 20) HapticFeedbackConstantsCompat.CONFIRM
-                            else HapticFeedbackConstantsCompat.CLOCK_TICK
-                        )
-                        lastDetent = nextDetent
-                    }
-                    onChange(next)
-                },
-                onValueChangeFinished = {
-                    ViewCompat.performHapticFeedback(view, HapticFeedbackConstantsCompat.CONFIRM)
-                },
-                valueRange = range,
-                colors = SliderDefaults.colors(
-                    activeTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = .78f),
-                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .42f),
-                    thumbColor = MaterialTheme.colorScheme.primaryContainer,
-                    activeTickColor = Color.Transparent,
-                    inactiveTickColor = Color.Transparent
-                )
-            )
-        }
+        TokenXGlassSlider(value = value, onValueChange = onChange, valueRange = range, modifier = Modifier.fillMaxWidth())
     }
 }
 
