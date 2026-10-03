@@ -18,7 +18,6 @@ import androidx.compose.material.icons.rounded.Token
 import androidx.compose.material.icons.rounded.SystemSecurityUpdateGood
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Surface
@@ -269,7 +268,7 @@ fun TokenXDashboard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Button(
+            TokenXGlassButton(
                 onClick = { runProvision("Provisioning Vault • Live") {
                     SystemUidProvisioner.verifyProvisionedPayloads { progress ->
                         liveStage = progress
@@ -293,7 +292,7 @@ fun TokenXDashboard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
+                TokenXGlassButton(
                     onClick = { runProvision("System Bridge Verify • Live") { SystemUidProvisioner.verify() } },
                     enabled = rootAvailable && !provisioning,
                     modifier = Modifier.weight(1f)
