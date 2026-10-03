@@ -12,6 +12,9 @@ data class TokenXCapabilityProbe(
     val packageManagerViaRoot: Boolean,
     val systemPropertiesViaRoot: Boolean,
     val rootSelinuxContext: String?,
+    val rootUid: String?,
+    val shellUid: Int,
+    val systemServerCapabilityMask: Int = 0,
 )
 
 object TokenXCapabilityScanner {
@@ -36,6 +39,8 @@ object TokenXCapabilityScanner {
             packageManagerViaRoot = rootProbe("cmd package list packages >/dev/null"),
             systemPropertiesViaRoot = rootProbe("getprop ro.build.version.release >/dev/null"),
             rootSelinuxContext = rootContext,
+            rootUid = runCatching { Shell.cmd("id").exec().out.firstOrNull() }.getOrNull(),
+            shellUid = if (rikka.shizuku.Shizuku.pingBinder()) runCatching { rikka.shizuku.Shizuku.getUid() }.getOrDefault(-1) else -1,
         )
     }
 }
