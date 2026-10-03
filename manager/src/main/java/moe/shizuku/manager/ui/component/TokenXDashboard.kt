@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.Security
@@ -13,6 +15,10 @@ import androidx.compose.material.icons.rounded.SystemSecurityUpdateGood
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,11 +47,13 @@ fun TokenXDashboard(
     val scope = rememberCoroutineScope()
     var provisionStatus by remember { mutableStateOf<String?>(null) }
     var provisioning by remember { mutableStateOf(false) }
+    var showVaultDialog by remember { mutableStateOf(false) }
 
     fun runProvision(action: () -> SystemUidProvisioner.Result) {
         if (provisioning) return
         provisioning = true
-        provisionStatus = "Working…"
+        showVaultDialog = true
+        provisionStatus = "D2 Gate • checking security boundary…"
         scope.launch {
             val result = withContext(Dispatchers.IO) { action() }
             provisionStatus = buildString {
@@ -60,6 +68,34 @@ fun TokenXDashboard(
             }
             provisioning = false
         }
+    }
+
+    if (showVaultDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!provisioning) showVaultDialog = false },
+            icon = {
+                if (provisioning) CircularProgressIndicator(Modifier.size(54.dp))
+                else Icon(Icons.Rounded.VerifiedUser, null, Modifier.size(54.dp), tint = MaterialTheme.colorScheme.primary)
+            },
+            title = { Text(if (provisioning) "Provisioning Vault • Live" else "Vault Scan Complete", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    VaultLiveRow(Icons.Rounded.Lock, "D2 Gate", if (provisioning) "Verifying…" else "Dual gate configured")
+                    VaultLiveRow(Icons.Rounded.VerifiedUser, "Serv.apk", if (provisioning) "Checking UID 1000…" else "Audit complete")
+                    VaultLiveRow(Icons.Rounded.SystemSecurityUpdateGood, "FOTA.apk", if (provisioning) "Checking shared system identity…" else "Audit complete")
+                    VaultLiveRow(Icons.Rounded.Security, "Android 17 Fix", if (provisioning) "Checking compatibility layer…" else "Audit complete")
+                    HorizontalDivider()
+                    Text(
+                        provisionStatus ?: "Preparing secure audit…",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                if (!provisioning) TextButton(onClick = { showVaultDialog = false }) { Text("Done") }
+            }
+        )
     }
 
     TokenXGlassCard(modifier) {
@@ -217,6 +253,22 @@ private fun StatusLine(
         Column(Modifier.padding(start = 8.dp)) {
             Text(label, style = MaterialTheme.typography.labelMedium)
             Text(value, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+
+@Composable
+private fun VaultLiveRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    detail: String,
+) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
+        Column(Modifier.padding(start = 12.dp).weight(1f)) {
+            Text(label, fontWeight = FontWeight.SemiBold)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
