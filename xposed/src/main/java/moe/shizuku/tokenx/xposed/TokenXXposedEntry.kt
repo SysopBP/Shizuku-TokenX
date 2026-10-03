@@ -49,7 +49,7 @@ class TokenXXposedEntry : XposedModule() {
                             // receiver flags globally.
                             args[flagsIndex] = oldFlags or Context.RECEIVER_EXPORTED
                             log(Log.INFO, TAG, "FOTA_RX_SHIM_APPLIED: flags=$oldFlags -> ${args[flagsIndex]}")
-                            chain.proceed(*args)
+                            chain.proceed(args)
                         } else {
                             chain.proceed()
                         }
