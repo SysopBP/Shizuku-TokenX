@@ -73,7 +73,7 @@ object TokenXRuntime {
             else -> null
         }
 
-        val selectedBackend = preferredBackend ?: state.activeBackend
+        val selectedBackend = TokenXRouteState.selected(preferredBackend ?: state.activeBackend)
         val registry = TokenXBackendRegistryBuilder.build(
             selected = selectedBackend,
             rootReady = state.rootAvailable,
