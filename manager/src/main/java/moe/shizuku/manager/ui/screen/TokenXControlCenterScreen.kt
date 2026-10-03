@@ -104,7 +104,16 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     BackendRow(Icons.Outlined.AdminPanelSettings, "Root", "UID 0", if (runtime.backendState.rootAvailable) if (uid == 0) "ACTIVE • current server" else "READY" else "Unavailable")
-                    BackendRow(Icons.Outlined.Security, "Sserver / Serv.apk", "UID 1000", if (runtime.backendState.systemServerBridgeAvailable) "READY • live Binder verified UID 1000" else "Waiting for UID 1000 Shizuku Binder")
+                    BackendRow(
+                        Icons.Outlined.Security,
+                        "Sserver / Serv.apk",
+                        "UID 1000",
+                        when {
+                            runtime.systemServerBridgeActive -> "ACTIVE • live system_server transaction verified"
+                            runtime.systemServerBridgeAttached -> "ATTACHED • system_server association verified; awaiting live transaction"
+                            else -> "AVAILABLE check pending • no verified system_server attachment"
+                        }
+                    )
                     BackendRow(Icons.Outlined.Terminal, "Shell", "UID 2000", if (runtime.backendState.shellAvailable) "ACTIVE • compatibility fallback" else "Standby")
                     BackendRow(Icons.Outlined.Extension, "Xposed / LSPosed", "system_server bridge", when { runtime.xposedBridgeActive -> "ACTIVE • handshake verified"; runtime.xposedFrameworkDetected -> "Framework detected • bridge waiting"; else -> "Not detected" })
                 }
@@ -166,7 +175,15 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     FeatureRow(Icons.Outlined.Api, "Capability discovery", "LIVE • runtime backend state feeds the router")
                     FeatureRow(Icons.Outlined.Route, "Per-capability routing", "LIVE • Root first, System Server for framework work, Shell fallback")
                     FeatureRow(Icons.Outlined.Code, "Root execution", if (runtime.backendState.rootAvailable) "READY • UID 0 backend available" else "Unavailable")
-                    FeatureRow(Icons.Outlined.AdminPanelSettings, "UID 1000 operations", "Sserver • Serv.apk compatibility path")
+                    FeatureRow(
+                        Icons.Outlined.AdminPanelSettings,
+                        "UID 1000 operations",
+                        when {
+                            runtime.systemServerBridgeActive -> "ACTIVE • execution handshake verified in system_server"
+                            runtime.systemServerBridgeAttached -> "ATTACHED • Serv.apk is UID 1000 in system_server; execution not yet verified"
+                            else -> "Not attached • Serv.apk compatibility path unavailable"
+                        }
+                    )
                     FeatureRow(Icons.Outlined.Link, "Shizuku compatibility", "Preserved • existing Binder model stays intact")
                 }
             }
