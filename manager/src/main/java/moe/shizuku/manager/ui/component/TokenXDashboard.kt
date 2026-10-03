@@ -223,8 +223,8 @@ fun TokenXDashboard(
 
     TokenXGlassCard(modifier) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.Token, contentDescription = null)
@@ -290,7 +290,7 @@ fun TokenXDashboard(
                 TokenXGlassButton(
                     onClick = { runRootAction("Soft Reboot • Live", "setprop ctl.restart zygote") },
                     enabled = rootAvailable && !provisioning,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).heightIn(min = 44.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(Icons.Rounded.RestartAlt, contentDescription = null, Modifier.size(18.dp))
@@ -300,7 +300,7 @@ fun TokenXDashboard(
                 TokenXGlassButton(
                     onClick = { runRootAction("System UI Restart • Live", "pkill -TERM -f com.android.systemui") },
                     enabled = rootAvailable && !provisioning,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).heightIn(min = 44.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(Icons.Rounded.Refresh, contentDescription = null, Modifier.size(18.dp))
@@ -351,12 +351,12 @@ fun TokenXDashboard(
                 } },
                 enabled = rootAvailable && !provisioning,
                 modifier = Modifier
-                    .fillMaxWidth(.82f)
-                    .align(Alignment.CenterHorizontally)
+                    .fillMaxWidth()
+                    .heightIn(min = 44.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Icon(Icons.Rounded.Search, contentDescription = null, Modifier.size(18.dp))
                     Text(if (provisioning) "Scanning Vault…" else "Scan Provisioning Vault", style = MaterialTheme.typography.labelLarge)
@@ -374,23 +374,21 @@ fun TokenXDashboard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TokenXGlassButton(
+            TokenXGlassButton(
                     onClick = { runProvision("System Bridge Verify • Live") { SystemUidProvisioner.verify() } },
                     enabled = rootAvailable && !provisioning,
                     modifier = Modifier
-                        .fillMaxWidth(.82f)
-                        .align(Alignment.CenterVertically)
+                        .fillMaxWidth()
+                        .heightIn(min = 44.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Icon(Icons.Rounded.VerifiedUser, contentDescription = null, Modifier.size(18.dp))
                         Text("Verify System Bridge", style = MaterialTheme.typography.labelLarge)
                     }
                 }
-            }
             if (!rootAvailable) {
                 Text(
                     "Root is required for provisioning and vault verification.",
