@@ -19,6 +19,8 @@ import moe.shizuku.manager.tokenx.TokenXBootState
 import moe.shizuku.manager.tokenx.TokenXRuntime
 import moe.shizuku.manager.tokenx.TokenXRuntimeState
 import moe.shizuku.manager.tokenx.TokenXCapability
+import moe.shizuku.manager.tokenx.TokenXBackend
+import moe.shizuku.manager.tokenx.TokenXRouteState
 import kotlinx.coroutines.delay
 import androidx.compose.ui.platform.LocalContext
 import moe.shizuku.manager.utils.ShizukuStateMachine
@@ -119,6 +121,43 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                 }
             }
 
+            SectionTitle("Backend Registry")
+            TokenXGlassCard {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Selected route: ${runtime.backendRegistry.selected.name.replace('_', ' ')}", fontWeight = FontWeight.SemiBold)
+                    runtime.backendRegistry.backends.values.forEach { entry ->
+                        Surface(
+                            onClick = {
+                                if (entry.ready) TokenXRouteState.select(entry.backend, "Selected from Privilege Inspector")
+                            },
+                            enabled = entry.ready,
+                            shape = MaterialTheme.shapes.medium,
+                            color = if (runtime.backendRegistry.selected == entry.backend) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .45f) else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .35f)
+                        ) {
+                            Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(entry.backend.name.replace('_', ' '), fontWeight = FontWeight.Medium)
+                                    Text("UID ${entry.uid} • ${entry.detail}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Text(if (entry.verified) "VERIFIED" else if (entry.ready) "READY" else "OFFLINE", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+                }
+            }
+
+            SectionTitle("Privilege Inspector")
+            TokenXGlassCard {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val selected = runtime.backendRegistry.entry(runtime.backendRegistry.selected)
+                    FeatureRow(Icons.Outlined.Route, "Selected backend", runtime.backendRegistry.selected.name.replace('_', ' '))
+                    FeatureRow(Icons.Outlined.Badge, "Identity", selected?.let { "UID ${it.uid} • ${if (it.verified) "verified" else "discovered"}" } ?: "Unavailable")
+                    FeatureRow(Icons.Outlined.Link, "System Server Binder", if (runtime.systemServerBridgeActive) "VERIFIED • capability mask 0x${runtime.systemServerCapabilities.toString(16)}" else "Not active")
+                    FeatureRow(Icons.Outlined.Security, "Serv / System UID", if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID)) "READY • UID 1000" else "Unavailable")
+                    FeatureRow(Icons.Outlined.Terminal, "Root", if (runtime.backendRegistry.isReady(TokenXBackend.ROOT)) "READY • UID 0" else "Unavailable")
+                }
+            }
+
             SectionTitle("Execution Router")
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -185,6 +224,17 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                         }
                     )
                     FeatureRow(Icons.Outlined.Link, "Shizuku compatibility", "Preserved • existing Binder model stays intact")
+                }
+            }
+
+            SectionTitle("Connection History")
+            TokenXGlassCard {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val events = TokenXRouteState.history()
+                    if (events.isEmpty()) Text("No route changes recorded this session.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    events.take(10).forEach { event ->
+                        Text("${event.from.name} → ${event.to.name} • ${event.message}", style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
 
