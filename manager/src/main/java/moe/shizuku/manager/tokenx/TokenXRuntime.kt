@@ -39,11 +39,15 @@ object TokenXRuntime {
         // backend only after the Binder service in system_server answers our ping.
         val bridgeActive = pingSystemServerBridge()
         val servUid1000 = isServUid1000()
+        // Sserver is READY only when the live Shizuku Binder itself belongs to UID 1000.
+        // Serv.apk being UID 1000 means the environment is provisioned, not that the
+        // UID-1000 Shizuku server has actually published a usable Binder.
+        val sserverBinderReady = running && uid == 1000 && servUid1000
         val state = TokenXBackendState(
             serverRunning = running,
             serverUid = uid,
             rootAvailable = root || uid == 0,
-            systemServerBridgeAvailable = servUid1000 || uid == 1000,
+            systemServerBridgeAvailable = sserverBinderReady,
             shellAvailable = uid == 2000,
         )
 
