@@ -17,6 +17,7 @@ import moe.shizuku.manager.ui.component.TokenXGlassCard
 import moe.shizuku.manager.ui.theme.BackgroundMode
 import moe.shizuku.manager.ui.theme.TokenXAppearanceKeys
 import moe.shizuku.manager.ui.theme.TokenXAccent
+import moe.shizuku.manager.ui.theme.TokenXThemePreset
 import moe.shizuku.manager.ui.theme.FloatingBarStyle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,6 +29,13 @@ import moe.shizuku.manager.ui.theme.ThemeState
 fun AppearanceStudioScreen() {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = ShizukuSettings.getPreferences()
+    var themePreset by remember {
+        mutableStateOf(runCatching {
+            TokenXThemePreset.valueOf(
+                prefs.getString(TokenXAppearanceKeys.THEME_PRESET, TokenXThemePreset.TOKENX.name)!!
+            )
+        }.getOrDefault(TokenXThemePreset.TOKENX))
+    }
     var glass by remember { mutableStateOf(prefs.getBoolean(TokenXAppearanceKeys.GLASS_ENABLED, true)) }
     var opacity by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_OPACITY, .72f)) }
     var blur by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_BLUR, 22f)) }
@@ -62,6 +70,99 @@ fun AppearanceStudioScreen() {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text("Appearance Studio", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface)
         Text("Build your own TokenX look. Changes are saved as you make them.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        Text("Theme engine", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+        Text("Whole-app presets inspired by KernelSU's centralized light/dark theme model. Pick a base, then fine-tune anything below.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            TokenXThemePreset.entries.forEach { preset ->
+                FilterChip(
+                    selected = themePreset == preset,
+                    onClick = {
+                        themePreset = preset
+                        val editor = prefs.edit().putString(TokenXAppearanceKeys.THEME_PRESET, preset.name)
+                        when (preset) {
+                            TokenXThemePreset.SYSTEM -> {
+                                glass = true; opacity = .72f; blur = 22f; radius = 28f; border = .18f; dim = .18f
+                                mode = BackgroundMode.SYSTEM
+                                editor.putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, true)
+                                    .putBoolean(ShizukuSettings.Keys.KEY_BLACK_NIGHT_THEME, false)
+                            }
+                            TokenXThemePreset.TOKENX -> {
+                                glass = true; opacity = .72f; blur = 28f; radius = 28f; border = .18f; dim = .18f
+                                mode = BackgroundMode.AMOLED_GRADIENT
+                                editor.putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
+                                    .putBoolean(ShizukuSettings.Keys.KEY_BLACK_NIGHT_THEME, false)
+                                    .putLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.TOKEN_PURPLE.argb)
+                                    .putString(TokenXAppearanceKeys.ACCENT_PRESET, TokenXAccent.TOKEN_PURPLE.name)
+                            }
+                            TokenXThemePreset.AMOLED -> {
+                                glass = true; opacity = .58f; blur = 20f; radius = 28f; border = .12f; dim = .12f
+                                mode = BackgroundMode.AMOLED
+                                editor.putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
+                                    .putBoolean(ShizukuSettings.Keys.KEY_BLACK_NIGHT_THEME, true)
+                            }
+                            TokenXThemePreset.ONE_UI -> {
+                                glass = true; opacity = .64f; blur = 26f; radius = 26f; border = .10f; dim = .26f
+                                mode = BackgroundMode.AMOLED_GRADIENT
+                                editor.putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
+                                    .putBoolean(ShizukuSettings.Keys.KEY_BLACK_NIGHT_THEME, false)
+                                    .putLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.SAMSUNG_BLUE.argb)
+                                    .putString(TokenXAppearanceKeys.ACCENT_PRESET, TokenXAccent.SAMSUNG_BLUE.name)
+                            }
+                            TokenXThemePreset.CRYSTAL -> {
+                                glass = true; opacity = .34f; blur = 34f; radius = 32f; border = .22f; dim = .12f
+                                mode = BackgroundMode.AMOLED_GRADIENT
+                                editor.putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
+                                    .putBoolean(ShizukuSettings.Keys.KEY_BLACK_NIGHT_THEME, false)
+                                    .putLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.ICE.argb)
+                                    .putString(TokenXAppearanceKeys.ACCENT_PRESET, TokenXAccent.ICE.name)
+                            }
+                            TokenXThemePreset.SMOKE -> {
+                                glass = true; opacity = .52f; blur = 24f; radius = 34f; border = .28f; dim = .20f
+                                mode = BackgroundMode.AMOLED_GRADIENT
+                                editor.putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
+                                    .putBoolean(ShizukuSettings.Keys.KEY_BLACK_NIGHT_THEME, false)
+                                    .putLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.GRAPHITE.argb)
+                                    .putString(TokenXAppearanceKeys.ACCENT_PRESET, TokenXAccent.GRAPHITE.name)
+                            }
+                        }
+                        editor.putBoolean(TokenXAppearanceKeys.GLASS_ENABLED, glass)
+                            .putFloat(TokenXAppearanceKeys.GLASS_OPACITY, opacity)
+                            .putFloat(TokenXAppearanceKeys.GLASS_BLUR, blur)
+                            .putFloat(TokenXAppearanceKeys.GLASS_RADIUS, radius)
+                            .putFloat(TokenXAppearanceKeys.GLASS_BORDER, border)
+                            .putFloat(TokenXAppearanceKeys.BACKGROUND_DIM, dim)
+                            .putString(TokenXAppearanceKeys.BACKGROUND_MODE, mode.name)
+                            .apply()
+                        refresh()
+                    },
+                    label = { Text(preset.label) }
+                )
+            }
+        }
+
+        TextButton(onClick = {
+            themePreset = TokenXThemePreset.TOKENX
+            glass = true; opacity = .72f; blur = 22f; radius = 28f; border = .18f; dim = .18f
+            barOpacity = .82f; barStyle = FloatingBarStyle.FROSTED; mode = BackgroundMode.AMOLED_GRADIENT
+            prefs.edit()
+                .putString(TokenXAppearanceKeys.THEME_PRESET, TokenXThemePreset.TOKENX.name)
+                .putBoolean(TokenXAppearanceKeys.GLASS_ENABLED, glass)
+                .putFloat(TokenXAppearanceKeys.GLASS_OPACITY, opacity)
+                .putFloat(TokenXAppearanceKeys.GLASS_BLUR, blur)
+                .putFloat(TokenXAppearanceKeys.GLASS_RADIUS, radius)
+                .putFloat(TokenXAppearanceKeys.GLASS_BORDER, border)
+                .putFloat(TokenXAppearanceKeys.BACKGROUND_DIM, dim)
+                .putFloat(TokenXAppearanceKeys.FLOATING_BAR_OPACITY, barOpacity)
+                .putString(TokenXAppearanceKeys.FLOATING_BAR_STYLE, barStyle.name)
+                .putString(TokenXAppearanceKeys.BACKGROUND_MODE, mode.name)
+                .putLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.TOKEN_PURPLE.argb)
+                .putString(TokenXAppearanceKeys.ACCENT_PRESET, TokenXAccent.TOKEN_PURPLE.name)
+                .putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
+                .putBoolean(ShizukuSettings.Keys.KEY_BLACK_NIGHT_THEME, false)
+                .apply()
+            refresh()
+        }) { Text("Reset appearance defaults") }
 
         TokenXGlassCard {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
