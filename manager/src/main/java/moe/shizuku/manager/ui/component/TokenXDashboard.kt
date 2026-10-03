@@ -16,6 +16,8 @@ import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.Surface
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TextButton
@@ -48,10 +50,12 @@ fun TokenXDashboard(
     var provisionStatus by remember { mutableStateOf<String?>(null) }
     var provisioning by remember { mutableStateOf(false) }
     var showVaultDialog by remember { mutableStateOf(false) }
+    var dialogTitle by remember { mutableStateOf("Provisioning Vault • Live") }
 
-    fun runProvision(action: () -> SystemUidProvisioner.Result) {
+    fun runProvision(title: String = "Provisioning Vault • Live", action: () -> SystemUidProvisioner.Result) {
         if (provisioning) return
         provisioning = true
+        dialogTitle = title
         showVaultDialog = true
         provisionStatus = "D2 Gate • checking security boundary…"
         scope.launch {
@@ -71,15 +75,17 @@ fun TokenXDashboard(
     }
 
     if (showVaultDialog) {
-        AlertDialog(
-            onDismissRequest = { if (!provisioning) showVaultDialog = false },
-            icon = {
+        BasicAlertDialog(
+            onDismissRequest = { if (!provisioning) showVaultDialog = false }
+        ) {
+          TokenXGlassCard {
+           Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            
                 if (provisioning) CircularProgressIndicator(Modifier.size(54.dp))
                 else Icon(Icons.Rounded.VerifiedUser, null, Modifier.size(54.dp), tint = MaterialTheme.colorScheme.primary)
             },
-            title = { Text(if (provisioning) "Provisioning Vault • Live" else "Vault Scan Complete", fontWeight = FontWeight.Bold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(if (provisioning) dialogTitle else dialogTitle.replace(" • Live", " • Complete"), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     VaultLiveRow(Icons.Rounded.Lock, "D2 Gate", if (provisioning) "Verifying…" else "Dual gate configured")
                     VaultLiveRow(Icons.Rounded.VerifiedUser, "Serv.apk", if (provisioning) "Checking UID 1000…" else "Audit complete")
                     VaultLiveRow(Icons.Rounded.SystemSecurityUpdateGood, "FOTA.apk", if (provisioning) "Checking shared system identity…" else "Audit complete")
@@ -91,11 +97,10 @@ fun TokenXDashboard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            },
-            confirmButton = {
                 if (!provisioning) TextButton(onClick = { showVaultDialog = false }) { Text("Done") }
-            }
-        )
+           }
+          }
+        }
     }
 
     TokenXGlassCard(modifier) {
@@ -179,7 +184,7 @@ fun TokenXDashboard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Button(
-                onClick = { runProvision { SystemUidProvisioner.verifyProvisionedPayloads() } },
+                onClick = { runProvision("Provisioning Vault • Live") { SystemUidProvisioner.verifyProvisionedPayloads() } },
                 enabled = rootAvailable && !provisioning,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -198,11 +203,11 @@ fun TokenXDashboard(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
-                    onClick = { runProvision { SystemUidProvisioner.verify() } },
+                    onClick = { runProvision("System Bridge Verify • Live") { SystemUidProvisioner.verify() } },
                     enabled = rootAvailable && !provisioning,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Verify")
+                    Text("Verify System Bridge")
                 }
             }
             if (!rootAvailable) {
