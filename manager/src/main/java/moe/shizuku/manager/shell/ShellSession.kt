@@ -1,6 +1,9 @@
 package moe.shizuku.manager.shell
 
 import android.util.Log
+import android.os.IBinder
+import android.os.Parcel
+import android.os.ServiceManager
 import com.topjohnwu.superuser.CallbackList
 import com.topjohnwu.superuser.Shell
 import java.io.BufferedReader
@@ -13,6 +16,9 @@ import rikka.shizuku.Shizuku
 enum class ShellBackend {
     /** Through the Shizuku server: uid 2000 over adb, 0 for root, 1000 for the exploit. */
     SHIZUKU,
+
+    /** Through TokenX's dedicated system_server Binder endpoint, always UID 1000. */
+    SSERVER,
 
     /** Through `su`. Works with Shizuku stopped, and is the only way to reach uid 0 then. */
     ROOT
@@ -83,6 +89,7 @@ class ShellSession {
         val body = script(command)
         return when (backend) {
             ShellBackend.SHIZUKU -> runThroughShizuku(body, sink)
+            ShellBackend.SSERVER -> runThroughSystemServer(body, sink)
             ShellBackend.ROOT -> runThroughRoot(body, sink)
         }
     }
@@ -183,6 +190,40 @@ class ShellSession {
         }
     }
 
+    private fun runThroughSystemServer(script: String, sink: (ShellLine) -> Unit): Int {
+        return try {
+            val binder = ServiceManager.getService(TOKENX_SYSTEM_SERVER_SERVICE)
+            if (binder == null) {
+                sink(ShellLine("TokenX Sserver bridge is not active.", ShellLine.Kind.ERROR))
+                return -1
+            }
+            val data = Parcel.obtain()
+            val reply = Parcel.obtain()
+            try {
+                data.writeInterfaceToken(TOKENX_SYSTEM_SERVER_DESCRIPTOR)
+                data.writeString(script)
+                if (!binder.transact(IBinder.FIRST_CALL_TRANSACTION + 1, data, reply, 0)) {
+                    sink(ShellLine("TokenX Sserver command endpoint is unavailable.", ShellLine.Kind.ERROR))
+                    return -1
+                }
+                reply.readException()
+                val code = reply.readInt()
+                reply.readString().orEmpty().lineSequence().filter { it.isNotEmpty() }
+                    .forEach { sink(ShellLine(it, ShellLine.Kind.OUTPUT)) }
+                reply.readString().orEmpty().lineSequence().filter { it.isNotEmpty() }
+                    .forEach { sink(ShellLine(it, ShellLine.Kind.ERROR)) }
+                code
+            } finally {
+                data.recycle()
+                reply.recycle()
+            }
+        } catch (e: Throwable) {
+            Log.w(AppConstants.TAG, "Sserver shell failed", e)
+            sink(ShellLine(e.message ?: e.javaClass.simpleName, ShellLine.Kind.ERROR))
+            -1
+        }
+    }
+
     private fun runThroughRoot(script: String, sink: (ShellLine) -> Unit): Int {
         return try {
             val out = object : CallbackList<String>() {
@@ -222,6 +263,8 @@ class ShellSession {
     companion object {
         /** A directory that exists on every device and needs no permission to enter. */
         private const val DEFAULT_CWD = "/data/local/tmp"
+        private const val TOKENX_SYSTEM_SERVER_SERVICE = "tokenx_system_server"
+        private const val TOKENX_SYSTEM_SERVER_DESCRIPTOR = "moe.shizuku.tokenx.ISystemServerBridge"
 
         private val EXPORT = Regex("""^\s*export\s+([A-Za-z_][A-Za-z0-9_]*)=(.*)$""")
 
