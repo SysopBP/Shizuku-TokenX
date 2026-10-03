@@ -102,6 +102,8 @@ import moe.shizuku.manager.ui.screen.TokenXControlCenterScreen
 import moe.shizuku.manager.ui.screen.TokenXGuideScreen
 import moe.shizuku.manager.ui.theme.LocalAmoledTheme
 import moe.shizuku.manager.ui.theme.FloatingBarStyle
+import moe.shizuku.manager.ui.theme.FloatingBarShape
+import moe.shizuku.manager.ui.theme.FloatingBarSelection
 import moe.shizuku.manager.ui.theme.TokenXAppearanceKeys
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.ui.theme.ShizukuTheme
@@ -260,6 +262,17 @@ private fun MainTabs(
     val floatingBarOpacity = appearancePrefs
         .getFloat(TokenXAppearanceKeys.FLOATING_BAR_OPACITY, .82f)
         .coerceIn(.20f, 1f)
+    val floatingBarShape = runCatching {
+        FloatingBarShape.valueOf(appearancePrefs.getString(TokenXAppearanceKeys.FLOATING_BAR_SHAPE, FloatingBarShape.ONE_UI.name)!!)
+    }.getOrDefault(FloatingBarShape.ONE_UI)
+    val floatingBarSelection = runCatching {
+        FloatingBarSelection.valueOf(appearancePrefs.getString(TokenXAppearanceKeys.FLOATING_BAR_SELECTION, FloatingBarSelection.GLASS.name)!!)
+    }.getOrDefault(FloatingBarSelection.GLASS)
+    val floatingBarWidth = appearancePrefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_WIDTH, .86f).coerceIn(.62f, 1f)
+    val floatingBarHeight = appearancePrefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_HEIGHT, 64f).coerceIn(52f, 78f)
+    val floatingBarBottomGap = appearancePrefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_BOTTOM_GAP, 8f).coerceIn(0f, 28f)
+    val floatingBarBorder = appearancePrefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_BORDER, .18f).coerceIn(0f, .5f)
+    val floatingBarElevation = appearancePrefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_ELEVATION, 8f).coerceIn(0f, 18f)
 
     // Whether the app has settled enough to read the lists nobody is looking at yet. Both app
     // lists are expensive to read - six hundred packages each - and a pager composes the page
@@ -378,8 +391,18 @@ private fun MainTabs(
                     animationSpec = pillSpec,
                     label = "tabPillWidth"
                 )
-                val pillColor = MaterialTheme.colorScheme.secondaryContainer
-                val barShape = FloatingToolbarDefaults.ContainerShape
+                val pillColor = when (floatingBarSelection) {
+                    FloatingBarSelection.GLASS -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .72f)
+                    FloatingBarSelection.TILE -> MaterialTheme.colorScheme.secondaryContainer
+                    FloatingBarSelection.INDICATOR -> MaterialTheme.colorScheme.primary.copy(alpha = .30f)
+                    FloatingBarSelection.MINIMAL -> Color.Transparent
+                }
+                val barShape = when (floatingBarShape) {
+                    FloatingBarShape.ONE_UI -> androidx.compose.foundation.shape.RoundedCornerShape(18.dp)
+                    FloatingBarShape.SQUIRCLE -> androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
+                    FloatingBarShape.ROUNDED -> androidx.compose.foundation.shape.RoundedCornerShape(10.dp)
+                    FloatingBarShape.PILL -> CircleShape
+                }
                 val barSurface = when (floatingBarStyle) {
                     FloatingBarStyle.FLOATING -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = floatingBarOpacity)
                     FloatingBarStyle.FROSTED -> Color(0xFF101216).copy(alpha = floatingBarOpacity)
@@ -387,14 +410,17 @@ private fun MainTabs(
                     FloatingBarStyle.CLEAR -> Color.Transparent
                 }
                 val barBorder = when (floatingBarStyle) {
-                    FloatingBarStyle.FROSTED -> Color.White.copy(alpha = .18f)
-                    FloatingBarStyle.CLEAR -> Color.White.copy(alpha = .10f)
-                    else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = .35f)
+                    FloatingBarStyle.FROSTED -> Color.White.copy(alpha = floatingBarBorder)
+                    FloatingBarStyle.CLEAR -> Color.White.copy(alpha = floatingBarBorder * .55f)
+                    else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = floatingBarBorder.coerceAtLeast(.08f))
                 }
 
                 HorizontalFloatingToolbar(
                     expanded = true,
-                    modifier = Modifier,
+                    modifier = Modifier
+                        .fillMaxWidth(floatingBarWidth)
+                        .padding(bottom = floatingBarBottomGap.dp)
+                        .graphicsLayer { shadowElevation = floatingBarElevation.dp.toPx(); shape = barShape; clip = false },
                     colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
                         toolbarContainerColor = Color.Transparent,
                         toolbarContentColor = MaterialTheme.colorScheme.onSurface
@@ -404,7 +430,7 @@ private fun MainTabs(
                 ) {
                     Row(
                         modifier = Modifier
-                            .heightIn(min = FloatingToolbarDefaults.ContainerSize)
+                            .height(floatingBarHeight.dp)
                             .background(
                                 color = barSurface,
                                 shape = barShape
