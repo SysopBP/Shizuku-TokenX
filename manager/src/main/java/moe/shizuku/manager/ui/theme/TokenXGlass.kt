@@ -53,6 +53,13 @@ enum class TokenXThemePreset(val label: String) {
     SMOKE("Smoke"),
 }
 
+enum class TokenXHapticStrength(val label: String) {
+    OFF("Off"),
+    LIGHT("Light"),
+    STANDARD("Standard"),
+    STRONG("Strong"),
+}
+
 enum class BackgroundMode {
     SYSTEM,
     AMOLED,
@@ -111,4 +118,5 @@ object TokenXAppearanceKeys {
     const val BACKGROUND_DIM = "tokenx_background_dim"
     const val ACCENT_COLOR = "tokenx_accent_color"
     const val ACCENT_PRESET = "tokenx_accent_preset"
+    const val HAPTIC_STRENGTH = "tokenx_haptic_strength"
 }
