@@ -432,10 +432,10 @@ private fun TonalAccentSwatch(
                 .border(
                     width = if (selected) 3.dp else 1.dp,
                     color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant,
-                    shape = CircleShape
+                    shape = RoundedCornerShape(18.dp)
                 )
                 .padding(4.dp)
-                .clip(CircleShape)
+                .clip(RoundedCornerShape(15.dp))
                 .clickable(onClick = onClick)
         ) {
             Column(Modifier.fillMaxSize()) {
@@ -449,13 +449,13 @@ private fun TonalAccentSwatch(
                 Modifier
                     .align(Alignment.Center)
                     .size(24.dp)
-                    .background(base, CircleShape)
-                    .border(1.dp, MaterialTheme.colorScheme.surface.copy(alpha = .65f), CircleShape)
+                    .background(base, RoundedCornerShape(7.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.surface.copy(alpha = .65f), RoundedCornerShape(7.dp))
             )
             if (selected) {
                 Text(
                     "✓",
-                    modifier = Modifier.align(Alignment.TopEnd).background(MaterialTheme.colorScheme.surface, CircleShape).padding(horizontal = 4.dp),
+                    modifier = Modifier.align(Alignment.TopEnd).background(MaterialTheme.colorScheme.surface, RoundedCornerShape(5.dp)).padding(horizontal = 4.dp),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
@@ -490,16 +490,22 @@ private fun TokenXThemePreview(
     )
     val opacity = prefs.getFloat(TokenXAppearanceKeys.GLASS_OPACITY, .72f)
     val radius = prefs.getFloat(TokenXAppearanceKeys.GLASS_RADIUS, 28f)
+    val borderStrength = prefs.getFloat(TokenXAppearanceKeys.GLASS_BORDER, .18f)
     val dim = prefs.getFloat(TokenXAppearanceKeys.BACKGROUND_DIM, .18f)
+    val barOpacity = prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_OPACITY, .82f)
+    val barStyle = runCatching {
+        FloatingBarStyle.valueOf(prefs.getString(TokenXAppearanceKeys.FLOATING_BAR_STYLE, FloatingBarStyle.FROSTED.name)!!)
+    }.getOrDefault(FloatingBarStyle.FROSTED)
     val backgroundMode = runCatching {
         BackgroundMode.valueOf(prefs.getString(TokenXAppearanceKeys.BACKGROUND_MODE, BackgroundMode.AMOLED_GRADIENT.name)!!)
     }.getOrDefault(BackgroundMode.AMOLED_GRADIENT)
 
     val phoneBackground = when (backgroundMode) {
         BackgroundMode.AMOLED -> Color.Black
-        BackgroundMode.AMOLED_GRADIENT -> androidx.compose.ui.graphics.lerp(Color.Black, accent, .10f)
+        BackgroundMode.AMOLED_GRADIENT -> androidx.compose.ui.graphics.lerp(Color.Black, accent, .14f)
         BackgroundMode.CUSTOM_COLOR -> Color(prefs.getLong(TokenXAppearanceKeys.BACKGROUND_COLOR, 0xFF090A0FFF).toInt())
-        else -> MaterialTheme.colorScheme.surface
+        BackgroundMode.CUSTOM_IMAGE -> androidx.compose.ui.graphics.lerp(Color.Black, accent, .22f)
+        BackgroundMode.SYSTEM -> MaterialTheme.colorScheme.surface
     }
     val previewShape = when (uiStyle) {
         TokenXUiStyle.MATERIAL -> RoundedCornerShape(radius.dp.coerceIn(12.dp, 32.dp))
@@ -507,6 +513,18 @@ private fun TokenXThemePreview(
         TokenXUiStyle.MIUIX -> RoundedCornerShape(18.dp)
     }
     val surfaceAlpha = if (glass) opacity.coerceIn(.18f, 1f) else 1f
+    val navShape = when (barStyle) {
+        FloatingBarStyle.FLOATING -> RoundedCornerShape(18.dp)
+        FloatingBarStyle.FROSTED -> RoundedCornerShape(12.dp)
+        FloatingBarStyle.SOLID -> RoundedCornerShape(8.dp)
+        FloatingBarStyle.CLEAR -> RoundedCornerShape(0.dp)
+    }
+    val navColor = when (barStyle) {
+        FloatingBarStyle.FLOATING -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = barOpacity.coerceIn(.25f, .92f))
+        FloatingBarStyle.FROSTED -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = (barOpacity * .66f).coerceIn(.18f, .78f))
+        FloatingBarStyle.SOLID -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 1f)
+        FloatingBarStyle.CLEAR -> Color.Transparent
+    }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(
@@ -514,10 +532,10 @@ private fun TokenXThemePreview(
                 .width(206.dp)
                 .height(330.dp)
                 .background(phoneBackground, RoundedCornerShape(34.dp))
-                .border(1.dp, accent.copy(alpha = .34f), RoundedCornerShape(34.dp))
+                .border(1.dp, accent.copy(alpha = (.22f + borderStrength).coerceAtMost(.72f)), RoundedCornerShape(34.dp))
                 .padding(12.dp)
         ) {
-            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
                         Text(
@@ -526,25 +544,21 @@ private fun TokenXThemePreview(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Text(uiStyle.label, style = MaterialTheme.typography.labelSmall, color = accent)
+                        Text(themePreset.label + " • " + uiStyle.label, style = MaterialTheme.typography.labelSmall, color = accent)
                     }
-                    Box(Modifier.size(9.dp).background(accent, CircleShape))
+                    Box(Modifier.size(9.dp).background(accent, RoundedCornerShape(3.dp)))
                 }
 
                 Box(
                     Modifier
                         .fillMaxWidth()
                         .height(48.dp)
-                        .background(accent.copy(alpha = if (cardActive) .52f else .28f), previewShape)
+                        .background(accent.copy(alpha = if (cardActive) .52f else .24f), previewShape)
                         .border(1.dp, accent.copy(alpha = .42f), previewShape)
                         .clickable { cardActive = !cardActive }
                         .padding(10.dp)
                 ) {
-                    Text(
-                        if (cardActive) "Interactive state" else "Tap preview card",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Text(if (cardActive) "Interactive state" else "Tap preview card", style = MaterialTheme.typography.labelMedium)
                 }
 
                 Column(
@@ -552,7 +566,7 @@ private fun TokenXThemePreview(
                         .fillMaxWidth()
                         .weight(1f)
                         .background(
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = (surfaceAlpha * (1f - dim * .35f)).coerceIn(.16f, 1f)),
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = (surfaceAlpha * (1f - dim * .35f)).coerceIn(.12f, 1f)),
                             previewShape
                         )
                         .clickable { page = (page + 1) % 4 }
@@ -563,39 +577,51 @@ private fun TokenXThemePreview(
                         Row(
                             Modifier
                                 .fillMaxWidth()
-                                .background(
-                                    if (index == page % 3) accent.copy(alpha = .22f) else Color.Transparent,
-                                    RoundedCornerShape(if (uiStyle == TokenXUiStyle.MIUIX) 10.dp else 14.dp)
-                                )
+                                .background(if (index == page % 3) accent.copy(alpha = .22f) else Color.Transparent, RoundedCornerShape(12.dp))
                                 .padding(7.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Box(Modifier.size(18.dp).background(if (index == page % 3) accent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f), CircleShape))
-                            Box(Modifier.weight(1f).height(7.dp).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.28f), CircleShape))
+                            Box(Modifier.size(18.dp).background(if (index == page % 3) accent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f), RoundedCornerShape(5.dp)))
+                            Box(Modifier.weight(1f).height(7.dp).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.28f), RoundedCornerShape(4.dp)))
                         }
                     }
                 }
 
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    repeat(4) { index ->
-                        Box(
-                            Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .clickable { page = index },
-                            contentAlignment = Alignment.Center
-                        ) {
+                Box(
+                    Modifier
+                        .then(if (barStyle == FloatingBarStyle.FLOATING) Modifier.padding(horizontal = 18.dp) else Modifier)
+                        .fillMaxWidth()
+                        .background(navColor, navShape)
+                        .then(if (barStyle != FloatingBarStyle.CLEAR) Modifier.border(1.dp, accent.copy(alpha = if (barStyle == FloatingBarStyle.FROSTED) .24f else .12f), navShape) else Modifier)
+                        .padding(horizontal = if (barStyle == FloatingBarStyle.FLOATING) 8.dp else 4.dp, vertical = if (barStyle == FloatingBarStyle.FLOATING) 7.dp else 5.dp)
+                ) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        repeat(4) { index ->
                             Box(
                                 Modifier
-                                    .size(if (page == index) 24.dp else 17.dp)
-                                    .background(if (page == index) accent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f), CircleShape)
-                            )
+                                    .size(if (barStyle == FloatingBarStyle.FLOATING) 30.dp else 32.dp)
+                                    .clip(RoundedCornerShape(9.dp))
+                                    .clickable { page = index }
+                                    .background(if (page == index) accent.copy(alpha = .24f) else Color.Transparent),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Box(
+                                    Modifier
+                                        .size(if (page == index) 17.dp else 13.dp)
+                                        .background(if (page == index) accent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f), RoundedCornerShape(5.dp))
+                                )
+                            }
                         }
                     }
                 }
             }
         }
-        Text("Tap the phone to preview states", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            barStyle.name.lowercase().replaceFirstChar { it.uppercase() } + " • " +
+                backgroundMode.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() },
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
