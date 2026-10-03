@@ -85,12 +85,12 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                 if (script == null || script.length() > 131072) {
                     throw new IllegalArgumentException("invalid TokenX Sserver command");
                 }
-                Process process = null;
+                java.lang.Process process = null;
                 try {
                     process = new ProcessBuilder("/system/bin/sh", "-c", script)
                             .redirectErrorStream(false)
                             .start();
-                    final Process commandProcess = process;
+                    final java.lang.Process commandProcess = process;
                     final AtomicReference<String> stdout = new AtomicReference<>("");
                     final AtomicReference<String> stderr = new AtomicReference<>("");
                     Thread outThread = new Thread(() -> stdout.set(readTokenXStream(commandProcess.getInputStream())), "TokenX-Sserver-out");
