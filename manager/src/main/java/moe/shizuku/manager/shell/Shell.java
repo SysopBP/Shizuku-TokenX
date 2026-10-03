@@ -17,6 +17,31 @@ import rikka.shizuku.ShizukuApiConstants;
 public class Shell extends Rish {
 
     private static final int SYSTEM_UID = 1000;
+    private static final String TOKENX_SYSTEM_PACKAGE = "com.vikram.exp";
+
+    /**
+     * Android 17 SettingsProvider validates the shell's calling package in addition to
+     * Binder/Unix UID. A raw "su 1000" worker has UID 1000 but no package attribution,
+     * so "settings put" is rejected even though other system-UID services accept it.
+     *
+     * Run only the settings CLI through Android's package-attributed UID launcher. The
+     * worker remains outside system_server and stays UID 1000; this is not a root/shell
+     * privilege fallback.
+     */
+    private static List<String> attributedSystemUidCommand(String[] args) {
+        final List<String> command = new ArrayList<>();
+        command.add("su");
+        command.add("1000");
+
+        if (args.length > 0 && "settings".equals(args[0])) {
+            command.add("env");
+            command.add("TOKENX_CALLING_PACKAGE=" + TOKENX_SYSTEM_PACKAGE);
+            System.err.println("TokenX: SettingsProvider route attributed to " + TOKENX_SYSTEM_PACKAGE + " (UID 1000).");
+        }
+
+        command.addAll(Arrays.asList(args));
+        return command;
+    }
 
     private static boolean canLaunchSystemUidWorker() {
         try {
@@ -35,18 +60,18 @@ public class Shell extends Rish {
 
     private static void runSystemUidWorkerOrRootFallback(String[] args) {
         final boolean systemWorkerReady = canLaunchSystemUidWorker();
-        final List<String> command = new ArrayList<>();
-        command.add("su");
+        final List<String> command;
 
         System.err.println("TokenX: DIRECT BINDER connected to System Server backend (UID 1000).");
         if (systemWorkerReady) {
-            command.add("1000");
+            command = attributedSystemUidCommand(args);
             System.err.println("TokenX: launching isolated UID-1000 shell worker outside system_server.");
         } else {
+            command = new ArrayList<>();
+            command.add("su");
+            command.addAll(Arrays.asList(args));
             System.err.println("TokenX: UID-1000 worker preflight failed; using KernelSU ROOT fallback.");
         }
-
-        command.addAll(Arrays.asList(args));
         System.err.flush();
 
         try {
