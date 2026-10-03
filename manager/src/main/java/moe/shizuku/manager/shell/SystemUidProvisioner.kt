@@ -19,6 +19,10 @@ object SystemUidProvisioner {
     const val RECEIVER_FIX_PACKAGE = "com.eliteone.receiver"
     const val STAGED_SHIZUKU = "/data/local/tmp/libshizuku.so"
 
+    enum class Stage { D2_GATE, SERV_UID, FOTA_UID, FOTA_DOMAIN, RX_COMPAT, SYSTEM_BRIDGE }
+    enum class StageState { WAITING, CHECKING, VERIFIED, WARNING, FAILED }
+    data class Progress(val stage: Stage, val state: StageState, val detail: String)
+
     data class Result(
         val success: Boolean,
         val exitCode: Int,
@@ -85,21 +89,28 @@ object SystemUidProvisioner {
      * does not launch FOTA, reboot, enter recovery, factory-reset, or invoke update_engine.
      * The KernelSU module remains the installer; the manager reports exactly what survived.
      */
-    fun verifyProvisionedPayloads(): Result {
-        val script = listOf(
-            "echo '=== TokenX provisioned payloads ==='",
-            "echo '-- Serv --'",
-            "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000' || echo 'SERV_UID1000=0'",
-            "dumpsys package $LIVE_PACKAGE 2>/dev/null | grep -m1 -F 'sharedUser=SharedUserSetting' || true",
-            "echo '-- FOTA --'",
-            "cmd package list packages -U | grep -F 'package:$FOTA_PACKAGE uid:1000' || echo 'FOTA_UID1000=0'",
-            "dumpsys package $FOTA_PACKAGE 2>/dev/null | grep -m1 -E 'sharedUser=.*android.uid.system/1000' || true",
-            "PID=$(pidof $FOTA_PACKAGE 2>/dev/null || true); if [ -n \"\$PID\" ]; then echo FOTA_PID=\$PID; ps -AZ | grep -F '$FOTA_PACKAGE' | head -n1; else echo FOTA_PID=stopped; fi",
-            "echo '-- Android 17 receiver compatibility --'",
-            "if cmd package list packages | grep -q -F 'package:$RECEIVER_FIX_PACKAGE'; then echo RECEIVER_FIX_PACKAGE=present; else echo RECEIVER_FIX_PACKAGE=absent; fi",
-            "echo 'NOTE=receiver-fix package presence does not prove an LSPosed hook is active'",
-        ).joinToString("; ")
-        return runRoot(script)
+    fun verifyProvisionedPayloads(onProgress: (Progress) -> Unit = {}): Result {
+        fun check(stage: Stage, label: String, script: String): Result {
+            onProgress(Progress(stage, StageState.CHECKING, label))
+            val result = runRoot(script)
+            onProgress(Progress(stage, if (result.success) StageState.VERIFIED else StageState.FAILED, result.output.trim().ifBlank { label }))
+            return result
+        }
+        val transcript = StringBuilder("=== TokenX provisioned payloads ===\n")
+        val checks = listOf(
+            Triple(Stage.D2_GATE, "Checking D2 dual-gate module", "test -d /data/adb/modules/tokenx_system_server && echo D2_GATE=module-present"),
+            Triple(Stage.SERV_UID, "Checking Serv UID 1000", "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000'"),
+            Triple(Stage.FOTA_UID, "Checking FOTA UID 1000", "cmd package list packages -U | grep -F 'package:$FOTA_PACKAGE uid:1000'"),
+            Triple(Stage.FOTA_DOMAIN, "Checking FOTA system identity", "dumpsys package $FOTA_PACKAGE 2>/dev/null | grep -m1 -E 'sharedUser=.*android.uid.system/1000'"),
+            Triple(Stage.RX_COMPAT, "Checking Android 17 receiver compatibility", "cmd package list packages | grep -q -F 'package:$RECEIVER_FIX_PACKAGE' && echo RECEIVER_FIX_PACKAGE=present")
+        )
+        for ((stage, label, script) in checks) {
+            val result = check(stage, label, script)
+            transcript.append(result.output)
+            if (!result.success) return Result(false, result.exitCode, transcript.toString(), result.command)
+        }
+        transcript.append("NOTE=receiver-fix package presence does not prove an LSPosed hook is active\n")
+        return Result(true, 0, transcript.toString(), "TokenX staged provisioning audit")
     }
 
     fun verify(): Result {
