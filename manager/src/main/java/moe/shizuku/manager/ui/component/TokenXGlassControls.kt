@@ -18,12 +18,13 @@ fun TokenXGlassButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(18.dp),
     content: @Composable () -> Unit,
 ) {
     val view = LocalView.current
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
+        shape = shape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = .58f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .62f)),
         tonalElevation = 2.dp,
