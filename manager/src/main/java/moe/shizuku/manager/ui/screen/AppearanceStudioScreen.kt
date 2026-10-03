@@ -4,6 +4,12 @@ import android.graphics.Color as AndroidColor
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.viewinterop.AndroidView
@@ -75,10 +81,77 @@ fun AppearanceStudioScreen() {
     fun putFloat(key: String, v: Float) { prefs.edit().putFloat(key, v).apply(); refresh() }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("Appearance Studio", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface)
-        Text("Build your own TokenX look. Changes are saved as you make them.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Theme", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        Text("Preview and tune the complete TokenX interface.", color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-        Text("Theme engine", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+        TokenXThemePreview(themePreset = themePreset, glass = glass)
+
+        Text("Color palette", style = MaterialTheme.typography.titleMedium)
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
+            TokenXAccent.entries.forEach { preset ->
+                val selected = prefs.getString(TokenXAppearanceKeys.ACCENT_PRESET, TokenXAccent.TOKEN_PURPLE.name) == preset.name
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        Modifier
+                            .size(54.dp)
+                            .background(Color(preset.argb.toInt()).copy(alpha = .32f), CircleShape)
+                            .border(if (selected) 3.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                            .clickable {
+                                prefs.edit()
+                                    .putLong(TokenXAppearanceKeys.ACCENT_COLOR, preset.argb)
+                                    .putString(TokenXAppearanceKeys.ACCENT_PRESET, preset.name)
+                                    .putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
+                                    .apply()
+                                refresh()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(Modifier.size(26.dp).background(Color(preset.argb.toInt()), CircleShape))
+                    }
+                    Text(preset.label, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+
+        Text("Quick appearance", style = MaterialTheme.typography.titleMedium)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                "System" to TokenXThemePreset.SYSTEM,
+                "Ghost" to TokenXThemePreset.GHOST,
+                "Dark" to TokenXThemePreset.TOKENX,
+                "AMOLED" to TokenXThemePreset.AMOLED
+            ).forEach { (label, preset) ->
+                FilterChip(
+                    selected = themePreset == preset,
+                    onClick = {
+                        themePreset = preset
+                        prefs.edit().putString(TokenXAppearanceKeys.THEME_PRESET, preset.name).apply()
+                        refresh()
+                    },
+                    label = { Text(label) }
+                )
+            }
+        }
+
+        Text("UI style", style = MaterialTheme.typography.titleMedium)
+        TokenXGlassCard {
+            Row(
+                Modifier.fillMaxWidth().padding(18.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("TokenX", style = MaterialTheme.typography.titleMedium)
+                    Text("Glass / Material interface", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Text(if (themePreset == TokenXThemePreset.GHOST) "Ghost" else if (themePreset == TokenXThemePreset.AMOLED) "AMOLED" else "Material", color = MaterialTheme.colorScheme.primary)
+            }
+        }
+
+        Text("Theme styles", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         Text("Whole-app presets inspired by KernelSU's centralized light/dark theme model. Pick a base, then fine-tune anything below.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             TokenXThemePreset.entries.forEach { preset ->
@@ -384,5 +457,28 @@ private fun StudioSlider(title: String, value: Float, range: ClosedFloatingPoint
     Column {
         Text(title + "  " + "%.2f".format(value) + suffix, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
         Slider(value = value, onValueChange = onChange, valueRange = range)
+    }
+}
+
+@Composable
+private fun TokenXThemePreview(themePreset: TokenXThemePreset, glass: Boolean) {
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Card(
+            modifier = Modifier.width(190.dp).height(300.dp),
+            shape = RoundedCornerShape(30.dp),
+            colors = CardDefaults.cardColors(containerColor = if (themePreset == TokenXThemePreset.AMOLED) Color.Black else MaterialTheme.colorScheme.surface.copy(alpha = if (glass) .62f else 1f)),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("TokenX", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Box(Modifier.fillMaxWidth().height(42.dp).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = .72f), RoundedCornerShape(12.dp)))
+                Box(Modifier.fillMaxWidth().weight(1f).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .55f), RoundedCornerShape(14.dp)))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    repeat(4) {
+                        Box(Modifier.size(if (it == 0) 24.dp else 18.dp).background(if (it == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.55f), CircleShape))
+                    }
+                }
+            }
+        }
     }
 }
