@@ -29,6 +29,20 @@ enum class FloatingBarStyle {
     CLEAR,
 }
 
+enum class FloatingBarShape(val label: String) {
+    ONE_UI("One UI"),
+    SQUIRCLE("Squircle"),
+    ROUNDED("Rounded"),
+    PILL("Pill"),
+}
+
+enum class FloatingBarSelection(val label: String) {
+    GLASS("Glass"),
+    TILE("Tile"),
+    INDICATOR("Indicator"),
+    MINIMAL("Minimal"),
+}
+
 enum class TokenXThemePreset(val label: String) {
     SYSTEM("System"),
     TOKENX("TokenX"),
@@ -82,6 +96,14 @@ object TokenXAppearanceKeys {
     const val TEXT_CONTRAST = "tokenx_text_contrast"
     const val FLOATING_BAR_STYLE = "tokenx_floating_bar_style"
     const val FLOATING_BAR_OPACITY = "tokenx_floating_bar_opacity"
+    const val FLOATING_BAR_SHAPE = "tokenx_floating_bar_shape"
+    const val FLOATING_BAR_WIDTH = "tokenx_floating_bar_width"
+    const val FLOATING_BAR_HEIGHT = "tokenx_floating_bar_height"
+    const val FLOATING_BAR_BOTTOM_GAP = "tokenx_floating_bar_bottom_gap"
+    const val FLOATING_BAR_BLUR = "tokenx_floating_bar_blur"
+    const val FLOATING_BAR_BORDER = "tokenx_floating_bar_border"
+    const val FLOATING_BAR_ELEVATION = "tokenx_floating_bar_elevation"
+    const val FLOATING_BAR_SELECTION = "tokenx_floating_bar_selection"
     const val BACKGROUND_MODE = "tokenx_background_mode"
     const val BACKGROUND_COLOR = "tokenx_background_color"
     const val BACKGROUND_IMAGE_URI = "tokenx_background_image_uri"
