@@ -70,6 +70,7 @@ enum class TokenXAccent(val argb: Long, val label: String) {
 
 object TokenXAppearanceKeys {
     const val THEME_PRESET = "tokenx_theme_preset"
+    const val UI_STYLE = "tokenx_ui_style"
     const val COLOR_STYLE = "tokenx_color_style"
     const val COLOR_SPEC = "tokenx_color_spec"
     const val GLASS_ENABLED = "tokenx_glass_enabled"
