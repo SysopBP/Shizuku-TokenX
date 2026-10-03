@@ -333,10 +333,36 @@ fun PermissionsScreen(onBack: () -> Unit) {
                 }
             }
             item {
-                PrivilegedAccessRow(Icons.Rounded.AdminPanelSettings, "Secure settings", "WRITE_SECURE_SETTINGS grant for manager operations.", if (capabilityProbe?.writeSecureSettings == true) "Granted" else "Not granted", capabilityProbe?.writeSecureSettings == true)
+                PrivilegedAccessRow(
+                    Icons.Rounded.AdminPanelSettings,
+                    "Secure settings capability",
+                    "Settings.Secure write capability verified by a live, reversible probe.",
+                    when {
+                        capabilityProbe?.secureSettingsRuntimeVerified == true ->
+                            "Runtime verified · ${capabilityProbe?.secureSettingsRoute ?: "privileged route"}"
+                        capabilityProbe == null -> "Checking…"
+                        else -> "Not verified"
+                    },
+                    capabilityProbe?.secureSettingsRuntimeVerified == true
+                )
             }
             item {
-                PrivilegedAccessRow(Icons.Rounded.Visibility, "System settings write", "Android Settings.System write capability.", if (capabilityProbe?.writeSettings == true) "Granted" else "Not granted", capabilityProbe?.writeSettings == true)
+                PrivilegedAccessRow(
+                    Icons.Rounded.AdminPanelSettings,
+                    "Direct WRITE_SECURE_SETTINGS",
+                    "PackageManager grant for android.permission.WRITE_SECURE_SETTINGS. This is separate from privileged backend capability.",
+                    if (capabilityProbe?.writeSecureSettings == true) "Direct grant" else "No direct grant",
+                    capabilityProbe?.writeSecureSettings == true
+                )
+            }
+            item {
+                PrivilegedAccessRow(
+                    Icons.Rounded.Visibility,
+                    "System settings write",
+                    "Settings.System.canWrite() / WRITE_SETTINGS special access. Independent of WRITE_SECURE_SETTINGS.",
+                    if (capabilityProbe?.writeSettings == true) "WRITE_SETTINGS allowed" else "WRITE_SETTINGS not allowed",
+                    capabilityProbe?.writeSettings == true
+                )
             }
             item {
                 PrivilegedAccessRow(Icons.Rounded.Memory, "Dumpsys", "Runtime diagnostic access tested through the Root backend.", if (capabilityProbe?.dumpViaRoot == true) "Root probe passed" else "Unavailable", capabilityProbe?.dumpViaRoot == true)
