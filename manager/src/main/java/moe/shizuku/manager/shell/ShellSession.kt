@@ -111,9 +111,9 @@ class ShellSession {
      * `cd`, resolved and verified by the shell itself so `..`, `~` and symlinks stay its
      * business rather than ours.
      */
-    fun cd(target: String, sink: (ShellLine) -> Unit): Boolean {
+    fun cd(target: String, sink: (ShellLine) -> Unit, backend: ShellBackend = ShellBackend.SHIZUKU): Boolean {
         val printed = StringBuilder()
-        val code = run(ShellBackend.SHIZUKU, "cd $target && pwd") { line ->
+        val code = run(backend, "cd " + quote(target) + " && pwd") { line ->
             if (line.kind == ShellLine.Kind.OUTPUT) printed.append(line.text).append('\n')
         }
         val resolved = printed.toString().trim()
