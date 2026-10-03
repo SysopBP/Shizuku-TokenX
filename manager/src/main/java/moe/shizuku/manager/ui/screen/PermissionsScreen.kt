@@ -27,6 +27,10 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.Wifi
+import androidx.compose.material.icons.rounded.Key
+import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.Hub
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -60,6 +64,9 @@ import moe.shizuku.manager.ui.component.SegmentedCard
 import moe.shizuku.manager.start.localNetworkPermission
 import moe.shizuku.manager.utils.SettingsHelper
 import moe.shizuku.manager.utils.SettingsPage
+import moe.shizuku.manager.tokenx.TokenXRuntime
+import moe.shizuku.manager.tokenx.TokenXRuntimeState
+import kotlinx.coroutines.delay
 import rikka.core.util.ClipboardUtils
 
 /**
@@ -83,6 +90,7 @@ fun PermissionsScreen(onBack: () -> Unit) {
     var localNetwork by remember {
         mutableStateOf(localNetworkPermission()?.let { context.hasPermission(it) } ?: true)
     }
+    var tokenxRuntime by remember { mutableStateOf(TokenXRuntime.snapshot(context)) }
 
     fun refresh() {
         notifications = context.hasPermission(POST_NOTIFICATIONS)
@@ -127,7 +135,13 @@ fun PermissionsScreen(onBack: () -> Unit) {
         }
     }
 
-    LaunchedEffect(Unit) { refresh() }
+    LaunchedEffect(Unit) {
+        refresh()
+        while (true) {
+            tokenxRuntime = withContext(Dispatchers.IO) { TokenXRuntime.snapshot(context) }
+            delay(TokenXRuntime.REFRESH_INTERVAL_MS)
+        }
+    }
     // Coming back from the system's own screens (accessibility, battery) changes these.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { refresh() }
 
@@ -229,6 +243,83 @@ fun PermissionsScreen(onBack: () -> Unit) {
                     }
                 )
             }
+            item {
+                val androidGranted = listOf(notifications, localNetwork, writeSecureSettings, accessibility, batteryIgnored).count { it }
+                val bridge = when {
+                    tokenxRuntime.systemServerBridgeActive -> "System bridge active"
+                    tokenxRuntime.systemServerBridgeAttached -> "System bridge attached"
+                    else -> "System bridge unavailable"
+                }
+                Text(
+                    "$androidGranted/5 Android permissions · " +
+                        (if (tokenxRuntime.backendState.rootAvailable) "Root granted" else "Root unavailable") +
+                        " · $bridge",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                )
+            }
+
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Privileged access", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Live TokenX privilege and system bridge state",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            item {
+                PrivilegedAccessRow(
+                    icon = Icons.Rounded.Key,
+                    headline = "KernelSU / Root",
+                    reason = "UID 0 backend for privileged TokenX operations.",
+                    state = if (tokenxRuntime.backendState.rootAvailable) "Granted" else "Unavailable",
+                    active = tokenxRuntime.backendState.rootAvailable
+                )
+            }
+            item {
+                PrivilegedAccessRow(
+                    icon = Icons.Rounded.Memory,
+                    headline = "System UID",
+                    reason = "Serv.apk provisioning and Android system identity.",
+                    state = when {
+                        tokenxRuntime.systemServerBridgeActive -> "Active · UID 1000"
+                        tokenxRuntime.systemServerBridgeAttached -> "Attached · UID 1000"
+                        tokenxRuntime.backendState.serverUid == 1000 -> "Available · UID 1000"
+                        else -> "Unavailable"
+                    },
+                    active = tokenxRuntime.systemServerBridgeAttached || tokenxRuntime.systemServerBridgeActive
+                )
+            }
+            item {
+                PrivilegedAccessRow(
+                    icon = Icons.Rounded.Hub,
+                    headline = "LSPosed",
+                    reason = "Optional Xposed framework and TokenX bridge discovery.",
+                    state = when {
+                        tokenxRuntime.xposedBridgeActive -> "Bridge active"
+                        tokenxRuntime.xposedFrameworkDetected -> "Detected"
+                        else -> "Not detected"
+                    },
+                    active = tokenxRuntime.xposedBridgeActive
+                )
+            }
+            item {
+                PrivilegedAccessRow(
+                    icon = Icons.Rounded.Security,
+                    headline = "System Server Bridge",
+                    reason = "Live TokenX execution handshake inside system_server.",
+                    state = when {
+                        tokenxRuntime.systemServerBridgeActive -> "Active"
+                        tokenxRuntime.systemServerBridgeAttached -> "Attached"
+                        else -> "Available check pending"
+                    },
+                    active = tokenxRuntime.systemServerBridgeActive
+                )
+            }
         }
     }
 }
@@ -301,6 +392,42 @@ private fun PermissionRow(
             } else {
                 TextButton(onClick = onAction) { Text(actionLabel) }
             }
+        }
+    }
+}
+
+
+@Composable
+private fun PrivilegedAccessRow(
+    icon: ImageVector,
+    headline: String,
+    reason: String,
+    state: String,
+    active: Boolean,
+) {
+    SegmentedCard {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(40.dp).clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = if (active) 0.16f else 0.08f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, null, tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(headline, style = MaterialTheme.typography.bodyLarge)
+                Text(reason, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(Modifier.width(12.dp))
+            Text(
+                state,
+                style = MaterialTheme.typography.labelMedium,
+                color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
