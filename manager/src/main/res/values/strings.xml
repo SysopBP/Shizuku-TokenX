@@ -399,11 +399,13 @@
     <!-- Shell -->
     <string name="shell_title">Shell</string>
     <string name="shell_backend_shizuku">Shizuku</string>
+    <string name="shell_backend_sserver">Sserver</string>
     <string name="shell_backend_root">Root</string>
     <string name="shell_backend_shizuku_status">Shizuku, uid %1$d</string>
+    <string name="shell_backend_sserver_status">System Server, uid 1000</string>
     <string name="shell_backend_root_status">Root, uid 0</string>
     <string name="shell_backend_offline">No command runner is active</string>
-    <string name="shell_needs_a_backend">Start Shizuku, or pick Root on a rooted device: one of the two runs the commands. Root works with Shizuku stopped.</string>
+    <string name="shell_needs_a_backend">Start Shizuku, use Sserver when the TokenX System Server bridge is active, or pick Root on a rooted device.</string>
     <string name="shell_intro">Runs as the uid Shizuku runs as (2000 over adb, 0 with root), so it reaches whatever that uid can: /sdcard, /system, and app data with root. It opens in /sdcard, one command at a time; with no tty behind it, programs that need a terminal (nano, an ssh prompt) will not run here.</string>
     <string name="shell_root_granted">Root is available: commands run as uid 0.</string>
     <string name="shell_root_refused">Root access was denied, so commands will use Shizuku. Grant this app root access to use Root.</string>
