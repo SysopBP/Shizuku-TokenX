@@ -146,7 +146,7 @@ fun AppearanceStudioScreen() {
         Text("Framework and color theme are independent.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             TokenXUiStyle.entries.forEach { candidate ->
-                val available = candidate != TokenXUiStyle.MIUIX
+                val available = true
                 FilterChip(
                     selected = uiStyle == candidate,
                     enabled = available,
@@ -155,7 +155,7 @@ fun AppearanceStudioScreen() {
                         prefs.edit().putString(TokenXAppearanceKeys.UI_STYLE, candidate.name).apply()
                         refresh()
                     },
-                    label = { Text(if (available) candidate.label else candidate.label + " • next") }
+                    label = { Text(candidate.label) }
                 )
             }
         }
@@ -171,7 +171,7 @@ fun AppearanceStudioScreen() {
                         when (uiStyle) {
                             TokenXUiStyle.MATERIAL -> "Material 3 component renderer"
                             TokenXUiStyle.GHOST -> "TokenX translucent glass renderer"
-                            TokenXUiStyle.MIUIX -> "Native Miuix renderer pending"
+                            TokenXUiStyle.MIUIX -> "Native Miuix framework enabled"
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
