@@ -205,21 +205,29 @@ class ShellSession {
 
     private fun runThroughRoot(script: String, sink: (ShellLine) -> Unit): Int {
         return try {
+            // libsu's Shell.cmd(String) treats the String as script/stdin. On this Android 17
+            // root path stdin can be unavailable, producing "sh: <stdin>[n]" and exit 127.
+            // Stage the complete session script in an executable shell argv instead.
+            val encoded = android.util.Base64.encodeToString(
+                script.toByteArray(Charsets.UTF_8),
+                android.util.Base64.NO_WRAP
+            )
+            val launcher = "echo " + quote(encoded) + " | base64 -d | /system/bin/sh"
             val out = object : CallbackList<String>() {
                 override fun onAddElement(e: String) = sink(ShellLine(e, ShellLine.Kind.OUTPUT))
             }
             val err = object : CallbackList<String>() {
                 override fun onAddElement(e: String) = sink(ShellLine(e, ShellLine.Kind.ERROR))
             }
-            val result = Shell.cmd(script).to(out, err).exec()
+            val result = Shell.cmd(launcher).to(out, err).exec()
             if (!result.isSuccess && err.isEmpty()) {
-                // su refused, or the command died before it could say anything.
                 sink(ShellLine("Root refused the command (exit ${result.code}).", ShellLine.Kind.ERROR))
             }
             result.code
         } catch (e: Throwable) {
             Log.w(AppConstants.TAG, "Root shell failed", e)
-            sink(ShellLine(e.message ?: e.javaClass.simpleName, ShellLine.Kind.ERROR))
+            val cause = generateSequence(e) { it.cause }.last()
+            sink(ShellLine(cause.message ?: cause.javaClass.simpleName, ShellLine.Kind.ERROR))
             -1
         }
     }
