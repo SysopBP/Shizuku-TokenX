@@ -70,7 +70,14 @@ object TokenXRuntime {
         }
     }.getOrDefault(false)
 
-    /** Serv.apk is the Sserver backend. Package presence alone is insufficient: it must\n     * resolve to Android's system UID before TokenX advertises UID 1000 as available. */\n    private fun isServUid1000(): Boolean = runCatching {\n        val result = Shell.cmd(\"cmd package list packages -U | grep -F 'package:com.vikram.exp uid:1000'\").exec()\n        result.isSuccess && result.out.any { it.contains(\"package:com.vikram.exp uid:1000\") }\n    }.getOrDefault(false)\n\n    private fun isInstalled(pm: PackageManager, packageName: String): Boolean =
+    /** Serv.apk is the Sserver backend. Package presence alone is insufficient: it must
+     * resolve to Android's system UID before TokenX advertises UID 1000 as available. */
+    private fun isServUid1000(): Boolean = runCatching {
+        val result = Shell.cmd("cmd package list packages -U | grep -F 'package:com.vikram.exp uid:1000'").exec()
+        result.isSuccess && result.out.any { it.contains("package:com.vikram.exp uid:1000") }
+    }.getOrDefault(false)
+
+    private fun isInstalled(pm: PackageManager, packageName: String): Boolean =
         runCatching { pm.getPackageInfo(packageName, 0) }.isSuccess
 
     private const val SYSTEM_SERVER_SERVICE = "tokenx_system_server"
