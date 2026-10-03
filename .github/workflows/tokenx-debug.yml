@@ -105,56 +105,46 @@ jobs:
                   raise SystemExit("UserServiceManager Process import anchor not found")
               s = s.replace(anchor, anchor + "import android.os.Process;\n", 1)
 
-          old = '''        String cmd = getUserServiceStartCmd(record, key, token, packageName, classname, processNameSuffix, callingUid, use32Bits && AbiUtil.has32Bit(), debug);
-          int exitCode;
-          try {
-              java.lang.Process process = Runtime.getRuntime().exec("sh");
-              OutputStream os = process.getOutputStream();
-              os.write(cmd.getBytes());
-              os.flush();
-              os.close();
+          guard = "Refusing UserService shell launch from system uid"
+          if guard not in s:
+              begin_marker = "        String cmd = getUserServiceStartCmd("
+              end_marker = '            throw new IllegalStateException("sh exited with " + exitCode);\n        }'
+              begin = s.find(begin_marker)
+              end = s.find(end_marker, begin)
+              if begin < 0 or end < 0:
+                  raise SystemExit("UserServiceManager launch range not found")
+              end += len(end_marker)
 
-              exitCode = process.waitFor();
-          } catch (Throwable e) {
-              throw new IllegalStateException(e.getMessage());
-          }
-          if (exitCode != 0) {
-              throw new IllegalStateException("sh exited with " + exitCode);
-          }'''
-
-          new = '''        String cmd = getUserServiceStartCmd(record, key, token, packageName, classname, processNameSuffix, callingUid, use32Bits && AbiUtil.has32Bit(), debug);
-
-          // TokenX can host Shizuku in system_server (uid 1000). SELinux deliberately
-          // prevents system_server from exec'ing a shell. Never let that expected denial
-          // escape this executor: an uncaught RuntimeException here kills the framework.
-          if (Process.myUid() == Process.SYSTEM_UID) {
-              LOGGER.w("Refusing UserService shell launch from system uid for %s (%s); keeping system_server alive", key, token);
-              record.removeSelf();
-              return;
-          }
-
-          int exitCode;
-          try {
-              java.lang.Process process = Runtime.getRuntime().exec("/system/bin/sh");
-              try (OutputStream os = process.getOutputStream()) {
-                  os.write(cmd.getBytes());
-                  os.flush();
-              }
-              exitCode = process.waitFor();
-          } catch (Throwable e) {
-              LOGGER.w("Unable to start UserService %s (%s): %s", key, token, e);
-              record.removeSelf();
-              return;
-          }
-          if (exitCode != 0) {
-              LOGGER.w("UserService shell exited with %d for %s (%s)", exitCode, key, token);
-              record.removeSelf();
-          }'''
-
-          if "Refusing UserService shell launch from system uid" not in s:
-              if old not in s:
-                  raise SystemExit("UserServiceManager launch block anchor not found")
-              s = s.replace(old, new, 1)
+              new_lines = [
+                  "        String cmd = getUserServiceStartCmd(record, key, token, packageName, classname, processNameSuffix, callingUid, use32Bits && AbiUtil.has32Bit(), debug);",
+                  "",
+                  "        // TokenX system_server must never exec a shell; SELinux denies it and",
+                  "        // an uncaught exception here would restart the Android framework.",
+                  "        if (Process.myUid() == Process.SYSTEM_UID) {",
+                  '            LOGGER.w("Refusing UserService shell launch from system uid for %s (%s); keeping system_server alive", key, token);',
+                  "            record.removeSelf();",
+                  "            return;",
+                  "        }",
+                  "",
+                  "        int exitCode;",
+                  "        try {",
+                  '            java.lang.Process process = Runtime.getRuntime().exec("/system/bin/sh");',
+                  "            try (OutputStream os = process.getOutputStream()) {",
+                  "                os.write(cmd.getBytes());",
+                  "                os.flush();",
+                  "            }",
+                  "            exitCode = process.waitFor();",
+                  "        } catch (Throwable e) {",
+                  '            LOGGER.w("Unable to start UserService %s (%s): %s", key, token, e);',
+                  "            record.removeSelf();",
+                  "            return;",
+                  "        }",
+                  "        if (exitCode != 0) {",
+                  '            LOGGER.w("UserService shell exited with %d for %s (%s)", exitCode, key, token);',
+                  "            record.removeSelf();",
+                  "        }",
+              ]
+              s = s[:begin] + "\n".join(new_lines) + s[end:]
 
           p.write_text(s)
           print("TokenX UserService system_server crash guard applied")
