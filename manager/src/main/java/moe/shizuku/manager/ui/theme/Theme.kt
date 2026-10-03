@@ -36,6 +36,12 @@ private val BrandColor = Color(0xFF3F51B5)
  */
 val LocalAmoledTheme = staticCompositionLocalOf { false }
 
+/** True when the TokenX MIUIX-inspired surface treatment is selected. */
+val LocalMiuixTheme = staticCompositionLocalOf { false }
+
+private const val PREF_THEME_STYLE = "tokenx_theme_style"
+private const val THEME_STYLE_MIUIX = "MIUIX"
+
 /** Bumped when a theme preference changes so the theme re-reads the prefs. */
 object ThemeState {
     var version by mutableIntStateOf(0)
@@ -62,6 +68,7 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
 
     val useSystemColor = prefs.getBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
     val amoled = darkTheme && prefs.getBoolean(ShizukuSettings.Keys.KEY_BLACK_NIGHT_THEME, false)
+    val miuix = prefs.getString(PREF_THEME_STYLE, "MATERIAL") == THEME_STYLE_MIUIX
 
     // Like KernelSU: keep the chosen key color by default, only follow the
     // wallpaper when the user enables system color. A fixed seed avoids a
@@ -84,27 +91,45 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
     // roles that the cards and the navigation bar actually use kept the standard
     // dark greys a black page with grey cards. Spread the black across every
     // surface role; row dividers keep the list readable without the card shape.
-    val colorScheme = if (amoled) baseScheme.copy(
-        background = Color.Black,
-        surface = Color.Black,
-        surfaceDim = Color.Black,
-        surfaceBright = Color.Black,
-        surfaceContainerLowest = Color.Black,
-        surfaceContainerLow = Color.Black,
-        surfaceContainer = Color.Black,
-        surfaceContainerHigh = Color.Black,
-        surfaceContainerHighest = Color.Black,
-
-        // Keep every foreground role legible on the pure-black theme. Some expressive
-        // components resolve their text/icon colour from these roles instead of inheriting
-        // Surface contentColor; leaving a light-scheme foreground behind produced nearly
-        // black labels on the AMOLED cards.
-        onBackground = Color(0xFFE6E6E6),
-        onSurface = Color(0xFFE6E6E6),
-        onSurfaceVariant = Color(0xFFB8B8B8),
-        outline = Color(0xFF8A8A8A),
-        outlineVariant = Color(0xFF4A4A4A),
-    ) else baseScheme
+    val colorScheme = when {
+        amoled -> baseScheme.copy(
+            background = Color.Black,
+            surface = Color.Black,
+            surfaceDim = Color.Black,
+            surfaceBright = Color.Black,
+            surfaceContainerLowest = Color.Black,
+            surfaceContainerLow = Color.Black,
+            surfaceContainer = Color.Black,
+            surfaceContainerHigh = Color.Black,
+            surfaceContainerHighest = Color.Black,
+            onBackground = Color(0xFFE6E6E6),
+            onSurface = Color(0xFFE6E6E6),
+            onSurfaceVariant = Color(0xFFB8B8B8),
+            outline = Color(0xFF8A8A8A),
+            outlineVariant = Color(0xFF4A4A4A),
+        )
+        miuix && darkTheme -> baseScheme.copy(
+            background = Color(0xFF0D0D0F),
+            surface = Color(0xFF121214),
+            surfaceContainerLowest = Color(0xFF101012),
+            surfaceContainerLow = Color(0xFF171719),
+            surfaceContainer = Color(0xFF1C1C1F),
+            surfaceContainerHigh = Color(0xFF222225),
+            surfaceContainerHighest = Color(0xFF29292D),
+            outlineVariant = Color(0xFF34343A),
+        )
+        miuix -> baseScheme.copy(
+            background = Color(0xFFF5F5F7),
+            surface = Color(0xFFFAFAFC),
+            surfaceContainerLowest = Color.White,
+            surfaceContainerLow = Color(0xFFF7F7F9),
+            surfaceContainer = Color(0xFFF0F0F3),
+            surfaceContainerHigh = Color(0xFFEAEAEF),
+            surfaceContainerHighest = Color(0xFFE3E3E9),
+            outlineVariant = Color(0xFFD7D7DE),
+        )
+        else -> baseScheme
+    }
 
     // Match the status/navigation bar icons to the app's theme, not the system's;
     // otherwise a white in-app theme gets light icons on a white bar (invisible).
@@ -119,7 +144,7 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
         }
     }
 
-    CompositionLocalProvider(LocalAmoledTheme provides amoled) {
+    CompositionLocalProvider(LocalAmoledTheme provides amoled, LocalMiuixTheme provides miuix) {
         MaterialTheme(
             colorScheme = colorScheme,
             motionScheme = MotionScheme.expressive(),
