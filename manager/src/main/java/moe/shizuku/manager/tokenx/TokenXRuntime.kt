@@ -6,6 +6,7 @@ import android.os.IBinder
 import android.os.Parcel
 import android.os.ServiceManager
 import com.topjohnwu.superuser.Shell
+import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import rikka.shizuku.Shizuku
 
