@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Parcel
+import android.os.SystemClock
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.Manifest
 import moe.shizuku.manager.ShizukuSettings
@@ -50,12 +51,13 @@ object AuthorizationManager {
      * or shell). App authorization therefore survives backend changes instead of being
      * tied to the backend that happened to be running when the switch was pressed.
      */
-    fun restoreDesiredGrants() {
-        if (!Shizuku.pingBinder()) return
+    fun restoreDesiredGrants(): Boolean {
+        if (!Shizuku.pingBinder()) return false
         val desired = desiredGrants()
-        if (desired.isEmpty()) return
+        if (desired.isEmpty()) return true
 
-        runCatching {
+        return runCatching {
+            var allVerified = true
             getPackages().forEach { pi ->
                 val uid = pi.applicationInfo?.uid ?: return@forEach
                 if (grantKey(pi.packageName, uid) !in desired) return@forEach
@@ -69,10 +71,34 @@ object AuthorizationManager {
                 } else {
                     Shizuku.updateFlagsForUid(uid, MASK_PERMISSION, FLAG_ALLOWED)
                 }
+
+                val verified = runCatching { granted(pi.packageName, uid) }.getOrDefault(false)
+                if (!verified) {
+                    allVerified = false
+                    LOGGER.w("TokenX grant replay not verified: %s uid=%d", pi.packageName, uid)
+                } else {
+                    LOGGER.i("TokenX grant replay verified: %s uid=%d", pi.packageName, uid)
+                }
             }
+            allVerified
         }.onFailure {
             LOGGER.w(it, "restoreDesiredGrants")
-        }
+        }.getOrDefault(false)
+    }
+
+    /** Retry authorization replay while a freshly started server is still settling. */
+    fun restoreDesiredGrantsWithRetry() {
+        Thread({
+            val delays = longArrayOf(0L, 750L, 1500L, 3000L, 5000L)
+            for ((attempt, delayMs) in delays.withIndex()) {
+                if (delayMs > 0) SystemClock.sleep(delayMs)
+                if (!Shizuku.pingBinder()) continue
+                val complete = runCatching { restoreDesiredGrants() }.getOrDefault(false)
+                LOGGER.i("TokenX grant replay attempt=%d complete=%s", attempt + 1, complete)
+                if (complete) return@Thread
+            }
+            LOGGER.w("TokenX grant replay exhausted retries")
+        }, "TokenX-GrantReplay").start()
     }
 
     private fun getApplications(userId: Int): List<PackageInfo> {
