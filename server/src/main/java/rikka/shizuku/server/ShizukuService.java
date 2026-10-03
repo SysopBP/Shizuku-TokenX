@@ -69,13 +69,30 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     private static volatile boolean EMBEDDED_SYSTEM_SERVER = false;
     private static final String TOKENX_SYSTEM_SERVER_SERVICE = "tokenx_system_server";
     private static final String TOKENX_SYSTEM_SERVER_DESCRIPTOR = "moe.shizuku.tokenx.ISystemServerBridge";
+    private static final int TOKENX_TX_HEALTH = IBinder.FIRST_CALL_TRANSACTION;
+    private static final int TOKENX_TX_CAPABILITIES = IBinder.FIRST_CALL_TRANSACTION + 1;
+    private static final int TOKENX_CAP_UID1000 = 1;
+    private static final int TOKENX_CAP_EMBEDDED_SYSTEM_SERVER = 1 << 1;
+    private static final int TOKENX_CAP_FRAMEWORK_BINDER = 1 << 2;
     private static final Binder TOKENX_SYSTEM_SERVER_HEALTH_BINDER = new Binder() {
         @Override
         protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
-            if (code == IBinder.FIRST_CALL_TRANSACTION) {
+            if (code == TOKENX_TX_HEALTH) {
                 data.enforceInterface(TOKENX_SYSTEM_SERVER_DESCRIPTOR);
                 reply.writeNoException();
                 reply.writeInt(Process.myUid());
+                reply.writeInt(Process.myPid());
+                reply.writeString(android.os.SELinux.getContext());
+                return true;
+            }
+            if (code == TOKENX_TX_CAPABILITIES) {
+                data.enforceInterface(TOKENX_SYSTEM_SERVER_DESCRIPTOR);
+                int capabilities = 0;
+                if (Process.myUid() == Process.SYSTEM_UID) capabilities |= TOKENX_CAP_UID1000;
+                if (EMBEDDED_SYSTEM_SERVER) capabilities |= TOKENX_CAP_EMBEDDED_SYSTEM_SERVER;
+                capabilities |= TOKENX_CAP_FRAMEWORK_BINDER;
+                reply.writeNoException();
+                reply.writeInt(capabilities);
                 return true;
             }
             return super.onTransact(code, data, reply, flags);
