@@ -30,7 +30,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.HapticFeedbackConstantsCompat
+import androidx.core.view.ViewCompat
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,10 +52,22 @@ fun TokenXDashboard(
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
+    val hapticView = LocalView.current
     var provisionStatus by remember { mutableStateOf<String?>(null) }
     var provisioning by remember { mutableStateOf(false) }
     var showVaultDialog by remember { mutableStateOf(false) }
     var dialogTitle by remember { mutableStateOf("Provisioning Vault • Live") }
+
+    LaunchedEffect(provisioning) {
+        if (provisioning) {
+            while (true) {
+                ViewCompat.performHapticFeedback(hapticView, HapticFeedbackConstantsCompat.CONFIRM)
+                delay(180L)
+                ViewCompat.performHapticFeedback(hapticView, HapticFeedbackConstantsCompat.CONFIRM)
+                delay(820L)
+            }
+        }
+    }
 
     fun runProvision(title: String = "Provisioning Vault • Live", action: () -> SystemUidProvisioner.Result) {
         if (provisioning) return
@@ -71,6 +88,7 @@ fun TokenXDashboard(
                 }
             }
             provisioning = false
+            ViewCompat.performHapticFeedback(hapticView, if (result.success) HapticFeedbackConstantsCompat.CONFIRM else HapticFeedbackConstantsCompat.REJECT)
         }
     }
 
