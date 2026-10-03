@@ -161,6 +161,7 @@ fun TokenXDashboard(
                         VaultChainRow("D2 Gate", stageLabel(SystemUidProvisioner.Stage.D2_GATE, liveStage, provisioning, "OPEN"), modeColor)
                         VaultChainRow("Serv", stageLabel(SystemUidProvisioner.Stage.SERV_UID, liveStage, provisioning, "UID 1000"), modeColor)
                         VaultChainRow("FOTA", stageLabel(SystemUidProvisioner.Stage.FOTA_UID, liveStage, provisioning, "UID 1000"), modeColor)
+                        VaultChainRow("DEX Fallback", stageLabel(SystemUidProvisioner.Stage.DEX_FALLBACK, liveStage, provisioning, "STANDBY"), modeColor)
                         VaultChainRow("Receiver Compatibility", stageLabel(SystemUidProvisioner.Stage.RX_COMPAT, liveStage, provisioning, "INTEGRATED"), modeColor)
                         if (dialogMode == "bridge") VaultChainRow("System Bridge", if (provisioning) "HANDSHAKE" else "VERIFIED", modeColor)
                     }
@@ -268,7 +269,7 @@ fun TokenXDashboard(
                 StatusLine(Icons.Rounded.Security, "Receiver Compatibility", "Xposed", Modifier.weight(1f))
             }
             Text(
-                "The audit is read-only: it checks Serv, FOTA, shared-system identity, live FOTA SELinux state, and TokenX Receiver Compatibility integration without launching FOTA or invoking update_engine.",
+                "The audit is read-only: it checks Serv, FOTA, shared-system identity, live FOTA SELinux state, the provisioning DEX fallback, and TokenX Receiver Compatibility integration without executing the DEX, launching FOTA, or invoking update_engine.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
