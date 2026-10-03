@@ -18,6 +18,8 @@ import androidx.compose.material.icons.rounded.Token
 import androidx.compose.material.icons.rounded.SystemSecurityUpdateGood
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -282,7 +284,12 @@ fun TokenXDashboard(
                     .fillMaxWidth(.82f)
                     .align(Alignment.CenterHorizontally)
             ) {
-                Text(if (provisioning) "Scanning Vault…" else "Scan Provisioning Vault", style = MaterialTheme.typography.labelLarge)
+                Icon(Icons.Rounded.Search, contentDescription = null, Modifier.size(20.dp))
+                Text(
+                    if (provisioning) "Scanning Vault…" else "Scan Provisioning Vault",
+                    Modifier.padding(start = 10.dp),
+                    style = MaterialTheme.typography.labelLarge
+                )
             }
 
             Text(
@@ -301,7 +308,12 @@ fun TokenXDashboard(
                     enabled = rootAvailable && !provisioning,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Verify System Bridge", style = MaterialTheme.typography.labelLarge)
+                    Icon(Icons.Rounded.VerifiedUser, contentDescription = null, Modifier.size(20.dp))
+                    Text(
+                        "Verify System Bridge",
+                        Modifier.padding(start = 10.dp),
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
             }
             if (!rootAvailable) {
@@ -348,10 +360,33 @@ private fun StatusLine(
     modifier: Modifier = Modifier,
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
+        Box(
+            modifier = Modifier.size(40.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.size(26.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
         Column(Modifier.padding(start = 8.dp)) {
             Text(label, style = MaterialTheme.typography.labelMedium)
-            Text(value, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Rounded.CheckCircle,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    value,
+                    modifier = Modifier.padding(start = 5.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
