@@ -66,6 +66,8 @@ import moe.shizuku.manager.utils.SettingsHelper
 import moe.shizuku.manager.utils.SettingsPage
 import moe.shizuku.manager.tokenx.TokenXRuntime
 import moe.shizuku.manager.tokenx.TokenXRuntimeState
+import moe.shizuku.manager.tokenx.TokenXCapabilityScanner
+import moe.shizuku.manager.tokenx.TokenXCapabilityProbe
 import kotlinx.coroutines.delay
 import rikka.core.util.ClipboardUtils
 
@@ -91,6 +93,7 @@ fun PermissionsScreen(onBack: () -> Unit) {
         mutableStateOf(localNetworkPermission()?.let { context.hasPermission(it) } ?: true)
     }
     var tokenxRuntime by remember { mutableStateOf(TokenXRuntime.snapshot(context)) }
+    var capabilityProbe by remember { mutableStateOf<TokenXCapabilityProbe?>(null) }
 
     fun refresh() {
         notifications = context.hasPermission(POST_NOTIFICATIONS)
@@ -139,6 +142,7 @@ fun PermissionsScreen(onBack: () -> Unit) {
         refresh()
         while (true) {
             tokenxRuntime = withContext(Dispatchers.IO) { TokenXRuntime.snapshot(context) }
+            capabilityProbe = withContext(Dispatchers.IO) { TokenXCapabilityScanner.scan(context) }
             delay(TokenXRuntime.REFRESH_INTERVAL_MS)
         }
     }
@@ -319,6 +323,34 @@ fun PermissionsScreen(onBack: () -> Unit) {
                     },
                     active = tokenxRuntime.systemServerBridgeActive
                 )
+            }
+
+
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Capability scanner", style = MaterialTheme.typography.titleMedium)
+                    Text("Live probes — not hard-coded permission claims", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            item {
+                PrivilegedAccessRow(Icons.Rounded.AdminPanelSettings, "Secure settings", "WRITE_SECURE_SETTINGS grant for manager operations.", if (capabilityProbe?.writeSecureSettings == true) "Granted" else "Not granted", capabilityProbe?.writeSecureSettings == true)
+            }
+            item {
+                PrivilegedAccessRow(Icons.Rounded.Visibility, "System settings write", "Android Settings.System write capability.", if (capabilityProbe?.writeSettings == true) "Granted" else "Not granted", capabilityProbe?.writeSettings == true)
+            }
+            item {
+                PrivilegedAccessRow(Icons.Rounded.Memory, "Dumpsys", "Runtime diagnostic access tested through the Root backend.", if (capabilityProbe?.dumpViaRoot == true) "Root probe passed" else "Unavailable", capabilityProbe?.dumpViaRoot == true)
+            }
+            item {
+                PrivilegedAccessRow(Icons.Rounded.Security, "Package manager", "Package service command access tested through Root.", if (capabilityProbe?.packageManagerViaRoot == true) "Root probe passed" else "Unavailable", capabilityProbe?.packageManagerViaRoot == true)
+            }
+            item {
+                PrivilegedAccessRow(Icons.Rounded.Hub, "System properties", "Read access to Android system properties through Root.", if (capabilityProbe?.systemPropertiesViaRoot == true) "Root probe passed" else "Unavailable", capabilityProbe?.systemPropertiesViaRoot == true)
+            }
+            capabilityProbe?.rootSelinuxContext?.let { contextLabel ->
+                item {
+                    PrivilegedAccessRow(Icons.Rounded.Key, "Root SELinux context", "Identity actually observed by the Root backend.", contextLabel, true)
+                }
             }
         }
     }
