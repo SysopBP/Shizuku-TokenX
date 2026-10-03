@@ -87,6 +87,13 @@ jobs:
           PY
           grep -nE 'fork\(\)|setsid\(\)|_exit\(' "$FILE"
 
+      - name: Apply TokenX system_server UserService crash guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C api apply ../ci/system-server-userservice.patch
+          echo "Applied UserService system_server crash guard"
+
       - name: Setup Java 21
         uses: actions/setup-java@v5
         with:
