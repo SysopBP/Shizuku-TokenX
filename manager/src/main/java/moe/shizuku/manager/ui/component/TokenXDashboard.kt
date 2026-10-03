@@ -302,7 +302,9 @@ fun TokenXDashboard(
                 TokenXGlassButton(
                     onClick = { runProvision("System Bridge Verify • Live") { SystemUidProvisioner.verify() } },
                     enabled = rootAvailable && !provisioning,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .fillMaxWidth(.82f)
+                        .align(Alignment.CenterVertically)
                 ) {
                     Icon(Icons.Rounded.VerifiedUser, contentDescription = null, Modifier.size(20.dp))
                     Text("Verify System Bridge", Modifier.padding(start = 10.dp), style = MaterialTheme.typography.labelLarge)
