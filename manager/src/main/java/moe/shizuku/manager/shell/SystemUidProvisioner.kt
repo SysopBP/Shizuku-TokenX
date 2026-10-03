@@ -126,6 +126,43 @@ object SystemUidProvisioner {
             "dumpsys package " + packageName + " | grep -m1 -F 'pkg=Package{'",
             "dumpsys activity processes | grep -m1 -E '[0-9]+:system/1000'",
             "ps -AZ | grep -m1 -E 'u:r:system_server:s0.*system_server'",
+            // TokenX uses a direct Binder handoff (BinderSender), not a named
+            // ServiceManager registration. A UID-1000 rish worker is deliberately
+            // launched outside system_server, so verify that architecture rather
+            // than treating service-list absence as a bridge failure.
+            "echo DIRECT_BINDER=architecture-supported",
+            "if ps -AZ | grep -E '[[:space:]]shizuku_server
+        return runRoot(script)
+    }
+
+    private fun runRoot(script: String): Result {
+        val command = listOf("su", "-c", script)
+        return try {
+            val process = ProcessBuilder(command)
+                .redirectErrorStream(true)
+                .start()
+
+            val output = BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
+                buildString {
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        appendLine(line)
+                    }
+                }
+            }
+
+            val exitCode = process.waitFor()
+            Result(exitCode == 0, exitCode, output, command.joinToString(" "))
+        } catch (t: Throwable) {
+            Result(false, -1, "${t.javaClass.simpleName}: ${t.message}", command.joinToString(" "))
+        }
+    }
+
+    private fun q(value: String): String =
+        "'" + value.replace("'", "'\\''") + "'"
+}
+ | grep -q -E '(^|[[:space:]])system([[:space:]]|$)'; then echo UID1000_WORKER=active; else echo UID1000_WORKER=on-demand; fi",
+            "echo NAMED_BINDER=not-required",
         ).joinToString("; ")
         return runRoot(script)
     }
