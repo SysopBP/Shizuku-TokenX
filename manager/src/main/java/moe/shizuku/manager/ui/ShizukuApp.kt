@@ -139,7 +139,7 @@ private data class Tab(
 private val tabs = listOf(
     Tab(R.string.tab_home, Icons.Filled.Home, Icons.Outlined.Home),
     Tab(R.string.tab_apps, Icons.Filled.Apps, Icons.Outlined.Apps),
-    Tab(R.string.tokenx_title, Icons.Filled.Bolt, Icons.Outlined.Bolt),
+    Tab(R.string.home_system_title, Icons.Filled.Bolt, Icons.Outlined.Bolt),
     // Labs holds the things that are gone to rather than lived in: the app-ops list and the
     // shell to begin with, and whatever else turns out to belong there. Each was a tab of its
     // own before, which is a lot of the bar for two screens that are mostly a list you read
@@ -332,7 +332,7 @@ private fun MainTabs(
                         active = active,
                         warmUp = warmUp
                     )
-                    2 -> TokenXControlCenterScreen(onBack = null)
+                    2 -> TokenXControlCenterScreen(onBack = {})
                     3 -> LabsScreen(bottomPadding = bottomPadding, onOpenDetail = onOpenDetail)
                     4 -> SettingsScreen(bottomPadding = bottomPadding, onOpenDetail = onOpenDetail)
                 }
