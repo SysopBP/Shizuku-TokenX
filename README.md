@@ -30,7 +30,13 @@ Shizuku-TokenX combines Shizuku-compatible app authorization with multiple Andro
 4. Remember that UID 1000, UID 0, and UID 2000 are different Android security contexts.
 5. Kiosk D2 Guardian integration is optional and only applies when D2 is installed.
 
-> **Current screenshot:** the v14.2.0-TKN interface preview will be shown here once the release collage is stored under `docs/`.
+## Screenshots
+
+<div align="center">
+
+<img src="docs/TokenX_collage_equal_sizes.png" width="100%" alt="Shizuku-TokenX v14.2.0-TKN interface and capability preview">
+
+</div>
 
 ## About TokenX
 
