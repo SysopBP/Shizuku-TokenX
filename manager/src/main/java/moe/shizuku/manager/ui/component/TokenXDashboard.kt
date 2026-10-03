@@ -65,6 +65,7 @@ fun TokenXDashboard(
     var dialogTitle by remember { mutableStateOf("Provisioning Vault • Live") }
     var dialogMode by remember { mutableStateOf("vault") }
     var showTechnicalConsole by remember { mutableStateOf(false) }
+    var liveStage by remember { mutableStateOf<SystemUidProvisioner.Progress?>(null) }
 
     LaunchedEffect(provisioning) {
         if (provisioning) {
@@ -154,10 +155,10 @@ fun TokenXDashboard(
                         color = modeColor
                     )
                     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        VaultChainRow("D2 Gate", if (provisioning) "VERIFYING" else "OPEN", modeColor)
-                        VaultChainRow("Serv", if (provisioning) "UID CHECK" else "UID 1000", modeColor)
-                        VaultChainRow("FOTA", if (provisioning) "IDENTITY CHECK" else "SYSTEM APP", modeColor)
-                        VaultChainRow("A17 Compatibility", if (provisioning) "CHECKING" else "AUDITED", modeColor)
+                        VaultChainRow("D2 Gate", stageLabel(SystemUidProvisioner.Stage.D2_GATE, liveStage, provisioning, "OPEN"), modeColor)
+                        VaultChainRow("Serv", stageLabel(SystemUidProvisioner.Stage.SERV_UID, liveStage, provisioning, "UID 1000"), modeColor)
+                        VaultChainRow("FOTA", stageLabel(SystemUidProvisioner.Stage.FOTA_UID, liveStage, provisioning, "UID 1000"), modeColor)
+                        VaultChainRow("A17 Compatibility", stageLabel(SystemUidProvisioner.Stage.RX_COMPAT, liveStage, provisioning, "AUDITED"), modeColor)
                         if (dialogMode == "bridge") VaultChainRow("System Bridge", if (provisioning) "HANDSHAKE" else "VERIFIED", modeColor)
                     }
                     HorizontalDivider()
@@ -269,7 +270,12 @@ fun TokenXDashboard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Button(
-                onClick = { runProvision("Provisioning Vault • Live") { SystemUidProvisioner.verifyProvisionedPayloads() } },
+                onClick = { runProvision("Provisioning Vault • Live") {
+                    SystemUidProvisioner.verifyProvisionedPayloads { progress ->
+                        liveStage = progress
+                        provisionStatus = "${progress.stage.name} • ${progress.state.name}\n${progress.detail}"
+                    }
+                } },
                 enabled = rootAvailable && !provisioning,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -375,4 +381,18 @@ private fun VaultChainRow(
         Text(label, Modifier.padding(start = 10.dp).weight(1f), fontWeight = FontWeight.Medium)
         Text(state, style = MaterialTheme.typography.labelSmall, color = accent)
     }
+}
+
+
+private fun stageLabel(
+    stage: SystemUidProvisioner.Stage,
+    current: SystemUidProvisioner.Progress?,
+    running: Boolean,
+    complete: String,
+): String = when {
+    !running -> complete
+    current == null -> "WAITING"
+    current.stage == stage -> current.state.name
+    current.stage.ordinal > stage.ordinal -> "VERIFIED"
+    else -> "WAITING"
 }
