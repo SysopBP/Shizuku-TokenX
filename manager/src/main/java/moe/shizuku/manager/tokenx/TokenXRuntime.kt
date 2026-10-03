@@ -38,11 +38,12 @@ object TokenXRuntime {
         // A package/manager being installed is not enough. Trust the UID 1000
         // backend only after the Binder service in system_server answers our ping.
         val bridgeActive = pingSystemServerBridge()
+        val servUid1000 = isServUid1000()
         val state = TokenXBackendState(
             serverRunning = running,
             serverUid = uid,
             rootAvailable = root || uid == 0,
-            systemServerBridgeAvailable = bridgeActive || uid == 1000,
+            systemServerBridgeAvailable = servUid1000 || uid == 1000,
             shellAvailable = uid == 2000,
         )
 
@@ -69,7 +70,7 @@ object TokenXRuntime {
         }
     }.getOrDefault(false)
 
-    private fun isInstalled(pm: PackageManager, packageName: String): Boolean =
+    /** Serv.apk is the Sserver backend. Package presence alone is insufficient: it must\n     * resolve to Android's system UID before TokenX advertises UID 1000 as available. */\n    private fun isServUid1000(): Boolean = runCatching {\n        val result = Shell.cmd(\"cmd package list packages -U | grep -F 'package:com.vikram.exp uid:1000'\").exec()\n        result.isSuccess && result.out.any { it.contains(\"package:com.vikram.exp uid:1000\") }\n    }.getOrDefault(false)\n\n    private fun isInstalled(pm: PackageManager, packageName: String): Boolean =
         runCatching { pm.getPackageInfo(packageName, 0) }.isSuccess
 
     private const val SYSTEM_SERVER_SERVICE = "tokenx_system_server"
