@@ -135,6 +135,18 @@ object SystemUidProvisioner {
         return runRoot(script)
     }
 
+    /** Run a fixed TokenX privileged maintenance action from the dashboard. */
+    fun runPrivilegedAction(command: String): Result {
+        val allowed = setOf(
+            "setprop ctl.restart zygote",
+            "pkill -TERM -f com.android.systemui",
+        )
+        if (command !in allowed) {
+            return Result(false, -1, "Rejected unsupported privileged action", command)
+        }
+        return runRoot(command)
+    }
+
     private fun runRoot(script: String): Result {
         val command = listOf("su", "-c", script)
         return try {
