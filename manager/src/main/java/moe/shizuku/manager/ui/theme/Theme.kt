@@ -71,6 +71,8 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
     // packed-ULong Color constructor makes Compose interpret ARGB bits as a packed
     // color-space value and can produce an invalid color-space index at startup.
     val tokenAccent = Color(savedAccent.toInt())
+    val selectedAccentPreset = prefs.getString(TokenXAppearanceKeys.ACCENT_PRESET, TokenXAccent.TOKEN_PURPLE.name)
+    val graphiteMode = !useSystemColor && selectedAccentPreset == TokenXAccent.GRAPHITE.name
     val seed = if (useSystemColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         (if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)).primary
     } else {
@@ -100,15 +102,25 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
     // TKN Boot keeps wallpaper/glass surfaces neutral. The selected accent is for
     // controls and active state, not for repainting every card/container.
     val neutralScheme = baseScheme.copy(
-        background = if (darkTheme) Color(0xFF090A0D) else Color(0xFFF7F7F9),
-        surface = if (darkTheme) Color(0xFF0D0F13) else Color(0xFFFFFFFF),
-        surfaceDim = if (darkTheme) Color(0xFF090A0D) else Color(0xFFE6E7EA),
-        surfaceBright = if (darkTheme) Color(0xFF25282E) else Color(0xFFFFFFFF),
-        surfaceContainerLowest = if (darkTheme) Color(0xFF090A0D) else Color(0xFFFFFFFF),
-        surfaceContainerLow = if (darkTheme) Color(0xFF101216) else Color(0xFFF4F4F6),
-        surfaceContainer = if (darkTheme) Color(0xFF14161B) else Color(0xFFF0F0F3),
-        surfaceContainerHigh = if (darkTheme) Color(0xFF191C21) else Color(0xFFE9E9ED),
-        surfaceContainerHighest = if (darkTheme) Color(0xFF202329) else Color(0xFFE2E3E7),
+        primary = if (darkTheme && graphiteMode) Color(0xFF9AA0A8) else baseScheme.primary,
+        onPrimary = if (darkTheme && graphiteMode) Color(0xFF111317) else baseScheme.onPrimary,
+        primaryContainer = if (darkTheme && graphiteMode) Color(0xFF24282E) else baseScheme.primaryContainer,
+        onPrimaryContainer = if (darkTheme && graphiteMode) Color(0xFFE5E7EA) else baseScheme.onPrimaryContainer,
+        secondary = if (darkTheme && graphiteMode) Color(0xFF858B93) else baseScheme.secondary,
+        secondaryContainer = if (darkTheme && graphiteMode) Color(0xFF20242A) else baseScheme.secondaryContainer,
+        tertiary = if (darkTheme && graphiteMode) Color(0xFFADB2B8) else baseScheme.tertiary,
+        tertiaryContainer = if (darkTheme && graphiteMode) Color(0xFF282C32) else baseScheme.tertiaryContainer,
+        outline = if (darkTheme && graphiteMode) Color(0xFF5B6068) else baseScheme.outline,
+        outlineVariant = if (darkTheme && graphiteMode) Color(0xFF343941) else baseScheme.outlineVariant,
+        background = if (darkTheme) (if (graphiteMode) Color(0xFF050607) else Color(0xFF090A0D)) else Color(0xFFF7F7F9),
+        surface = if (darkTheme) (if (graphiteMode) Color(0xFF080A0C) else Color(0xFF0D0F13)) else Color(0xFFFFFFFF),
+        surfaceDim = if (darkTheme) (if (graphiteMode) Color(0xFF050607) else Color(0xFF090A0D)) else Color(0xFFE6E7EA),
+        surfaceBright = if (darkTheme) (if (graphiteMode) Color(0xFF1B1E22) else Color(0xFF25282E)) else Color(0xFFFFFFFF),
+        surfaceContainerLowest = if (darkTheme) (if (graphiteMode) Color(0xFF050607) else Color(0xFF090A0D)) else Color(0xFFFFFFFF),
+        surfaceContainerLow = if (darkTheme) (if (graphiteMode) Color(0xFF0A0C0F) else Color(0xFF101216)) else Color(0xFFF4F4F6),
+        surfaceContainer = if (darkTheme) (if (graphiteMode) Color(0xFF0E1013) else Color(0xFF14161B)) else Color(0xFFF0F0F3),
+        surfaceContainerHigh = if (darkTheme) (if (graphiteMode) Color(0xFF13161A) else Color(0xFF191C21)) else Color(0xFFE9E9ED),
+        surfaceContainerHighest = if (darkTheme) (if (graphiteMode) Color(0xFF191C21) else Color(0xFF202329)) else Color(0xFFE2E3E7),
         onBackground = if (darkTheme) Color(0xFFF5F5F7) else Color(0xFF17181B),
         onSurface = if (darkTheme) Color(0xFFF5F5F7) else Color(0xFF17181B),
         onSurfaceVariant = if (darkTheme) Color(0xFFC7C9D0) else Color(0xFF555861),
