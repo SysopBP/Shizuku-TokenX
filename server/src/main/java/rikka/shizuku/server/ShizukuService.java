@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -78,9 +79,56 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                 reply.writeInt(Process.myUid());
                 return true;
             }
+            if (code == IBinder.FIRST_CALL_TRANSACTION + 1) {
+                data.enforceInterface(TOKENX_SYSTEM_SERVER_DESCRIPTOR);
+                final String script = data.readString();
+                if (script == null || script.length() > 131072) {
+                    throw new IllegalArgumentException("invalid TokenX Sserver command");
+                }
+                Process process = null;
+                try {
+                    process = new ProcessBuilder("/system/bin/sh", "-c", script)
+                            .redirectErrorStream(false)
+                            .start();
+                    final Process commandProcess = process;
+                    final AtomicReference<String> stdout = new AtomicReference<>("");
+                    final AtomicReference<String> stderr = new AtomicReference<>("");
+                    Thread outThread = new Thread(() -> stdout.set(readTokenXStream(commandProcess.getInputStream())), "TokenX-Sserver-out");
+                    Thread errThread = new Thread(() -> stderr.set(readTokenXStream(commandProcess.getErrorStream())), "TokenX-Sserver-err");
+                    outThread.setDaemon(true);
+                    errThread.setDaemon(true);
+                    outThread.start();
+                    errThread.start();
+                    boolean finished = process.waitFor(30, TimeUnit.SECONDS);
+                    if (!finished) process.destroyForcibly();
+                    outThread.join(1000);
+                    errThread.join(1000);
+                    reply.writeNoException();
+                    reply.writeInt(finished ? process.exitValue() : 124);
+                    reply.writeString(stdout.get());
+                    reply.writeString(finished ? stderr.get() : stderr.get() + "\nTokenX Sserver: command timed out.");
+                    return true;
+                } catch (Throwable tr) {
+                    if (process != null) process.destroyForcibly();
+                    reply.writeNoException();
+                    reply.writeInt(-1);
+                    reply.writeString("");
+                    reply.writeString(tr.getClass().getSimpleName() + ": " + tr.getMessage());
+                    return true;
+                }
+            }
             return super.onTransact(code, data, reply, flags);
         }
     };
+
+    private static String readTokenXStream(java.io.InputStream input) {
+        try {
+            byte[] bytes = input.readNBytes(1024 * 1024);
+            return new String(bytes, StandardCharsets.UTF_8);
+        } catch (Throwable tr) {
+            return "stream error: " + tr.getMessage();
+        }
+    }
 
     private static void publishTokenXSystemServerHealthBinder() {
         if (Process.myUid() != Process.SYSTEM_UID) return;
