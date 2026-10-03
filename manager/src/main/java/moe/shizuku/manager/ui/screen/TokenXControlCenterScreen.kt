@@ -83,7 +83,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     BackendRow(Icons.Outlined.AdminPanelSettings, "Root", "UID 0", if (runtime.backendState.rootAvailable) if (uid == 0) "ACTIVE • current server" else "READY" else "Unavailable")
-                    BackendRow(Icons.Outlined.Security, "System Server", "UID 1000", if (runtime.backendState.systemServerBridgeAvailable) "ACTIVE • bridge verified" else "Waiting for bridge")
+                    BackendRow(Icons.Outlined.Security, "Sserver / Serv.apk", "UID 1000", if (runtime.backendState.systemServerBridgeAvailable) "READY • com.vikram.exp verified" else "Waiting for Serv.apk UID 1000")
                     BackendRow(Icons.Outlined.Terminal, "Shell", "UID 2000", if (runtime.backendState.shellAvailable) "ACTIVE • compatibility fallback" else "Standby")
                     BackendRow(Icons.Outlined.Extension, "Xposed / LSPosed", "system_server bridge", when { runtime.xposedBridgeActive -> "ACTIVE • handshake verified"; runtime.xposedFrameworkDetected -> "Framework detected • bridge waiting"; else -> "Not detected" })
                 }
@@ -103,7 +103,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                             ) { Text(mode) }
                         }
                     }
-                    PreviewSwitch("Prefer Root when capable", "Root-first policy; framework-only calls can route to System Server.", rootFirst) {
+                    PreviewSwitch("Prefer Root when capable", "Root-first policy; UID-1000 work can route to Sserver.", rootFirst) {
                         rootFirst = it; prefs.edit().putBoolean("tokenx_root_first", it).apply()
                     }
                     CapabilityLine("Filesystem", runtime.routes.getValue(TokenXCapability.FILESYSTEM).backend.name)
@@ -133,7 +133,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     FeatureRow(Icons.Outlined.Api, "Capability discovery", "LIVE • runtime backend state feeds the router")
                     FeatureRow(Icons.Outlined.Route, "Per-capability routing", "LIVE • Root first, System Server for framework work, Shell fallback")
                     FeatureRow(Icons.Outlined.Code, "Root execution", if (runtime.backendState.rootAvailable) "READY • UID 0 backend available" else "Unavailable")
-                    FeatureRow(Icons.Outlined.AdminPanelSettings, "Framework operations", "Preview • System Server / Xposed path")
+                    FeatureRow(Icons.Outlined.AdminPanelSettings, "UID 1000 operations", "Sserver • Serv.apk compatibility path")
                     FeatureRow(Icons.Outlined.Link, "Shizuku compatibility", "Preserved • existing Binder model stays intact")
                 }
             }
