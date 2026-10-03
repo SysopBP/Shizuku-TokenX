@@ -238,6 +238,17 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                 }
             }
 
+            SectionTitle("About TokenX")
+            TokenXGlassCard {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    FeatureRow(Icons.Outlined.Security, "D2 Dual Gate", "Serv + FOTA remain held until the D2 security boundary is released")
+                    FeatureRow(Icons.Outlined.Token, "Provisioning Vault", "Token Pulse • live Secure Chain • technical console")
+                    FeatureRow(Icons.Outlined.AdminPanelSettings, "Privileged payloads", "Serv UID 1000 • FOTA UID 1000 / system_app")
+                    FeatureRow(Icons.Outlined.Extension, "Android 17 compatibility", "Receiver Flag Fix currently required for the tested FOTA path")
+                    Text("System Server contribution: @Vikramaditya015", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+
             SectionTitle("Interface")
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
