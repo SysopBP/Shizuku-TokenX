@@ -23,6 +23,7 @@ data class TokenXRuntimeState(
     val systemServerBridgeActive: Boolean,
     /** Capability bits reported by the live TokenX system_server Binder. */
     val systemServerCapabilities: Int,
+    val backendRegistry: TokenXBackendRegistry,
     val xposedFrameworkDetected: Boolean,
     val xposedBridgeActive: Boolean,
     val routes: Map<TokenXCapability, TokenXRoute>,
@@ -65,18 +66,28 @@ object TokenXRuntime {
 
         val preferredBackend = when (ShizukuSettings.getStartMethod()) {
             ShizukuSettings.StartMethod.ROOT -> TokenXBackend.ROOT
-            ShizukuSettings.StartMethod.SYSTEM -> TokenXBackend.SYSTEM_SERVER
+            ShizukuSettings.StartMethod.SYSTEM -> TokenXBackend.SYSTEM_UID
             ShizukuSettings.StartMethod.WIRELESS,
             ShizukuSettings.StartMethod.USB,
             ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK -> TokenXBackend.SHELL
             else -> null
         }
 
+        val selectedBackend = preferredBackend ?: state.activeBackend
+        val registry = TokenXBackendRegistryBuilder.build(
+            selected = selectedBackend,
+            rootReady = state.rootAvailable,
+            systemUidReady = sserverBinderReady,
+            systemServerReady = bridgeActive,
+            shellReady = running && uid == 2000,
+        )
+
         return TokenXRuntimeState(
             backendState = state,
             systemServerBridgeAttached = bridgeAttached,
             systemServerBridgeActive = bridgeActive,
             systemServerCapabilities = bridgeCapabilities,
+            backendRegistry = registry,
             xposedFrameworkDetected = xposedDetected,
             xposedBridgeActive = bridgeActive,
             routes = TokenXCapability.entries.associateWith { TokenXRouter.route(it, state, preferredBackend) },
