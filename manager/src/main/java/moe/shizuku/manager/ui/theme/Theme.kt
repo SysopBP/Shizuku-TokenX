@@ -139,6 +139,13 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
         }
     }
 
+    val requestedUiStyle = runCatching {
+        TokenXUiStyle.valueOf(prefs.getString(TokenXAppearanceKeys.UI_STYLE, TokenXUiStyle.MATERIAL.name)!!)
+    }.getOrDefault(TokenXUiStyle.MATERIAL)
+    // Native Miuix rendering is introduced separately. Never label Material
+    // controls as Miuix while that renderer is unavailable.
+    val activeUiStyle = if (requestedUiStyle == TokenXUiStyle.MIUIX) TokenXUiStyle.MATERIAL else requestedUiStyle
+
     val tokenXGlass = TokenXGlassStyle(
         enabled = prefs.getBoolean(TokenXAppearanceKeys.GLASS_ENABLED, true),
         opacity = prefs.getFloat(TokenXAppearanceKeys.GLASS_OPACITY, .72f),
@@ -156,6 +163,7 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
 
     CompositionLocalProvider(
         LocalAmoledTheme provides amoled,
+        LocalTokenXUiStyle provides activeUiStyle,
         LocalTokenXGlass provides tokenXGlass
     ) {
         MaterialTheme(
