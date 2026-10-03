@@ -135,9 +135,9 @@ fun TokenXDashboard(
                         Box(
                             Modifier.size(64.dp)
                                 .graphicsLayer {
-                                    scaleX = if (provisioning) pulseScale else 1f
-                                    scaleY = if (provisioning) pulseScale else 1f
-                                    alpha = if (provisioning) (1.72f - pulseScale).coerceIn(.18f, .82f) else .38f
+                                    scaleX = pulseScale
+                                    scaleY = pulseScale
+                                    alpha = (1.72f - pulseScale).coerceIn(.28f, .92f)
                                 }
                                 .border(3.dp, modeColor, CircleShape)
                         )
@@ -278,9 +278,11 @@ fun TokenXDashboard(
                     }
                 } },
                 enabled = rootAvailable && !provisioning,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth(.82f)
+                    .align(Alignment.CenterHorizontally)
             ) {
-                Text(if (provisioning) "Scanning Vault…" else "Scan Provisioning Vault")
+                Text(if (provisioning) "Scanning Vault…" else "Scan Provisioning Vault", style = MaterialTheme.typography.labelLarge)
             }
 
             Text(
@@ -299,7 +301,7 @@ fun TokenXDashboard(
                     enabled = rootAvailable && !provisioning,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Verify System Bridge")
+                    Text("Verify System Bridge", style = MaterialTheme.typography.labelLarge)
                 }
             }
             if (!rootAvailable) {
