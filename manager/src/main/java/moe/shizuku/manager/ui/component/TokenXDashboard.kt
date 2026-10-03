@@ -57,6 +57,7 @@ fun TokenXDashboard(
     var provisioning by remember { mutableStateOf(false) }
     var showVaultDialog by remember { mutableStateOf(false) }
     var dialogTitle by remember { mutableStateOf("Provisioning Vault • Live") }
+    var dialogMode by remember { mutableStateOf("vault") }
 
     LaunchedEffect(provisioning) {
         if (provisioning) {
@@ -73,6 +74,7 @@ fun TokenXDashboard(
         if (provisioning) return
         provisioning = true
         dialogTitle = title
+        dialogMode = if (title.startsWith("System Bridge")) "bridge" else "vault"
         showVaultDialog = true
         provisionStatus = "D2 Gate • checking security boundary…"
         scope.launch {
@@ -92,6 +94,13 @@ fun TokenXDashboard(
         }
     }
 
+    val modeColor = when {
+        !provisioning && provisionStatus?.startsWith("SUCCESS") == true -> MaterialTheme.colorScheme.tertiary
+        !provisioning && provisionStatus?.startsWith("FAILED") == true -> MaterialTheme.colorScheme.error
+        dialogMode == "bridge" -> MaterialTheme.colorScheme.secondary
+        else -> MaterialTheme.colorScheme.primary
+    }
+
     if (showVaultDialog) {
         BasicAlertDialog(
             onDismissRequest = { if (!provisioning) showVaultDialog = false }
@@ -99,10 +108,10 @@ fun TokenXDashboard(
           TokenXGlassCard {
            Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             
-                if (provisioning) CircularProgressIndicator(Modifier.size(54.dp))
-                else Icon(Icons.Rounded.VerifiedUser, null, Modifier.size(54.dp), tint = MaterialTheme.colorScheme.primary)
+                if (provisioning) CircularProgressIndicator(Modifier.size(54.dp), color = modeColor)
+                else Icon(Icons.Rounded.VerifiedUser, null, Modifier.size(54.dp), tint = modeColor)
             },
-            Text(if (provisioning) dialogTitle else dialogTitle.replace(" • Live", " • Complete"), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+            Text(if (provisioning) dialogTitle else dialogTitle.replace(" • Live", " • Complete"), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = modeColor)
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     VaultLiveRow(Icons.Rounded.Lock, "D2 Gate", if (provisioning) "Verifying…" else "Dual gate configured")
                     VaultLiveRow(Icons.Rounded.VerifiedUser, "Serv.apk", if (provisioning) "Checking UID 1000…" else "Audit complete")
