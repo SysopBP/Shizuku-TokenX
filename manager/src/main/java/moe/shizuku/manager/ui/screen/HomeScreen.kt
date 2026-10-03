@@ -1398,6 +1398,6 @@ private enum class DeviceRestartAction(
         "Restart TokenX",
         "Restart only the TokenX manager app. The active privilege backend is left running.",
         "Restart TokenX",
-        "(sleep 1; am force-stop moe.shizuku.privileged.api; sleep 1; monkey -p moe.shizuku.privileged.api -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1) >/dev/null 2>&1 &"
+        "(sleep 1; am force-stop com.vikram.exp; sleep 1; monkey -p com.vikram.exp -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1) >/dev/null 2>&1 &"
     )
 }
