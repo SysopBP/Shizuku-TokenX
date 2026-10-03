@@ -49,6 +49,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.shell.SystemUidProvisioner
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TokenXDashboard(
     running: Boolean,
