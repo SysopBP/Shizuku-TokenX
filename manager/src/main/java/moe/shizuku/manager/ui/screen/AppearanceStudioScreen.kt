@@ -24,6 +24,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
 import moe.shizuku.manager.ui.theme.ThemeState
+import com.materialkolor.PaletteStyle
 
 @Composable
 fun AppearanceStudioScreen() {
@@ -36,6 +37,12 @@ fun AppearanceStudioScreen() {
             )
         }.getOrDefault(TokenXThemePreset.TOKENX))
     }
+    var colorStyle by remember {
+        mutableStateOf(runCatching {
+            PaletteStyle.valueOf(prefs.getString(TokenXAppearanceKeys.COLOR_STYLE, PaletteStyle.TonalSpot.name)!!)
+        }.getOrDefault(PaletteStyle.TonalSpot))
+    }
+    var colorSpec by remember { mutableStateOf(prefs.getString(TokenXAppearanceKeys.COLOR_SPEC, "SPEC_2025") ?: "SPEC_2025") }
     var glass by remember { mutableStateOf(prefs.getBoolean(TokenXAppearanceKeys.GLASS_ENABLED, true)) }
     var opacity by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_OPACITY, .72f)) }
     var blur by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_BLUR, 22f)) }
@@ -95,6 +102,14 @@ fun AppearanceStudioScreen() {
                                     .putLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.TOKEN_PURPLE.argb)
                                     .putString(TokenXAppearanceKeys.ACCENT_PRESET, TokenXAccent.TOKEN_PURPLE.name)
                             }
+                            TokenXThemePreset.GHOST -> {
+                                glass = true; opacity = .26f; blur = 38f; radius = 34f; border = .24f; dim = .08f
+                                mode = BackgroundMode.AMOLED_GRADIENT
+                                editor.putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
+                                    .putBoolean(ShizukuSettings.Keys.KEY_BLACK_NIGHT_THEME, false)
+                                    .putLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.ICE.argb)
+                                    .putString(TokenXAppearanceKeys.ACCENT_PRESET, TokenXAccent.ICE.name)
+                            }
                             TokenXThemePreset.AMOLED -> {
                                 glass = true; opacity = .58f; blur = 20f; radius = 28f; border = .12f; dim = .12f
                                 mode = BackgroundMode.AMOLED
@@ -138,6 +153,39 @@ fun AppearanceStudioScreen() {
                     },
                     label = { Text(preset.label) }
                 )
+            }
+        }
+
+        TokenXGlassCard {
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Material color engine", style = MaterialTheme.typography.titleMedium)
+                Text("Choose the palette algorithm and Material color specification used across TokenX.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(PaletteStyle.TonalSpot, PaletteStyle.Neutral, PaletteStyle.Vibrant, PaletteStyle.Expressive, PaletteStyle.Fidelity, PaletteStyle.Content, PaletteStyle.Monochrome).forEach { style ->
+                        FilterChip(
+                            selected = colorStyle == style,
+                            onClick = {
+                                colorStyle = style
+                                prefs.edit().putString(TokenXAppearanceKeys.COLOR_STYLE, style.name).apply()
+                                refresh()
+                            },
+                            label = { Text(style.name) }
+                        )
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("SPEC_2021", "SPEC_2025").forEach { spec ->
+                        FilterChip(
+                            selected = colorSpec == spec,
+                            onClick = {
+                                colorSpec = spec
+                                prefs.edit().putString(TokenXAppearanceKeys.COLOR_SPEC, spec).apply()
+                                refresh()
+                            },
+                            label = { Text(spec.replace('_', ' ')) }
+                        )
+                    }
+                }
             }
         }
 
