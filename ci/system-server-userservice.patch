@@ -38,7 +38,7 @@ diff --git a/server-shared/src/main/java/rikka/shizuku/server/UserServiceManager
              exitCode = process.waitFor();
          } catch (Throwable e) {
 -            throw new IllegalStateException(e.getMessage());
-+            LOGGER.w(e, "Unable to start UserService %s (%s)", key, token);
++            LOGGER.w("Unable to start UserService %s (%s): %s", key, token, e);
 +            record.removeSelf();
 +            return;
          }
