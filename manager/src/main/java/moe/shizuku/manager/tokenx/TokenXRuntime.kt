@@ -21,6 +21,8 @@ data class TokenXRuntimeState(
     val systemServerBridgeAttached: Boolean,
     /** A TokenX Binder transaction completed inside system_server as UID 1000. */
     val systemServerBridgeActive: Boolean,
+    /** Capability bits reported by the live TokenX system_server Binder. */
+    val systemServerCapabilities: Int,
     val xposedFrameworkDetected: Boolean,
     val xposedBridgeActive: Boolean,
     val routes: Map<TokenXCapability, TokenXRoute>,
@@ -48,6 +50,7 @@ object TokenXRuntime {
         val servUid1000 = isServUid1000()
         val bridgeAttached = servUid1000 && isServAssociatedWithSystemServer()
         val bridgeActive = bridgeAttached && pingSystemServerBridge()
+        val bridgeCapabilities = if (bridgeActive) readSystemServerCapabilities() else 0
         // Sserver is READY only when the live Shizuku Binder itself belongs to UID 1000.
         // Serv.apk being UID 1000 means the environment is provisioned, not that the
         // UID-1000 Shizuku server has actually published a usable Binder.
@@ -73,6 +76,7 @@ object TokenXRuntime {
             backendState = state,
             systemServerBridgeAttached = bridgeAttached,
             systemServerBridgeActive = bridgeActive,
+            systemServerCapabilities = bridgeCapabilities,
             xposedFrameworkDetected = xposedDetected,
             xposedBridgeActive = bridgeActive,
             routes = TokenXCapability.entries.associateWith { TokenXRouter.route(it, state, preferredBackend) },
@@ -93,6 +97,21 @@ object TokenXRuntime {
             reply.recycle()
         }
     }.getOrDefault(false)
+
+    private fun readSystemServerCapabilities(): Int = runCatching {
+        val binder = ServiceManager.getService(SYSTEM_SERVER_SERVICE) ?: return 0
+        val data = Parcel.obtain()
+        val reply = Parcel.obtain()
+        try {
+            data.writeInterfaceToken(SYSTEM_SERVER_DESCRIPTOR)
+            if (!binder.transact(IBinder.FIRST_CALL_TRANSACTION + 1, data, reply, 0)) return 0
+            reply.readException()
+            reply.readInt()
+        } finally {
+            data.recycle()
+            reply.recycle()
+        }
+    }.getOrDefault(0)
 
     /** Serv.apk is the Sserver backend. Package presence alone is insufficient: it must
      * resolve to Android's system UID before TokenX advertises UID 1000 as available. */
