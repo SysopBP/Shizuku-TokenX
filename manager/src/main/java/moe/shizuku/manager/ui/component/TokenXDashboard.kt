@@ -6,6 +6,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.Security
@@ -31,7 +35,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.animation.core.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.HapticFeedbackConstantsCompat
 import androidx.core.view.ViewCompat
@@ -58,6 +64,7 @@ fun TokenXDashboard(
     var showVaultDialog by remember { mutableStateOf(false) }
     var dialogTitle by remember { mutableStateOf("Provisioning Vault • Live") }
     var dialogMode by remember { mutableStateOf("vault") }
+    var showTechnicalConsole by remember { mutableStateOf(false) }
 
     LaunchedEffect(provisioning) {
         if (provisioning) {
@@ -102,31 +109,82 @@ fun TokenXDashboard(
     }
 
     if (showVaultDialog) {
-        BasicAlertDialog(
-            onDismissRequest = { if (!provisioning) showVaultDialog = false }
-        ) {
-          TokenXGlassCard {
-           Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            
-                if (provisioning) CircularProgressIndicator(Modifier.size(54.dp), color = modeColor)
-                else Icon(Icons.Rounded.VerifiedUser, null, Modifier.size(54.dp), tint = modeColor)
-            },
-            Text(if (provisioning) dialogTitle else dialogTitle.replace(" • Live", " • Complete"), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = modeColor)
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    VaultLiveRow(Icons.Rounded.Lock, "D2 Gate", if (provisioning) "Verifying…" else "Dual gate configured")
-                    VaultLiveRow(Icons.Rounded.VerifiedUser, "Serv.apk", if (provisioning) "Checking UID 1000…" else "Audit complete")
-                    VaultLiveRow(Icons.Rounded.SystemSecurityUpdateGood, "FOTA.apk", if (provisioning) "Checking shared system identity…" else "Audit complete")
-                    VaultLiveRow(Icons.Rounded.Security, "Android 17 Fix", if (provisioning) "Checking compatibility layer…" else "Audit complete")
-                    HorizontalDivider()
+        val pulse = rememberInfiniteTransition(label = "token-pulse")
+        val pulseScale by pulse.animateFloat(
+            initialValue = 1f,
+            targetValue = 1.28f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(820, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "pulse-scale"
+        )
+        BasicAlertDialog(onDismissRequest = { if (!provisioning) showVaultDialog = false }) {
+            TokenXGlassCard {
+                Column(
+                    Modifier.padding(22.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        Modifier.size(76.dp).clickable { showTechnicalConsole = !showTechnicalConsole },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            Modifier.size(58.dp)
+                                .graphicsLayer {
+                                    scaleX = if (provisioning) pulseScale else 1f
+                                    scaleY = if (provisioning) pulseScale else 1f
+                                    alpha = if (provisioning) (1.55f - pulseScale).coerceIn(.22f, .55f) else .28f
+                                }
+                                .border(2.dp, modeColor, CircleShape)
+                        )
+                        if (provisioning) CircularProgressIndicator(Modifier.size(48.dp), color = modeColor, strokeWidth = 3.dp)
+                        else Icon(Icons.Rounded.VerifiedUser, null, Modifier.size(44.dp), tint = modeColor)
+                    }
                     Text(
-                        provisionStatus ?: "Preparing secure audit…",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        if (provisioning) dialogTitle else dialogTitle.replace(" • Live", " • Complete"),
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = modeColor
                     )
+                    Text(
+                        if (provisioning) "TOKEN PULSE • SECURE CHAIN ACTIVE" else "TOKENX • CHAIN VERIFIED",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = modeColor
+                    )
+                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        VaultChainRow("D2 Gate", if (provisioning) "VERIFYING" else "OPEN", modeColor)
+                        VaultChainRow("Serv", if (provisioning) "UID CHECK" else "UID 1000", modeColor)
+                        VaultChainRow("FOTA", if (provisioning) "IDENTITY CHECK" else "SYSTEM APP", modeColor)
+                        VaultChainRow("A17 Compatibility", if (provisioning) "CHECKING" else "AUDITED", modeColor)
+                        if (dialogMode == "bridge") VaultChainRow("System Bridge", if (provisioning) "HANDSHAKE" else "VERIFIED", modeColor)
+                    }
+                    HorizontalDivider()
+                    if (showTechnicalConsole) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = .35f),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("TOKENX LIVE CONSOLE", style = MaterialTheme.typography.labelMedium, color = modeColor)
+                                Text(
+                                    provisionStatus ?: "Preparing secure audit…",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    } else {
+                        Text(
+                            "Tap the pulse to reveal technical details",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (!provisioning) TextButton(onClick = { showVaultDialog = false }) { Text("Done") }
                 }
-                if (!provisioning) TextButton(onClick = { showVaultDialog = false }) { Text("Done") }
-           }
-          }
+            }
         }
     }
 
@@ -302,5 +360,19 @@ private fun VaultLiveRow(
             Text(label, fontWeight = FontWeight.SemiBold)
             Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
+}
+
+
+@Composable
+private fun VaultChainRow(
+    label: String,
+    state: String,
+    accent: androidx.compose.ui.graphics.Color,
+) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(10.dp).border(2.dp, accent, CircleShape))
+        Text(label, Modifier.padding(start = 10.dp).weight(1f), fontWeight = FontWeight.Medium)
+        Text(state, style = MaterialTheme.typography.labelSmall, color = accent)
     }
 }
