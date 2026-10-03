@@ -17,29 +17,6 @@ import rikka.shizuku.ShizukuApiConstants;
 public class Shell extends Rish {
 
     private static final int SYSTEM_UID = 1000;
-    private static final String TOKENX_SYSTEM_PACKAGE = "com.vikram.exp";
-
-    private static List<String> systemUidWorkerCommand(String[] args) {
-        final List<String> command = new ArrayList<>();
-        command.add("su");
-        command.add("1000");
-
-        /*
-         * Keep the proven build-173 UID-1000 worker unchanged for normal commands.
-         * Android 17 SettingsProvider additionally validates package attribution on
-         * mutations. Export the TokenX system package identity only for the settings
-         * CLI so other Binder/service routes retain build-173 behavior.
-         */
-        if (args.length > 0 && "settings".equals(args[0])) {
-            command.add("env");
-            command.add("TOKENX_CALLING_PACKAGE=" + TOKENX_SYSTEM_PACKAGE);
-            System.err.println("TokenX: SettingsProvider UID-1000 attribution=" + TOKENX_SYSTEM_PACKAGE);
-        }
-
-        command.addAll(Arrays.asList(args));
-        return command;
-    }
-
     private static boolean canLaunchSystemUidWorker() {
         try {
             ProcessBuilder probe = new ProcessBuilder("su", "1000", "-c", "id -u");
@@ -61,8 +38,26 @@ public class Shell extends Rish {
 
         System.err.println("TokenX: DIRECT BINDER connected to System Server backend (UID 1000).");
         if (systemWorkerReady) {
-            command = systemUidWorkerCommand(args);
-            System.err.println("TokenX: launching isolated UID-1000 shell worker outside system_server.");
+            command = new ArrayList<>();
+            /*
+             * Android 17 SettingsProvider accepts UID-1000 reads but rejects mutating
+             * settings shell calls because the isolated worker has no ContentProvider
+             * calling-package attribution. Root is the verified safe compatibility
+             * route for those mutations; keep every other command on the build-173
+             * UID-1000 worker.
+             */
+            boolean settingsMutation = args.length > 1
+                    && "settings".equals(args[0])
+                    && ("put".equals(args[1]) || "delete".equals(args[1]) || "reset".equals(args[1]));
+            if (settingsMutation) {
+                command.add("su");
+                System.err.println("TokenX: Android 17 Settings mutation -> KernelSU root compatibility route.");
+            } else {
+                command.add("su");
+                command.add("1000");
+                System.err.println("TokenX: launching isolated UID-1000 shell worker outside system_server.");
+            }
+            command.addAll(Arrays.asList(args));
         } else {
             command = new ArrayList<>();
             command.add("su");
