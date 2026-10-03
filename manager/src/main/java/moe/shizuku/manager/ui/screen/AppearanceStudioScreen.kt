@@ -26,6 +26,8 @@ import moe.shizuku.manager.ui.theme.TokenXAccent
 import moe.shizuku.manager.ui.theme.TokenXThemePreset
 import moe.shizuku.manager.ui.theme.TokenXThemeEngine
 import moe.shizuku.manager.ui.theme.FloatingBarStyle
+import moe.shizuku.manager.ui.theme.FloatingBarShape
+import moe.shizuku.manager.ui.theme.FloatingBarSelection
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
@@ -69,6 +71,14 @@ fun AppearanceStudioScreen() {
             FloatingBarStyle.valueOf(prefs.getString(TokenXAppearanceKeys.FLOATING_BAR_STYLE, FloatingBarStyle.FROSTED.name)!!)
         }.getOrDefault(FloatingBarStyle.FROSTED))
     }
+    var barShape by remember { mutableStateOf(runCatching { FloatingBarShape.valueOf(prefs.getString(TokenXAppearanceKeys.FLOATING_BAR_SHAPE, FloatingBarShape.ONE_UI.name)!!) }.getOrDefault(FloatingBarShape.ONE_UI)) }
+    var barSelection by remember { mutableStateOf(runCatching { FloatingBarSelection.valueOf(prefs.getString(TokenXAppearanceKeys.FLOATING_BAR_SELECTION, FloatingBarSelection.GLASS.name)!!) }.getOrDefault(FloatingBarSelection.GLASS)) }
+    var barWidth by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_WIDTH, .86f)) }
+    var barHeight by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_HEIGHT, 64f)) }
+    var barBottomGap by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_BOTTOM_GAP, 8f)) }
+    var barBlur by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_BLUR, 22f)) }
+    var barBorder by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_BORDER, .18f)) }
+    var barElevation by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_ELEVATION, 8f)) }
     var dim by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.BACKGROUND_DIM, .18f)) }
     var colorHex by remember { mutableStateOf(String.format("#%08X", prefs.getLong(TokenXAppearanceKeys.BACKGROUND_COLOR, 0xFF090A0FFF))) }
     var seslSwitch by remember { mutableStateOf(true) }
@@ -260,9 +270,40 @@ fun AppearanceStudioScreen() {
                 )
             }
         }
-        StudioSlider("Bar opacity", barOpacity, .20f..1f) {
-            barOpacity = it
-            putFloat(TokenXAppearanceKeys.FLOATING_BAR_OPACITY, it)
+        Text("Shape", style = MaterialTheme.typography.labelLarge)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FloatingBarShape.entries.forEach { candidate ->
+                FilterChip(
+                    selected = barShape == candidate,
+                    onClick = {
+                        barShape = candidate
+                        prefs.edit().putString(TokenXAppearanceKeys.FLOATING_BAR_SHAPE, candidate.name).apply()
+                        refresh()
+                    },
+                    label = { Text(candidate.label) }
+                )
+            }
+        }
+        StudioSlider("Width", barWidth, .62f..1f) { barWidth = it; putFloat(TokenXAppearanceKeys.FLOATING_BAR_WIDTH, it) }
+        StudioSlider("Height", barHeight, 52f..78f, " dp") { barHeight = it; putFloat(TokenXAppearanceKeys.FLOATING_BAR_HEIGHT, it) }
+        StudioSlider("Bottom gap", barBottomGap, 0f..28f, " dp") { barBottomGap = it; putFloat(TokenXAppearanceKeys.FLOATING_BAR_BOTTOM_GAP, it) }
+        StudioSlider("Bar opacity", barOpacity, .20f..1f) { barOpacity = it; putFloat(TokenXAppearanceKeys.FLOATING_BAR_OPACITY, it) }
+        StudioSlider("Blur strength", barBlur, 0f..48f, " dp") { barBlur = it; putFloat(TokenXAppearanceKeys.FLOATING_BAR_BLUR, it) }
+        StudioSlider("Border strength", barBorder, 0f..0.5f) { barBorder = it; putFloat(TokenXAppearanceKeys.FLOATING_BAR_BORDER, it) }
+        StudioSlider("Elevation", barElevation, 0f..18f, " dp") { barElevation = it; putFloat(TokenXAppearanceKeys.FLOATING_BAR_ELEVATION, it) }
+        Text("Selected item", style = MaterialTheme.typography.labelLarge)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FloatingBarSelection.entries.forEach { candidate ->
+                FilterChip(
+                    selected = barSelection == candidate,
+                    onClick = {
+                        barSelection = candidate
+                        prefs.edit().putString(TokenXAppearanceKeys.FLOATING_BAR_SELECTION, candidate.name).apply()
+                        refresh()
+                    },
+                    label = { Text(candidate.label) }
+                )
+            }
         }
 
         Text("Accent color", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
