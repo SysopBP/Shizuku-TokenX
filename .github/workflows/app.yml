@@ -53,6 +53,11 @@ jobs:
             git push origin "HEAD:${{ github.ref_name }}"
           fi
 
+      - name: Apply TokenX system_server safety patch
+        run: |
+          git -C api apply ../ci/system-server-userservice.patch
+          echo "Applied UserService system_server crash guard"
+
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
