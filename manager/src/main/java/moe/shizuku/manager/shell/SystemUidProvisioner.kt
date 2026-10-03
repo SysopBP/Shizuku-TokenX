@@ -102,7 +102,7 @@ object SystemUidProvisioner {
             Triple(Stage.SERV_UID, "Checking Serv UID 1000", "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000'"),
             Triple(Stage.FOTA_UID, "Checking FOTA UID 1000", "cmd package list packages -U | grep -F 'package:$FOTA_PACKAGE uid:1000'"),
             Triple(Stage.FOTA_DOMAIN, "Checking FOTA system identity", "dumpsys package $FOTA_PACKAGE 2>/dev/null | grep -m1 -E 'sharedUser=.*android.uid.system/1000'"),
-            Triple(Stage.DEX_FALLBACK, "Checking provisioning DEX fallback", "DEX=$(find /data/adb/modules/tokenx_system_server -type f -name '*.dex' 2>/dev/null | head -n 1); test -n \"$DEX\" && test -r \"$DEX\" && echo DEX_FALLBACK=present && echo DEX_PATH=\"$DEX\" && echo DEX_STATE=standby"),
+            Triple(Stage.DEX_FALLBACK, "Checking provisioning DEX fallback", "DEX=$(find /data/adb/modules/tokenx_system_server -type f -name '*.dex' 2>/dev/null | head -n 1); test -n \"${'\" && test -r \"$DEX\" && echo DEX_FALLBACK=present && echo DEX_PATH=\"$DEX\" && echo DEX_STATE=standby"),}DEX\" && test -r \"${'\" && echo DEX_FALLBACK=present && echo DEX_PATH=\"$DEX\" && echo DEX_STATE=standby"),}DEX\" && echo DEX_FALLBACK=present && echo DEX_PATH=\"${'\" && echo DEX_STATE=standby"),}DEX\" && echo DEX_STATE=standby"),
             Triple(Stage.RX_COMPAT, "Checking TokenX Receiver Compatibility", "echo TOKENX_RECEIVER_COMPAT=integrated; echo TOKENX_RECEIVER_SCOPE=$FOTA_PACKAGE")
         )
         for ((stage, label, script) in checks) {
