@@ -113,11 +113,11 @@ fun TokenXDashboard(
     if (showVaultDialog) {
         val pulse = rememberInfiniteTransition(label = "token-pulse")
         val pulseScale by pulse.animateFloat(
-            initialValue = 1f,
-            targetValue = 1.28f,
+            initialValue = .88f,
+            targetValue = 1.72f,
             animationSpec = infiniteRepeatable(
-                animation = tween(820, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Restart
+                animation = tween(620, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
             ),
             label = "pulse-scale"
         )
@@ -129,17 +129,17 @@ fun TokenXDashboard(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
-                        Modifier.size(76.dp).clickable { showTechnicalConsole = !showTechnicalConsole },
+                        Modifier.size(104.dp).clickable { showTechnicalConsole = !showTechnicalConsole },
                         contentAlignment = Alignment.Center
                     ) {
                         Box(
-                            Modifier.size(58.dp)
+                            Modifier.size(64.dp)
                                 .graphicsLayer {
                                     scaleX = if (provisioning) pulseScale else 1f
                                     scaleY = if (provisioning) pulseScale else 1f
-                                    alpha = if (provisioning) (1.55f - pulseScale).coerceIn(.22f, .55f) else .28f
+                                    alpha = if (provisioning) (1.72f - pulseScale).coerceIn(.18f, .82f) else .38f
                                 }
-                                .border(2.dp, modeColor, CircleShape)
+                                .border(3.dp, modeColor, CircleShape)
                         )
                         if (provisioning) CircularProgressIndicator(Modifier.size(48.dp), color = modeColor, strokeWidth = 3.dp)
                         else Icon(Icons.Rounded.VerifiedUser, null, Modifier.size(44.dp), tint = modeColor)
