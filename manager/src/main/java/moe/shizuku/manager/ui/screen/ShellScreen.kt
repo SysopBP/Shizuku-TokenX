@@ -179,9 +179,9 @@ private val BARE_SU = Regex("""^su(?:\s+-\s*)?$""")
  *
  * Every command is its own process see [ShellSession] for why a real tty is not on offer
  * here with the working directory and anything exported to `export` carried from one to the
- * next, so it reads like a session even though nothing outlives a command. Two backends, and
- * the same screen for both: through Shizuku (whatever uid the server runs as: 2000 over adb,
- * 0 with root, 1000 with the exploit) or through `su`, which works with Shizuku stopped.
+ * next, so it reads like a session even though nothing outlives a command. Three backends, and
+ * the same screen for all: Shizuku, the dedicated TokenX Sserver Binder path at uid 1000,
+ * or `su` at uid 0, which works with Shizuku stopped.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -586,6 +586,8 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
                             text = when {
                                 backend == ShellBackend.ROOT ->
                                     stringResource(R.string.shell_backend_root_status)
+                                backend == ShellBackend.SSERVER ->
+                                    stringResource(R.string.shell_backend_sserver_status)
                                 uid >= 0 -> stringResource(R.string.shell_backend_shizuku_status, uid)
                                 else -> stringResource(R.string.shell_backend_offline)
                             },
@@ -692,6 +694,11 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
                 onClick = { backend = ShellBackend.SHIZUKU },
                 enabled = shizukuRunning,
                 label = { Text(stringResource(R.string.shell_backend_shizuku)) }
+            )
+            FilterChip(
+                selected = backend == ShellBackend.SSERVER,
+                onClick = { backend = ShellBackend.SSERVER },
+                label = { Text(stringResource(R.string.shell_backend_sserver)) }
             )
             // Never disabled: a chip that cannot be pressed is also a chip that cannot ask
             // for root, and asking is what makes the root manager offer the grant.
