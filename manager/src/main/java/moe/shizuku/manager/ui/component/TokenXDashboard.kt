@@ -122,18 +122,11 @@ fun TokenXDashboard(
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "Serv.apk + Serv.dex attach com.vikram.exp to Android\'s system process. Interactive rish remains isolated through the Android 17 root fallback.",
+                "Serv.apk provides the current TokenX System Server Bridge for com.vikram.exp (UID 1000). Interactive rish remains isolated through the Android 17 root fallback.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = { runProvision { SystemUidProvisioner.install() } },
-                    enabled = rootAvailable && !provisioning,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(if (provisioning) "Working…" else "Provision")
-                }
                 Button(
                     onClick = { runProvision { SystemUidProvisioner.verify() } },
                     enabled = rootAvailable && !provisioning,
