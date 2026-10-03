@@ -2,9 +2,11 @@
 
 <img src="docs/tokenx-app-icon.png" width="132" alt="TokenX app icon">
 
-# TokenX
+# Shizuku-TokenX
 
 ### Shizuku-compatible multi-backend privilege engine for Android
+
+**v14.2.0-TKN · Beta Pre-release**
 
 **System / UID 1000 · Root / UID 0 · Shell / UID 2000**
 
@@ -13,7 +15,22 @@
 
 </div>
 
-> **Screenshot refresh in progress:** the previous Shizuku Next screenshots have been removed because they no longer represent the current TokenX interface. Current TokenX / System Server Bridge screenshots will replace them.
+> [!IMPORTANT]
+> **Read the README before installing or updating Shizuku-TokenX.** System / UID 1000 requires the TokenX System Server Bridge and a supported KernelSU/systemless-mount environment. The manager APK by itself is not the System Server Bridge.
+
+## Shizuku-TokenX at a glance
+
+Shizuku-TokenX combines Shizuku-compatible app authorization with multiple Android privilege backends: **System / UID 1000**, **Root / UID 0**, and **Shell / UID 2000**. The current interface includes the TokenX Control Center, execution routing, System Server Bridge verification, App Ops, Firewall, Autostart, Root Console, Shell, and Diagnostics & Logs.
+
+### Before installing
+
+1. Read the **Requirements** and **Installation notes** below.
+2. For the System / UID 1000 backend, follow [SYSTEM_UID_INSTALL.md](SYSTEM_UID_INSTALL.md).
+3. Verify the System Server Bridge after reboot before relying on UID 1000 routing.
+4. Remember that UID 1000, UID 0, and UID 2000 are different Android security contexts.
+5. Kiosk D2 Guardian integration is optional and only applies when D2 is installed.
+
+> **Current screenshot:** the v14.2.0-TKN interface preview will be shown here once the release collage is stored under `docs/`.
 
 ## About TokenX
 
@@ -226,6 +243,6 @@ Unless a file states otherwise, project code remains licensed under the reposito
 
 <div align="center">
 
-**TokenX — one authorization layer, multiple Android privilege backends.**
+**Shizuku-TokenX — one authorization layer, multiple Android privilege backends.**
 
 </div>
