@@ -93,6 +93,7 @@ object TokenXAppearanceKeys {
     const val GLASS_RADIUS = "tokenx_glass_radius"
     const val GLASS_BORDER = "tokenx_glass_border"
     const val GLASS_TINT = "tokenx_glass_tint"
+    const val GLASS_PRESET = "tokenx_glass_preset"
     const val TEXT_CONTRAST = "tokenx_text_contrast"
     const val FLOATING_BAR_STYLE = "tokenx_floating_bar_style"
     const val FLOATING_BAR_OPACITY = "tokenx_floating_bar_opacity"
