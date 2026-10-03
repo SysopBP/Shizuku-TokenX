@@ -94,7 +94,7 @@ object SystemUidProvisioner {
             "echo '-- FOTA --'",
             "cmd package list packages -U | grep -F 'package:$FOTA_PACKAGE uid:1000' || echo 'FOTA_UID1000=0'",
             "dumpsys package $FOTA_PACKAGE 2>/dev/null | grep -m1 -E 'sharedUser=.*android.uid.system/1000' || true",
-            "PID=\\$(pidof $FOTA_PACKAGE 2>/dev/null || true); if [ -n \"\\$PID\" ]; then echo FOTA_PID=\\$PID; ps -AZ | grep -F '$FOTA_PACKAGE' | head -n1; else echo FOTA_PID=stopped; fi",
+            "PID=$(pidof $FOTA_PACKAGE 2>/dev/null || true); if [ -n \"\$PID\" ]; then echo FOTA_PID=\$PID; ps -AZ | grep -F '$FOTA_PACKAGE' | head -n1; else echo FOTA_PID=stopped; fi",
             "echo '-- Android 17 receiver compatibility --'",
             "if cmd package list packages | grep -q -F 'package:$RECEIVER_FIX_PACKAGE'; then echo RECEIVER_FIX_PACKAGE=present; else echo RECEIVER_FIX_PACKAGE=absent; fi",
             "echo 'NOTE=receiver-fix package presence does not prove an LSPosed hook is active'",
