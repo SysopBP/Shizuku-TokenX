@@ -12,7 +12,7 @@ import rikka.shizuku.server.util.Android17Compat
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** TokenX modern LSPosed UID 1000 bridge. */
+/** TokenX modern LSPosed UID 1000 bridge and Receiver Compatibility layer. */
 class TokenXXposedEntry : XposedModule() {
     override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
         if (!param.isSystemServer) return
@@ -31,7 +31,7 @@ class TokenXXposedEntry : XposedModule() {
             }
 
             if (methods.isEmpty()) {
-                log(Log.WARN, TAG, "FOTA_RX_SHIM_SKIP: no compatible ContextImpl.registerReceiverInternal overload")
+                log(Log.WARN, TAG, "TOKENX_RECEIVER_COMPAT_SKIP: no compatible ContextImpl.registerReceiverInternal overload")
                 return@runCatching
             }
 
@@ -44,20 +44,20 @@ class TokenXXposedEntry : XposedModule() {
                         val oldFlags = args[flagsIndex] as? Int ?: return@intercept chain.proceed()
                         val hasExportFlag = oldFlags and (Context.RECEIVER_EXPORTED or Context.RECEIVER_NOT_EXPORTED) != 0
                         if (!hasExportFlag) {
-                            // FOTA is an OEM/system broadcast consumer. Preserve legacy exported
-                            // receiver semantics only inside com.sdet.fotaagent; never rewrite
-                            // receiver flags globally.
+                            // Receiver Compatibility: preserve legacy OEM receiver semantics only when
+                            // the app omitted both modern export flags. Existing explicit flags
+                            // are never rewritten, and the hook remains scoped to FOTA.
                             args[flagsIndex] = oldFlags or Context.RECEIVER_EXPORTED
-                            log(Log.INFO, TAG, "FOTA_RX_SHIM_APPLIED: flags=$oldFlags -> ${args[flagsIndex]}")
+                            log(Log.INFO, TAG, "TOKENX_RECEIVER_COMPAT_APPLIED: flags=$oldFlags -> ${args[flagsIndex]}")
                             chain.proceed(args)
                         } else {
                             chain.proceed()
                         }
                     }
             }
-            log(Log.INFO, TAG, "FOTA_RX_SHIM_READY: hooked ${methods.size} receiver overload(s)")
+            log(Log.INFO, TAG, "TOKENX_RECEIVER_COMPAT_READY: hooked ${methods.size} receiver overload(s)")
         }.onFailure {
-            log(Log.ERROR, TAG, "FOTA_RX_SHIM_FAIL_OPEN: ${it.javaClass.simpleName}: ${it.message}")
+            log(Log.ERROR, TAG, "TOKENX_RECEIVER_COMPAT_FAIL_OPEN: ${it.javaClass.simpleName}: ${it.message}")
         }
     }
 
