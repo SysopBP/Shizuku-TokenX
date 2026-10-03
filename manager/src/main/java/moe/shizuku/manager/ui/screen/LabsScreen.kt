@@ -19,15 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.Route
-import androidx.compose.material.icons.outlined.Security
-import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.BugReport
-import androidx.compose.material.icons.outlined.Article
-import androidx.compose.material.icons.outlined.DeveloperBoard
-import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Key
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -119,32 +112,8 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
             item {
                 LabTile(
                     icon = Icons.Outlined.Route,
-                    label = "TokenX Router",
-                    badge = "LIVE",
-                    onClick = { onOpenDetail(Detail.TOKENX) }
-                )
-            }
-            item {
-                LabTile(
-                    icon = Icons.Outlined.Shield,
-                    label = "Boot Guardian",
-                    badge = "TOKEN",
-                    onClick = { onOpenDetail(Detail.TOKENX) }
-                )
-            }
-            item {
-                LabTile(
-                    icon = Icons.Outlined.Memory,
-                    label = "System Server",
-                    badge = "UID 1000",
-                    onClick = { onOpenDetail(Detail.TOKENX) }
-                )
-            }
-            item {
-                LabTile(
-                    icon = Icons.Outlined.DeveloperBoard,
-                    label = "LSPosed Bridge",
-                    badge = "BRIDGE",
+                    label = "TokenX Control Center",
+                    badge = "ROUTER · BOOT · UID 1000 · LSPOSED",
                     onClick = { onOpenDetail(Detail.TOKENX) }
                 )
             }
@@ -159,17 +128,9 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
             item {
                 LabTile(
                     icon = Icons.Outlined.BugReport,
-                    label = "Diagnostics",
-                    badge = "TOOLS",
+                    label = "Diagnostics & Logs",
+                    badge = "TOKENX",
                     onClick = { onOpenDetail(Detail.TOKENX) }
-                )
-            }
-            item {
-                LabTile(
-                    icon = Icons.Outlined.Article,
-                    label = "Live Logs",
-                    badge = "LOGS",
-                    onClick = { onOpenDetail(Detail.TERMINAL) }
                 )
             }
         }
