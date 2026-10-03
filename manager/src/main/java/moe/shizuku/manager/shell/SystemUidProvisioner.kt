@@ -62,32 +62,49 @@ object SystemUidProvisioner {
     fun stageShizukuUid1000(context: Context): Result {
         val nativeDir = context.applicationInfo.nativeLibraryDir
         val source = "$nativeDir/libshizuku.so"
+        val apk = context.applicationInfo.sourceDir
         val script = listOf(
             "set -e",
             "test -r ${q(source)}",
+            "test -r ${q(apk)}",
             "cp ${q(source)} ${q(STAGED_SHIZUKU)}",
             "chmod 755 ${q(STAGED_SHIZUKU)}",
             "chown 1000:1000 ${q(STAGED_SHIZUKU)}",
             "test -x ${q(STAGED_SHIZUKU)}",
             "echo source=${q(source)}",
+            "echo apk=${q(apk)}",
             "echo staged=${q(STAGED_SHIZUKU)}",
         ).joinToString("; ")
         return runRoot(script)
     }
 
     /**
-     * Start the staged launcher with the historical UID-1000 mechanism.
-     * Readiness is intentionally verified separately; a successful fork is
-     * not enough to advertise Sserver as READY.
+     * Start TokenX's normal native Shizuku starter as UID 1000. The explicit
+     * --apk argument matters after staging: /data/local/tmp no longer sits next
+     * to base.apk, so the starter cannot infer the manager APK from /proc/self/exe.
      */
-    fun startShizukuUid1000(): Result {
+    fun startShizukuUid1000(context: Context): Result {
+        val apk = context.applicationInfo.sourceDir
+        val inner = "${q(STAGED_SHIZUKU)} --apk=${q(apk)}"
         val script = listOf(
             "set -e",
             "test -x ${q(STAGED_SHIZUKU)}",
+            "test -r ${q(apk)}",
             "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000'",
-            "su 1000 -c ${q(STAGED_SHIZUKU)}",
+            "su 1000 -c ${q(inner)}",
         ).joinToString("; ")
         return runRoot(script)
+    }
+
+    /**
+     * Stage and start in one operation. A successful return means the native
+     * starter was launched as UID 1000; callers must still verify the Shizuku
+     * Binder UID before presenting Sserver as READY.
+     */
+    fun prepareAndStartShizukuUid1000(context: Context): Result {
+        val staged = stageShizukuUid1000(context)
+        if (!staged.success) return staged
+        return startShizukuUid1000(context)
     }
 
     fun verify(): Result {
