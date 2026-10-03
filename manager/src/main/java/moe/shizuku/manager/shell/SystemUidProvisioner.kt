@@ -5,18 +5,14 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 /**
- * Root-only installer for the external Server.apk + Serv.dex System UID backend.
+ * Helpers for the current TokenX System UID / System Server backend.
  *
- * The Server APK intentionally remains outside the TokenX APK/repository. This class only
- * provisions files already supplied by the user on device storage.
+ * Legacy Serv.dex provisioning is retired. The bridge is installed by the KernelSU
+ * module; this class only verifies the live Serv.apk/com.vikram.exp bridge and stages
+ * TokenX's isolated UID-1000 Shizuku worker when needed.
  */
 object SystemUidProvisioner {
 
-    const val DEFAULT_APK = "/sdcard/Download/Serv.apk"
-    const val DEFAULT_DEX = "/sdcard/Serv.dex"
-    const val INSTALL_DIR = "/data/app/com.android.settings/vikram_shell"
-    const val INSTALLED_APK = "$INSTALL_DIR/base.apk"
-    const val STAGED_DEX = "/data/local/tmp/Serv.dex"
     const val LIVE_PACKAGE = "com.vikram.exp"
     const val LEGACY_PACKAGE = "com.vikram.shell"
     const val STAGED_SHIZUKU = "/data/local/tmp/libshizuku.so"
@@ -27,31 +23,6 @@ object SystemUidProvisioner {
         val output: String,
         val command: String,
     )
-
-    /**
-     * Reproduces the known-working root provisioning sequence. Server.apk is not bundled.
-     * Serv.dex remains a separate external provisioning payload.
-     */
-    fun install(
-        apkPath: String = DEFAULT_APK,
-        dexPath: String = DEFAULT_DEX,
-    ): Result {
-        val script = listOf(
-            "set -e",
-            "test -r ${q(apkPath)}",
-            "test -r ${q(dexPath)}",
-            "mkdir -p ${q(INSTALL_DIR)}",
-            "cat ${q(apkPath)} > ${q(INSTALLED_APK)}",
-            "chmod -R 755 ${q(INSTALL_DIR)}",
-            "cp ${q(dexPath)} ${q(STAGED_DEX)}",
-            "chmod 644 ${q(STAGED_DEX)}",
-            "export CLASSPATH=${q(STAGED_DEX)}",
-            // Keep the invocation identical to the sequence already proven on-device.
-            "app_process -cp ${q(dexPath)} /system/bin Serv",
-        ).joinToString("; ")
-
-        return runRoot(script)
-    }
 
     /**
      * Stage the Shizuku native launcher without ever hard-coding Android's
