@@ -49,6 +49,27 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
     var routerMode by remember { mutableStateOf(prefs.getString("tokenx_router_mode", "Automatic") ?: "Automatic") }
     var rootFirst by remember { mutableStateOf(prefs.getBoolean("tokenx_root_first", true)) }
     var recovery by remember { mutableStateOf(prefs.getBoolean("tokenx_recovery_preview", true)) }
+    // Deliberately session-only: experimental system_server operations reset OFF
+    // whenever this screen/app process is recreated, including after reboot.
+    var systemServerOperations by remember { mutableStateOf(false) }
+    var showSystemServerWarning by remember { mutableStateOf(false) }
+
+    if (showSystemServerWarning) {
+        AlertDialog(
+            onDismissRequest = { showSystemServerWarning = false },
+            title = { Text("Enable System Server Operations?") },
+            text = { Text("Experimental high-trust mode. Only explicitly supported TokenX framework operations may use the verified system_server bridge. The interactive rish shell will remain outside system_server as the isolated UID-1000 worker. This option is session-only and resets OFF after restart or reboot.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    systemServerOperations = true
+                    showSystemServerWarning = false
+                }) { Text("Enable") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSystemServerWarning = false }) { Text("Cancel") }
+            }
+        )
+    }
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
@@ -111,6 +132,18 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     CapabilityLine("Android framework", runtime.routes.getValue(TokenXCapability.FRAMEWORK).backend.name)
                     CapabilityLine("Shell commands", runtime.routes.getValue(TokenXCapability.SHELL_COMMAND).backend.name)
                     CapabilityLine("General", runtime.routes.getValue(TokenXCapability.GENERAL).backend.name)
+                    HorizontalDivider()
+                    PreviewSwitch(
+                        "Experimental: System Server Operations",
+                        if (systemServerOperations)
+                            "ON for this session • only explicitly supported framework operations may use the verified system_server bridge; interactive rish stays isolated UID 1000."
+                        else
+                            "OFF • interactive rish remains isolated UID 1000. Enable only for supported framework operations; resets after restart/reboot.",
+                        systemServerOperations
+                    ) { enabled ->
+                        if (enabled) showSystemServerWarning = true
+                        else systemServerOperations = false
+                    }
                 }
             }
 
