@@ -95,6 +95,8 @@ import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.home.showAccessibilityDialog
 import moe.shizuku.manager.receiver.ShizukuReceiverStarter
+import moe.shizuku.manager.shell.ShellBackend
+import moe.shizuku.manager.shell.ShellSession
 import moe.shizuku.manager.start.StartFailureKind
 import moe.shizuku.manager.start.StartStatus
 import moe.shizuku.manager.start.StartStatusReporter
@@ -140,6 +142,8 @@ fun HomeScreen(bottomPadding: Dp) {
     }
     var showAdbCommand by remember { mutableStateOf(false) }
     var rebootRequired by remember { mutableStateOf(false) }
+    var showDeviceRestartMenu by remember { mutableStateOf(false) }
+    var pendingDeviceRestart by remember { mutableStateOf<DeviceRestartAction?>(null) }
     var duplicateApp by remember { mutableStateOf(false) }
     var updateAvailable by remember { mutableStateOf(false) }
     var rooted by remember { mutableStateOf(false) }
@@ -149,6 +153,39 @@ fun HomeScreen(bottomPadding: Dp) {
     var seccompRes by remember { mutableStateOf<Int?>(null) }
     val startStatus by StartStatusReporter.status.collectAsState()
     val scope = rememberCoroutineScope()
+
+    if (showDeviceRestartMenu) {
+        AlertDialog(
+            onDismissRequest = { showDeviceRestartMenu = false },
+            title = { Text("Device restart") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = { pendingDeviceRestart = DeviceRestartAction.FULL; showDeviceRestartMenu = false }) { Text("Full Reboot") }
+                    TextButton(onClick = { pendingDeviceRestart = DeviceRestartAction.SOFT; showDeviceRestartMenu = false }) { Text("Soft Reboot") }
+                    TextButton(onClick = { pendingDeviceRestart = DeviceRestartAction.SYSTEM_UI; showDeviceRestartMenu = false }) { Text("UI Reboot") }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showDeviceRestartMenu = false }) { Text("Cancel") } }
+        )
+    }
+
+    pendingDeviceRestart?.let { action ->
+        AlertDialog(
+            onDismissRequest = { pendingDeviceRestart = null },
+            title = { Text(action.label) },
+            text = { Text(action.description) },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingDeviceRestart = null
+                    scope.launch(Dispatchers.IO) {
+                        ShellSession().run(ShellBackend.ROOT, action.command) { }
+                    }
+                }) { Text(action.confirmLabel) }
+            },
+            dismissButton = { TextButton(onClick = { pendingDeviceRestart = null }) { Text("Cancel") } }
+        )
+    }
 
     // Android 16+ gates local-network discovery behind a runtime permission, and discovery is
     // the first thing a wireless start does. Asking here on the path that needs it, when the
@@ -578,15 +615,7 @@ fun HomeScreen(bottomPadding: Dp) {
                     },
                     // A bounce: forceStart replaces the running server instead of
                     // being ignored as "already running".
-                    onRestart = {
-                        startWithLocalNetworkPermission(ShizukuSettings.getStartMethod()) {
-                            ShizukuReceiverStarter.start(
-                                context,
-                                forceStart = true,
-                                userInitiated = true
-                            )
-                        }
-                    }
+                    onRestart = { showDeviceRestartMenu = true }
                 )
             }
 
@@ -1266,4 +1295,31 @@ private fun transportLabel(uid: Int): String = when {
 private fun launchedByUsOverAdb(): Boolean = when (ShizukuSettings.getRunningStartMethod()) {
     ShizukuSettings.StartMethod.WIRELESS, ShizukuSettings.StartMethod.USB -> true
     else -> false
+}
+
+
+private enum class DeviceRestartAction(
+    val label: String,
+    val description: String,
+    val confirmLabel: String,
+    val command: String
+) {
+    FULL(
+        "Full Reboot",
+        "Restart the entire device. D2 and TokenX boot gating will run again on the next boot.",
+        "Reboot",
+        "/system/bin/svc power reboot || /system/bin/reboot"
+    ),
+    SOFT(
+        "Soft Reboot",
+        "Restart Android's framework through zygote without rebooting the kernel. The current TokenX Binder session will be interrupted.",
+        "Soft Reboot",
+        "setprop ctl.restart zygote"
+    ),
+    SYSTEM_UI(
+        "UI Reboot",
+        "Restart SystemUI only. Android framework and the kernel remain running.",
+        "Restart UI",
+        "pkill -TERM -f com.android.systemui || killall com.android.systemui"
+    )
 }
