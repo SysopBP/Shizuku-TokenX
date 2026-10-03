@@ -188,29 +188,19 @@ class ShellSession {
     }
 
     private fun runThroughSserver(script: String, sink: (ShellLine) -> Unit): Int {
-        return try {
-            // Never execute arbitrary commands inside Android's persistent system_server.
-            // Sserver is an isolated shell worker launched as UID 1000.
-            val out = object : CallbackList<String>() {
-                override fun onAddElement(e: String) = sink(ShellLine(e, ShellLine.Kind.OUTPUT))
-            }
-            val err = object : CallbackList<String>() {
-                override fun onAddElement(e: String) = sink(ShellLine(e, ShellLine.Kind.ERROR))
-            }
-            val quoted = quote(script)
-            val result = Shell.cmd(
-                "cmd package list packages -U | grep -F 'package:com.vikram.exp uid:1000' >/dev/null || exit 126; " +
-                    "su 1000 -c \"/system/bin/sh -c $quoted\""
-            ).to(out, err).exec()
-            if (!result.isSuccess && err.isEmpty()) {
-                sink(ShellLine("Sserver UID-1000 worker unavailable (exit ${result.code}).", ShellLine.Kind.ERROR))
-            }
-            result.code
-        } catch (e: Throwable) {
-            Log.w(AppConstants.TAG, "Sserver shell failed", e)
-            sink(ShellLine(e.message ?: e.javaClass.simpleName, ShellLine.Kind.ERROR))
-            -1
+        // Sserver commands must travel through a live Shizuku Binder owned by UID 1000.
+        // Do not silently fall back to su(1000): that would make the UI claim Binder-backed
+        // Sserver while actually using a different execution path.
+        if (!ShizukuStateMachine.isRunning()) {
+            sink(ShellLine("Sserver is not running.", ShellLine.Kind.ERROR))
+            return -1
         }
+        val uid = runCatching { Shizuku.getUid() }.getOrDefault(-1)
+        if (uid != 1000) {
+            sink(ShellLine("Sserver Binder is not active (current Shizuku UID $uid).", ShellLine.Kind.ERROR))
+            return -1
+        }
+        return runThroughShizuku(script, sink)
     }
 
     private fun runThroughRoot(script: String, sink: (ShellLine) -> Unit): Int {
