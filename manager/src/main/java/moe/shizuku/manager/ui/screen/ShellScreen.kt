@@ -133,6 +133,8 @@ import moe.shizuku.manager.shell.ShellSession
 import moe.shizuku.manager.shell.SystemUidProvisioner
 import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.manager.utils.ShizukuStateMachine
+import moe.shizuku.manager.tokenx.TokenXRuntime
+import moe.shizuku.manager.tokenx.TokenXBackend
 import rikka.shizuku.Shizuku
 
 /** How much scrollback to keep. A command like `logcat` would otherwise grow without end. */
@@ -209,6 +211,18 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
         mutableStateOf(TextFieldValue(""))
     }
     var backend by rememberSaveable { mutableStateOf(ShellBackend.SHIZUKU) }
+    var tokenxRuntime by remember { mutableStateOf(TokenXRuntime.snapshot(context)) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            tokenxRuntime = withContext(Dispatchers.IO) { TokenXRuntime.snapshot(context) }
+            delay(TokenXRuntime.REFRESH_INTERVAL_MS)
+        }
+    }
+    val backendAvailability = mapOf(
+        ShellBackend.ROOT to tokenxRuntime.backendRegistry.isReady(TokenXBackend.ROOT),
+        ShellBackend.SSERVER to tokenxRuntime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID),
+        ShellBackend.SHIZUKU to tokenxRuntime.backendRegistry.isReady(TokenXBackend.SHELL),
+    )
     val session = ShellContinuity.session(backend)
     var running by remember { mutableStateOf(false) }
     var cwd by remember(backend) { mutableStateOf(session.cwd) }
