@@ -30,6 +30,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
 import moe.shizuku.manager.ui.theme.ThemeState
+import moe.shizuku.manager.ui.theme.TokenXUiStyle
 import com.materialkolor.PaletteStyle
 
 @Composable
@@ -42,6 +43,11 @@ fun AppearanceStudioScreen() {
                 prefs.getString(TokenXAppearanceKeys.THEME_PRESET, TokenXThemePreset.TOKENX.name)!!
             )
         }.getOrDefault(TokenXThemePreset.TOKENX))
+    }
+    var uiStyle by remember {
+        mutableStateOf(runCatching {
+            TokenXUiStyle.valueOf(prefs.getString(TokenXAppearanceKeys.UI_STYLE, TokenXUiStyle.MATERIAL.name)!!)
+        }.getOrDefault(TokenXUiStyle.MATERIAL))
     }
     var colorStyle by remember {
         mutableStateOf(runCatching {
@@ -136,7 +142,23 @@ fun AppearanceStudioScreen() {
             }
         }
 
-        Text("UI style", style = MaterialTheme.typography.titleMedium)
+        Text("UI framework", style = MaterialTheme.typography.titleMedium)
+        Text("Framework and color theme are independent.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            TokenXUiStyle.entries.forEach { candidate ->
+                val available = candidate != TokenXUiStyle.MIUIX
+                FilterChip(
+                    selected = uiStyle == candidate,
+                    enabled = available,
+                    onClick = {
+                        uiStyle = candidate
+                        prefs.edit().putString(TokenXAppearanceKeys.UI_STYLE, candidate.name).apply()
+                        refresh()
+                    },
+                    label = { Text(if (available) candidate.label else candidate.label + " • next") }
+                )
+            }
+        }
         TokenXGlassCard {
             Row(
                 Modifier.fillMaxWidth().padding(18.dp),
@@ -144,10 +166,17 @@ fun AppearanceStudioScreen() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("TokenX", style = MaterialTheme.typography.titleMedium)
-                    Text("Glass / Material interface", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(uiStyle.label, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        when (uiStyle) {
+                            TokenXUiStyle.MATERIAL -> "Material 3 component renderer"
+                            TokenXUiStyle.GHOST -> "TokenX translucent glass renderer"
+                            TokenXUiStyle.MIUIX -> "Native Miuix renderer pending"
+                        },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-                Text(if (themePreset == TokenXThemePreset.GHOST) "Ghost" else if (themePreset == TokenXThemePreset.AMOLED) "AMOLED" else "Material", color = MaterialTheme.colorScheme.primary)
+                Text("Framework", color = MaterialTheme.colorScheme.primary)
             }
         }
 
