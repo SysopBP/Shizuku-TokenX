@@ -181,7 +181,19 @@ class ShellSession {
             if (stopped) -1 else code
         } catch (e: Throwable) {
             Log.w(AppConstants.TAG, "Shell command failed", e)
-            sink(ShellLine(e.message ?: e.javaClass.simpleName, ShellLine.Kind.ERROR))
+            // Reflection wraps the real framework/Binder failure in InvocationTargetException.
+            // Surface the complete cause chain in the shell so Android-version regressions can
+            // be diagnosed on-device instead of reporting only the wrapper exception.
+            val chain = generateSequence(e) { it.cause }.toList()
+            chain.forEachIndexed { index, cause ->
+                val label = if (index == 0) "ERROR" else "CAUSE[$index]"
+                val detail = cause.message?.takeIf { it.isNotBlank() } ?: "(no message)"
+                sink(ShellLine("$label: ${cause.javaClass.name}: $detail", ShellLine.Kind.ERROR))
+            }
+            val deepest = chain.lastOrNull()
+            deepest?.stackTrace?.take(8)?.forEach { frame ->
+                sink(ShellLine("  at $frame", ShellLine.Kind.ERROR))
+            }
             running = null
             -1
         }
