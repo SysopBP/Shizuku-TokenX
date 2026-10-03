@@ -29,6 +29,15 @@ enum class FloatingBarStyle {
     CLEAR,
 }
 
+enum class TokenXThemePreset(val label: String) {
+    SYSTEM("System"),
+    TOKENX("TokenX"),
+    AMOLED("AMOLED"),
+    ONE_UI("One UI"),
+    CRYSTAL("Crystal"),
+    SMOKE("Smoke"),
+}
+
 enum class BackgroundMode {
     SYSTEM,
     AMOLED,
@@ -59,6 +68,7 @@ enum class TokenXAccent(val argb: Long, val label: String) {
 }
 
 object TokenXAppearanceKeys {
+    const val THEME_PRESET = "tokenx_theme_preset"
     const val GLASS_ENABLED = "tokenx_glass_enabled"
     const val GLASS_OPACITY = "tokenx_glass_opacity"
     const val GLASS_BLUR = "tokenx_glass_blur"
