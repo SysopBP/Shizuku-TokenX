@@ -92,7 +92,7 @@ fun AppearanceStudioScreen() {
         Text("Theme", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         Text("Preview and tune the complete TokenX interface.", color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-        TokenXThemePreview(themePreset = themePreset, glass = glass)
+        TokenXThemePreview(themePreset = themePreset, glass = glass, uiStyle = uiStyle, prefs = prefs)
 
         Text("UI framework", style = MaterialTheme.typography.titleMedium)
         Text("Framework and color theme are independent.", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -475,24 +475,127 @@ private fun StudioSlider(title: String, value: Float, range: ClosedFloatingPoint
 }
 
 @Composable
-private fun TokenXThemePreview(themePreset: TokenXThemePreset, glass: Boolean) {
-    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        Card(
-            modifier = Modifier.width(190.dp).height(300.dp),
-            shape = RoundedCornerShape(30.dp),
-            colors = CardDefaults.cardColors(containerColor = if (themePreset == TokenXThemePreset.AMOLED) Color.Black else MaterialTheme.colorScheme.surface.copy(alpha = if (glass) .62f else 1f)),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+private fun TokenXThemePreview(
+    themePreset: TokenXThemePreset,
+    glass: Boolean,
+    uiStyle: TokenXUiStyle,
+    prefs: android.content.SharedPreferences,
+) {
+    var page by remember { mutableIntStateOf(0) }
+    var cardActive by remember { mutableStateOf(false) }
+
+    val useSystem = prefs.getBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
+    val accent = if (useSystem) MaterialTheme.colorScheme.primary else Color(
+        prefs.getLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.TOKEN_PURPLE.argb).toInt()
+    )
+    val opacity = prefs.getFloat(TokenXAppearanceKeys.GLASS_OPACITY, .72f)
+    val radius = prefs.getFloat(TokenXAppearanceKeys.GLASS_RADIUS, 28f)
+    val dim = prefs.getFloat(TokenXAppearanceKeys.BACKGROUND_DIM, .18f)
+    val backgroundMode = runCatching {
+        BackgroundMode.valueOf(prefs.getString(TokenXAppearanceKeys.BACKGROUND_MODE, BackgroundMode.AMOLED_GRADIENT.name)!!)
+    }.getOrDefault(BackgroundMode.AMOLED_GRADIENT)
+
+    val phoneBackground = when (backgroundMode) {
+        BackgroundMode.AMOLED -> Color.Black
+        BackgroundMode.AMOLED_GRADIENT -> androidx.compose.ui.graphics.lerp(Color.Black, accent, .10f)
+        BackgroundMode.CUSTOM_COLOR -> Color(prefs.getLong(TokenXAppearanceKeys.BACKGROUND_COLOR, 0xFF090A0FFF).toInt())
+        else -> MaterialTheme.colorScheme.surface
+    }
+    val previewShape = when (uiStyle) {
+        TokenXUiStyle.MATERIAL -> RoundedCornerShape(radius.dp.coerceIn(12.dp, 32.dp))
+        TokenXUiStyle.GHOST -> RoundedCornerShape(radius.dp.coerceIn(22.dp, 40.dp))
+        TokenXUiStyle.MIUIX -> RoundedCornerShape(18.dp)
+    }
+    val surfaceAlpha = if (glass) opacity.coerceIn(.18f, 1f) else 1f
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box(
+            Modifier
+                .width(206.dp)
+                .height(330.dp)
+                .background(phoneBackground, RoundedCornerShape(34.dp))
+                .border(1.dp, accent.copy(alpha = .34f), RoundedCornerShape(34.dp))
+                .padding(12.dp)
         ) {
-            Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("TokenX", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Box(Modifier.fillMaxWidth().height(42.dp).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = .72f), RoundedCornerShape(12.dp)))
-                Box(Modifier.fillMaxWidth().weight(1f).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .55f), RoundedCornerShape(14.dp)))
+            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Column {
+                        Text(
+                            when (page) { 0 -> "TokenX"; 1 -> "Apps"; 2 -> "Modules"; else -> "Settings" },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(uiStyle.label, style = MaterialTheme.typography.labelSmall, color = accent)
+                    }
+                    Box(Modifier.size(9.dp).background(accent, CircleShape))
+                }
+
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .background(accent.copy(alpha = if (cardActive) .52f else .28f), previewShape)
+                        .border(1.dp, accent.copy(alpha = .42f), previewShape)
+                        .clickable { cardActive = !cardActive }
+                        .padding(10.dp)
+                ) {
+                    Text(
+                        if (cardActive) "Interactive state" else "Tap preview card",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = (surfaceAlpha * (1f - dim * .35f)).coerceIn(.16f, 1f)),
+                            previewShape
+                        )
+                        .clickable { page = (page + 1) % 4 }
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    repeat(3) { index ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    if (index == page % 3) accent.copy(alpha = .22f) else Color.Transparent,
+                                    RoundedCornerShape(if (uiStyle == TokenXUiStyle.MIUIX) 10.dp else 14.dp)
+                                )
+                                .padding(7.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(Modifier.size(18.dp).background(if (index == page % 3) accent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f), CircleShape))
+                            Box(Modifier.weight(1f).height(7.dp).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.28f), CircleShape))
+                        }
+                    }
+                }
+
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    repeat(4) {
-                        Box(Modifier.size(if (it == 0) 24.dp else 18.dp).background(if (it == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.55f), CircleShape))
+                    repeat(4) { index ->
+                        Box(
+                            Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .clickable { page = index },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                Modifier
+                                    .size(if (page == index) 24.dp else 17.dp)
+                                    .background(if (page == index) accent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f), CircleShape)
+                            )
+                        }
                     }
                 }
             }
         }
+        Text("Tap the phone to preview states", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
