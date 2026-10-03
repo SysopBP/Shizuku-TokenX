@@ -101,7 +101,10 @@ object ShizukuReceiverStarter {
         // next start will do.
         val method = StartMethodGuard.resolve(startMethod)
 
-        StartStatusReporter.starting()
+        val currentUid = if (rikka.shizuku.Shizuku.pingBinder()) {
+            runCatching { rikka.shizuku.Shizuku.getUid() }.getOrDefault(-1)
+        } else -1
+        StartStatusReporter.starting(method, currentUid)
 
         // Remember how this launch was started: the status card and the notification
         // report the method the server is actually running under, which isn't always
@@ -148,6 +151,7 @@ object ShizukuReceiverStarter {
         }
 
         Log.i(AppConstants.TAG, "TOKENX_MODE_SWITCH: UID $liveUid -> UID $targetUid method=$targetMethod")
+        StartStatusReporter.starting(targetMethod, liveUid)
 
         // Never call Shizuku.exit() against UID 1000: that Binder is hosted by
         // system_server. Root/ADB starters publish the replacement Binder themselves.
@@ -347,8 +351,9 @@ object ShizukuReceiverStarter {
             ShizukuStateMachine.set(ShizukuStateMachine.State.STARTING)
             if (claimed) TokenXBootSession.markServerStarting(TokenXBootOwner.ROOT)
             val result = Shell.cmd(Starter.internalCommand).exec()
-            if (!result.isSuccess && claimed) {
-                TokenXBootSession.fail(TokenXBootOwner.ROOT, "Root starter exited with code ${result.code}")
+            if (!result.isSuccess) {
+                if (claimed) TokenXBootSession.fail(TokenXBootOwner.ROOT, "Root starter exited with code ${result.code}")
+                StartStatusReporter.failed("Root backend exited with code ${result.code}")
             }
         } catch (e: Exception) {
             if (claimed) TokenXBootSession.fail(TokenXBootOwner.ROOT, e.message ?: "Root starter exception")
