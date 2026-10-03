@@ -130,11 +130,6 @@ public class ShizukuShellLoader {
     public static void main(String[] args) {
         ShizukuShellLoader.args = args;
 
-        if ("sserver".equals(System.getenv("TOKENX_RISH_BACKEND"))) {
-            runThroughTokenXSystemServer(args);
-            return;
-        }
-
         String packageName;
         var pkg = PackageManagerApis.getPackagesForUidNoThrow(Os.getuid());
         if (pkg.size() == 1) {
@@ -174,57 +169,6 @@ public class ShizukuShellLoader {
 
         Looper.loop();
         System.exit(0);
-    }
-
-    private static void runThroughTokenXSystemServer(String[] args) {
-        if (args == null || args.length == 0) {
-            abort("Sserver command mode requires a command. Example: ./rish --sserver id");
-            return;
-        }
-        IBinder binder = ServiceManager.getService("tokenx_system_server");
-        if (binder == null) {
-            abort("TokenX Sserver bridge is not active");
-            return;
-        }
-        Parcel data = Parcel.obtain();
-        Parcel reply = Parcel.obtain();
-        try {
-            data.writeInterfaceToken("moe.shizuku.tokenx.ISystemServerBridge");
-            data.writeString(joinCommand(args));
-            if (!binder.transact(IBinder.FIRST_CALL_TRANSACTION + 1, data, reply, 0)) {
-                abort("TokenX Sserver command endpoint is unavailable");
-                return;
-            }
-            reply.readException();
-            int code = reply.readInt();
-            String stdout = reply.readString();
-            String stderr = reply.readString();
-            if (!TextUtils.isEmpty(stdout)) {
-                System.out.print(stdout);
-                System.out.flush();
-            }
-            if (!TextUtils.isEmpty(stderr)) {
-                System.err.print(stderr);
-                System.err.flush();
-            }
-            System.exit(code);
-        } catch (Throwable tr) {
-            tr.printStackTrace(System.err);
-            System.err.flush();
-            System.exit(1);
-        } finally {
-            data.recycle();
-            reply.recycle();
-        }
-    }
-
-    private static String joinCommand(String[] args) {
-        StringBuilder out = new StringBuilder();
-        for (String arg : args) {
-            if (out.length() > 0) out.append(' ');
-            out.append("\'").append(arg.replace("\'", "\'\\\\\'\'")).append("\'");
-        }
-        return out.toString();
     }
 
     private static void abort(String message) {
