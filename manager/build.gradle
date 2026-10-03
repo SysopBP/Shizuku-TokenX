@@ -200,7 +200,9 @@ dependencies {
     implementation "com.materialkolor:material-kolor:3.0.1"
 
     // Phase 2 UI framework renderer. Core UI only; navigation/blur stay isolated.
-    implementation "top.yukonga.miuix.kmp:miuix-ui:0.9.4"
+    // Android-target artifact avoids pulling the Compose Multiplatform metadata graph
+    // into TokenX's AndroidX Compose build while retaining native Miuix UI components.
+    implementation "top.yukonga.miuix.kmp:miuix-ui-android:0.9.4"
     implementation "androidx.compose.runtime:runtime-livedata"
     implementation "io.coil-kt:coil-compose:2.7.0"
     implementation "androidx.lifecycle:lifecycle-runtime-compose:2.9.0"
