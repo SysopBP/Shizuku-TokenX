@@ -331,6 +331,34 @@ fun HomeScreen(bottomPadding: Dp) {
             runCatching { UpdateHelper.updateLastPromptedVersion() }
         }    }
 
+    // Binder replacement during an engine switch may not produce a second state-machine
+    // transition in the manager process. Poll the live Binder while a switch is pending;
+    // the backend-reported UID is the authoritative completion signal.
+    LaunchedEffect(startStatus) {
+        if (startStatus is StartStatus.Starting) {
+            val expectedUid = when (StartStatusReporter.targetMethod) {
+                ShizukuSettings.StartMethod.ROOT -> 0
+                ShizukuSettings.StartMethod.SYSTEM -> 1000
+                ShizukuSettings.StartMethod.WIRELESS,
+                ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK,
+                ShizukuSettings.StartMethod.USB -> 2000
+                else -> -1
+            }
+            while (StartStatusReporter.status.value is StartStatus.Starting) {
+                val binderReady = runCatching { Shizuku.pingBinder() }.getOrDefault(false)
+                val liveUid = if (binderReady) runCatching { Shizuku.getUid() }.getOrDefault(-1) else -1
+                if (binderReady && liveUid == expectedUid) {
+                    running = true
+                    uid = liveUid
+                    ShizukuStateMachine.set(ShizukuStateMachine.State.RUNNING)
+                    StartStatusReporter.succeeded()
+                    break
+                }
+                delay(250)
+            }
+        }
+    }
+
     if (startStatus is StartStatus.Starting) {
         val targetLabel = StartStatusReporter.targetMethod?.let { context.getString(startMethodLabelRes(it)) } ?: "backend"
         val targetUid = when (StartStatusReporter.targetMethod) {
