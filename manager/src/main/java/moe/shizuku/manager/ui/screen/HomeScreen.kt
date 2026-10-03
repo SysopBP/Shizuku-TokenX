@@ -115,6 +115,8 @@ import moe.shizuku.manager.ui.component.TokenXDashboard
 import moe.shizuku.manager.ui.component.SegmentedColumn
 import moe.shizuku.manager.ui.theme.LocalAmoledTheme
 import moe.shizuku.manager.ui.theme.LocalTokenXGlass
+import moe.shizuku.manager.ui.haptics.TokenXHaptics
+import moe.shizuku.manager.ui.haptics.TokenXHapticEvent
 import moe.shizuku.manager.ui.component.SegmentedListItem
 import moe.shizuku.manager.ui.component.stripHtmlTags
 import moe.shizuku.manager.utils.EnvironmentUtils
@@ -1072,6 +1074,7 @@ private fun ServerActionButtons(
     onStop: () -> Unit,
     onRestart: () -> Unit
 ) {
+    val context = LocalContext.current
     val glass = LocalTokenXGlass.current
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -1084,7 +1087,7 @@ private fun ServerActionButtons(
             emphasized = !running,
             loading = starting,
             modifier = Modifier.weight(1f),
-            onClick = onStart
+            onClick = { TokenXHaptics.perform(context, TokenXHapticEvent.CONFIRM); onStart() }
         )
         GlassServerAction(
             label = stringResource(R.string.action_stop),
@@ -1092,7 +1095,7 @@ private fun ServerActionButtons(
             enabled = running && !starting,
             emphasized = running,
             modifier = Modifier.weight(1f),
-            onClick = onStop
+            onClick = { TokenXHaptics.perform(context, TokenXHapticEvent.WARNING); onStop() }
         )
         GlassServerAction(
             label = stringResource(R.string.action_restart),
@@ -1100,7 +1103,7 @@ private fun ServerActionButtons(
             enabled = running && !starting,
             emphasized = running,
             modifier = Modifier.weight(1f),
-            onClick = onRestart
+            onClick = { TokenXHaptics.perform(context, TokenXHapticEvent.CONFIRM); onRestart() }
         )
     }
 }
