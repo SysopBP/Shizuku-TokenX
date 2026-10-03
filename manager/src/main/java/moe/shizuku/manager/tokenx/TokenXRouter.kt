@@ -49,8 +49,15 @@ object TokenXRouter {
     fun route(
         capability: TokenXCapability,
         state: TokenXBackendState,
+        preferredBackend: TokenXBackend? = null,
     ): TokenXRoute {
-        val backend = when (capability) {
+        val preferredAvailable = when (preferredBackend) {
+            TokenXBackend.ROOT -> state.rootAvailable
+            TokenXBackend.SYSTEM_SERVER -> state.systemServerBridgeAvailable
+            TokenXBackend.SHELL -> state.shellAvailable
+            else -> false
+        }
+        val backend = if (preferredAvailable) preferredBackend!! else when (capability) {
             TokenXCapability.FRAMEWORK -> when {
                 state.systemServerBridgeAvailable -> TokenXBackend.SYSTEM_SERVER
                 state.rootAvailable -> TokenXBackend.ROOT
@@ -78,7 +85,7 @@ object TokenXRouter {
         return TokenXRoute(
             capability = capability,
             backend = backend,
-            reason = routeReason(capability, backend),
+            reason = if (preferredAvailable) "Explicit runtime preference: ${backend.name}" else routeReason(capability, backend),
         )
     }
 
