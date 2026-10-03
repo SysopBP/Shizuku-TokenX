@@ -567,12 +567,13 @@ fun HomeScreen(bottomPadding: Dp) {
                             summary = if (rooted) {
                                 if (running && uid == 0) "Active now • UID 0" else "Primary • UID 0"
                             } else "Root unavailable",
-                            enabled = rooted && !running,
+                            enabled = rooted && !(running && uid == 0),
                             active = running && uid == 0,
                             onClick = {
-                                context.startActivity(
-                                    Intent(context, StarterActivity::class.java)
-                                        .putExtra(StarterActivity.EXTRA_IS_ROOT, true)
+                                ShizukuReceiverStarter.switchMode(
+                                    context,
+                                    ShizukuSettings.StartMethod.ROOT,
+                                    userInitiated = true
                                 )
                             }
                         )
@@ -582,13 +583,13 @@ fun HomeScreen(bottomPadding: Dp) {
                             icon = Icons.Rounded.AdminPanelSettings,
                             title = stringResource(R.string.home_system_title),
                             summary = if (running && uid == 1000) "Active now • UID 1000" else "Framework • UID 1000",
-                            enabled = !running,
+                            enabled = !(running && uid == 1000),
                             active = running && uid == 1000,
                             onClick = {
-                                ShizukuReceiverStarter.start(
+                                ShizukuReceiverStarter.switchMode(
                                     context,
-                                    userInitiated = true,
-                                    startMethod = ShizukuSettings.StartMethod.SYSTEM
+                                    ShizukuSettings.StartMethod.SYSTEM,
+                                    userInitiated = true
                                 )
                             }
                         )
@@ -600,14 +601,14 @@ fun HomeScreen(bottomPadding: Dp) {
                             summary = if (startStatus is StartStatus.Starting && ShizukuSettings.getForceWirelessDebugging()) {
                                 stringResource(R.string.home_wireless_adb_starting_without_wifi)
                             } else "ADB • wireless",
-                            enabled = !running,
+                            enabled = !(running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS),
                             active = running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS,
                             onClick = {
                                 startWithLocalNetworkPermission(ShizukuSettings.StartMethod.WIRELESS) {
-                                    ShizukuReceiverStarter.start(
+                                    ShizukuReceiverStarter.switchMode(
                                         context,
-                                        userInitiated = true,
-                                        startMethod = ShizukuSettings.StartMethod.WIRELESS
+                                        ShizukuSettings.StartMethod.WIRELESS,
+                                        userInitiated = true
                                     )
                                 }
                             }
@@ -620,13 +621,13 @@ fun HomeScreen(bottomPadding: Dp) {
                             summary = if (!EnvironmentUtils.isWifiConnected() && EnvironmentUtils.getAdbTcpPort() <= 0) {
                                 stringResource(R.string.home_usb_adb_needs_network)
                             } else "ADB • USB / TCP",
-                            enabled = !running,
+                            enabled = !(running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB),
                             active = running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB,
                             onClick = {
-                                ShizukuReceiverStarter.start(
+                                ShizukuReceiverStarter.switchMode(
                                     context,
-                                    userInitiated = true,
-                                    startMethod = ShizukuSettings.StartMethod.USB
+                                    ShizukuSettings.StartMethod.USB,
+                                    userInitiated = true
                                 )
                             }
                         )
