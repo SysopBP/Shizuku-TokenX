@@ -332,7 +332,14 @@ private fun MainTabs(
                         active = active,
                         warmUp = warmUp
                     )
-                    2 -> TokenXControlCenterScreen(onBack = {})
+                    2 -> {
+                        BackHandler(enabled = active) {
+                            scope.launch { pagerState.animateScrollToPage(0) }
+                        }
+                        TokenXControlCenterScreen(
+                            onBack = { scope.launch { pagerState.animateScrollToPage(0) } }
+                        )
+                    }
                     3 -> LabsScreen(bottomPadding = bottomPadding, onOpenDetail = onOpenDetail)
                     4 -> SettingsScreen(bottomPadding = bottomPadding, onOpenDetail = onOpenDetail)
                 }
