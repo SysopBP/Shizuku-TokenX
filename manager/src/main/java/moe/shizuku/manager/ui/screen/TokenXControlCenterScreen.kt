@@ -83,7 +83,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     BackendRow(Icons.Outlined.AdminPanelSettings, "Root", "UID 0", if (runtime.backendState.rootAvailable) if (uid == 0) "ACTIVE • current server" else "READY" else "Unavailable")
-                    BackendRow(Icons.Outlined.Security, "Sserver / Serv.apk", "UID 1000", if (runtime.backendState.systemServerBridgeAvailable) "READY • com.vikram.exp verified" else "Waiting for Serv.apk UID 1000")
+                    BackendRow(Icons.Outlined.Security, "Sserver / Serv.apk", "UID 1000", if (runtime.backendState.systemServerBridgeAvailable) "READY • live Binder verified UID 1000" else "Waiting for UID 1000 Shizuku Binder")
                     BackendRow(Icons.Outlined.Terminal, "Shell", "UID 2000", if (runtime.backendState.shellAvailable) "ACTIVE • compatibility fallback" else "Standby")
                     BackendRow(Icons.Outlined.Extension, "Xposed / LSPosed", "system_server bridge", when { runtime.xposedBridgeActive -> "ACTIVE • handshake verified"; runtime.xposedFrameworkDetected -> "Framework detected • bridge waiting"; else -> "Not detected" })
                 }
