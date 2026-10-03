@@ -1,5 +1,6 @@
 package moe.shizuku.manager.shell
 
+import android.content.Context
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -18,6 +19,7 @@ object SystemUidProvisioner {
     const val STAGED_DEX = "/data/local/tmp/Serv.dex"
     const val LIVE_PACKAGE = "com.vikram.exp"
     const val LEGACY_PACKAGE = "com.vikram.shell"
+    const val STAGED_SHIZUKU = "/data/local/tmp/libshizuku.so"
 
     data class Result(
         val success: Boolean,
@@ -48,6 +50,43 @@ object SystemUidProvisioner {
             "app_process -cp ${q(dexPath)} /system/bin Serv",
         ).joinToString("; ")
 
+        return runRoot(script)
+    }
+
+    /**
+     * Stage the Shizuku native launcher without ever hard-coding Android's
+     * randomized /data/app/~~... install directory. nativeLibraryDir is the
+     * authoritative location for this installation and changes safely across
+     * updates/reinstalls.
+     */
+    fun stageShizukuUid1000(context: Context): Result {
+        val nativeDir = context.applicationInfo.nativeLibraryDir
+        val source = "$nativeDir/libshizuku.so"
+        val script = listOf(
+            "set -e",
+            "test -r ${q(source)}",
+            "cp ${q(source)} ${q(STAGED_SHIZUKU)}",
+            "chmod 755 ${q(STAGED_SHIZUKU)}",
+            "chown 1000:1000 ${q(STAGED_SHIZUKU)}",
+            "test -x ${q(STAGED_SHIZUKU)}",
+            "echo source=${q(source)}",
+            "echo staged=${q(STAGED_SHIZUKU)}",
+        ).joinToString("; ")
+        return runRoot(script)
+    }
+
+    /**
+     * Start the staged launcher with the historical UID-1000 mechanism.
+     * Readiness is intentionally verified separately; a successful fork is
+     * not enough to advertise Sserver as READY.
+     */
+    fun startShizukuUid1000(): Result {
+        val script = listOf(
+            "set -e",
+            "test -x ${q(STAGED_SHIZUKU)}",
+            "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000'",
+            "su 1000 -c ${q(STAGED_SHIZUKU)}",
+        ).joinToString("; ")
         return runRoot(script)
     }
 
