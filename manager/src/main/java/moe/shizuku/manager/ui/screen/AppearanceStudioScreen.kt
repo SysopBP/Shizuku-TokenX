@@ -13,6 +13,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.HapticFeedbackConstantsCompat
+import androidx.core.view.ViewCompat
 import androidx.appcompat.widget.SwitchCompat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -536,9 +539,48 @@ private fun TonalAccentSwatch(
 
 @Composable
 private fun StudioSlider(title: String, value: Float, range: ClosedFloatingPointRange<Float>, suffix: String = "", onChange: (Float) -> Unit) {
-    Column {
+    val view = LocalView.current
+    var lastDetent by remember(title, range.start, range.endInclusive) { mutableIntStateOf(-1) }
+    val span = (range.endInclusive - range.start).coerceAtLeast(0.0001f)
+    val fraction = ((value - range.start) / span).coerceIn(0f, 1f)
+    val detent = (fraction * 20f).toInt()
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(title + "  " + "%.2f".format(value) + suffix, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
-        Slider(value = value, onValueChange = onChange, valueRange = range)
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = .46f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
+        ) {
+            Slider(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                value = value,
+                onValueChange = { next ->
+                    val nextFraction = ((next - range.start) / span).coerceIn(0f, 1f)
+                    val nextDetent = (nextFraction * 20f).toInt()
+                    if (nextDetent != lastDetent) {
+                        ViewCompat.performHapticFeedback(
+                            view,
+                            if (nextDetent == 0 || nextDetent == 20) HapticFeedbackConstantsCompat.CONFIRM
+                            else HapticFeedbackConstantsCompat.CLOCK_TICK
+                        )
+                        lastDetent = nextDetent
+                    }
+                    onChange(next)
+                },
+                onValueChangeFinished = {
+                    ViewCompat.performHapticFeedback(view, HapticFeedbackConstantsCompat.CONFIRM)
+                },
+                valueRange = range,
+                colors = SliderDefaults.colors(
+                    activeTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = .78f),
+                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .42f),
+                    thumbColor = MaterialTheme.colorScheme.primaryContainer,
+                    activeTickColor = Color.Transparent,
+                    inactiveTickColor = Color.Transparent
+                )
+            )
+        }
     }
 }
 
