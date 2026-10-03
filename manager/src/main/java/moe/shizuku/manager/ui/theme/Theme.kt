@@ -77,12 +77,20 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
         tokenAccent
     }
 
+    val paletteStyle = runCatching {
+        PaletteStyle.valueOf(prefs.getString(TokenXAppearanceKeys.COLOR_STYLE, PaletteStyle.TonalSpot.name)!!)
+    }.getOrDefault(PaletteStyle.TonalSpot)
+    val colorSpec = when (prefs.getString(TokenXAppearanceKeys.COLOR_SPEC, "SPEC_2025")) {
+        "SPEC_2021" -> ColorSpec.SpecVersion.SPEC_2021
+        else -> ColorSpec.SpecVersion.SPEC_2025
+    }
+
     val baseScheme = rememberDynamicColorScheme(
         seedColor = seed,
         isDark = darkTheme,
         isAmoled = amoled,
-        style = PaletteStyle.TonalSpot,
-        specVersion = ColorSpec.SpecVersion.SPEC_2021,
+        style = paletteStyle,
+        specVersion = colorSpec,
     )
 
     // The AMOLED switch only repaints the base surface roles, while the container
