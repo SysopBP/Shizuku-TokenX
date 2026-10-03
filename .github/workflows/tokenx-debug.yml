@@ -91,8 +91,75 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git -C api apply ../ci/system-server-userservice.patch
-          echo "Applied UserService system_server crash guard"
+          FILE="api/server-shared/src/main/java/rikka/shizuku/server/UserServiceManager.java"
+          python3 - "$FILE" <<'PY'
+          from pathlib import Path
+          import sys
+
+          p = Path(sys.argv[1])
+          s = p.read_text()
+
+          if "import android.os.Process;" not in s:
+              anchor = "import android.os.IBinder;\n"
+              if anchor not in s:
+                  raise SystemExit("UserServiceManager Process import anchor not found")
+              s = s.replace(anchor, anchor + "import android.os.Process;\n", 1)
+
+          old = '''        String cmd = getUserServiceStartCmd(record, key, token, packageName, classname, processNameSuffix, callingUid, use32Bits && AbiUtil.has32Bit(), debug);
+          int exitCode;
+          try {
+              java.lang.Process process = Runtime.getRuntime().exec("sh");
+              OutputStream os = process.getOutputStream();
+              os.write(cmd.getBytes());
+              os.flush();
+              os.close();
+
+              exitCode = process.waitFor();
+          } catch (Throwable e) {
+              throw new IllegalStateException(e.getMessage());
+          }
+          if (exitCode != 0) {
+              throw new IllegalStateException("sh exited with " + exitCode);
+          }'''
+
+          new = '''        String cmd = getUserServiceStartCmd(record, key, token, packageName, classname, processNameSuffix, callingUid, use32Bits && AbiUtil.has32Bit(), debug);
+
+          // TokenX can host Shizuku in system_server (uid 1000). SELinux deliberately
+          // prevents system_server from exec'ing a shell. Never let that expected denial
+          // escape this executor: an uncaught RuntimeException here kills the framework.
+          if (Process.myUid() == Process.SYSTEM_UID) {
+              LOGGER.w("Refusing UserService shell launch from system uid for %s (%s); keeping system_server alive", key, token);
+              record.removeSelf();
+              return;
+          }
+
+          int exitCode;
+          try {
+              java.lang.Process process = Runtime.getRuntime().exec("/system/bin/sh");
+              try (OutputStream os = process.getOutputStream()) {
+                  os.write(cmd.getBytes());
+                  os.flush();
+              }
+              exitCode = process.waitFor();
+          } catch (Throwable e) {
+              LOGGER.w("Unable to start UserService %s (%s): %s", key, token, e);
+              record.removeSelf();
+              return;
+          }
+          if (exitCode != 0) {
+              LOGGER.w("UserService shell exited with %d for %s (%s)", exitCode, key, token);
+              record.removeSelf();
+          }'''
+
+          if "Refusing UserService shell launch from system uid" not in s:
+              if old not in s:
+                  raise SystemExit("UserServiceManager launch block anchor not found")
+              s = s.replace(old, new, 1)
+
+          p.write_text(s)
+          print("TokenX UserService system_server crash guard applied")
+          PY
+          grep -nE 'SYSTEM_UID|/system/bin/sh|Unable to start UserService|keeping system_server alive' "$FILE"
 
       - name: Setup Java 21
         uses: actions/setup-java@v5
