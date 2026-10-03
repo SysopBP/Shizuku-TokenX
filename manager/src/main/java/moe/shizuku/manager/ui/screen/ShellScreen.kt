@@ -194,7 +194,6 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
     // The session, the output and the channel it arrives on outlive this screen, because it is
     // opened from the Labs list rather than being a page: leaving it to check something and
     // coming back has to find what was run still there. See ShellContinuity.
-    val session = ShellContinuity.session
     val listState = rememberLazyListState()
 
     val lines = ShellContinuity.lines
@@ -210,8 +209,11 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
         mutableStateOf(TextFieldValue(""))
     }
     var backend by rememberSaveable { mutableStateOf(ShellBackend.SHIZUKU) }
+    val session = ShellContinuity.session(backend)
     var running by remember { mutableStateOf(false) }
-    var cwd by remember { mutableStateOf(session.cwd) }
+    var cwd by remember(backend) { mutableStateOf(session.cwd) }
+    var cwdField by remember(backend) { mutableStateOf(session.cwd) }
+    var recentOpen by remember { mutableStateOf(false) }
     // A chip that fills the input leaves the cursor in it, so the command can be finished
     // without reaching for the field again.
     val focus = remember { FocusRequester() }
@@ -370,7 +372,8 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
         if (inner != null) {
             feed(ShellLine(context.getString(R.string.shell_adb_prefix_dropped), ShellLine.Kind.INFO))
         }
-        feed(ShellLine("$cwd $ $command", ShellLine.Kind.COMMAND))
+        val prompt = if (backend == ShellBackend.ROOT) "#" else "$"
+        feed(ShellLine("${backend.name}  $cwd $prompt $command", ShellLine.Kind.COMMAND))
         history = ShellHistory.record(context, command)
         historyIndex = -1
 
@@ -379,10 +382,11 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
             running = true
             scope.launch {
                 val ok = withContext(Dispatchers.IO) {
-                    runCatching { session.cd(target, ::feed) }.getOrDefault(false)
+                    runCatching { session.cd(target, ::feed, backend) }.getOrDefault(false)
                 }
                 if (!ok) feed(ShellLine("cd: no such directory: $target", ShellLine.Kind.ERROR))
                 cwd = session.cwd
+                cwdField = session.cwd
                 running = false
             }
             return
@@ -934,6 +938,37 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
             }
 
             Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = cwdField,
+                    onValueChange = { cwdField = it },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Working directory") },
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+                    keyboardActions = KeyboardActions(onGo = {
+                        if (!running && cwdField.isNotBlank()) {
+                            running = true
+                            scope.launch {
+                                val ok = withContext(Dispatchers.IO) {
+                                    runCatching { session.cd(cwdField.trim(), ::feed, backend) }.getOrDefault(false)
+                                }
+                                if (ok) { cwd = session.cwd; cwdField = session.cwd }
+                                else feed(ShellLine("cd: no such directory: ${cwdField.trim()}", ShellLine.Kind.ERROR))
+                                running = false
+                            }
+                        }
+                    })
+                )
+                IconButton(onClick = { recentOpen = true }, enabled = history.isNotEmpty()) {
+                    Icon(Icons.Outlined.History, contentDescription = "Recent commands")
+                }
+            }
+
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 8.dp),
@@ -989,6 +1024,27 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
                     }
                 }
             }
+        }
+    }
+
+    if (recentOpen) {
+        ModalBottomSheet(onDismissRequest = { recentOpen = false }) {
+            Text("Recent commands", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+                items(history.take(12), key = { it.command }) { entry ->
+                    ListItem(
+                        modifier = Modifier.clickable {
+                            field = TextFieldValue(entry.command, TextRange(entry.command.length))
+                            recentOpen = false
+                            focus.requestFocus()
+                        },
+                        headlineContent = { Text(entry.command, fontFamily = FontFamily.Monospace, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                        supportingContent = { Text("Tap to restore") },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
         }
     }
 
