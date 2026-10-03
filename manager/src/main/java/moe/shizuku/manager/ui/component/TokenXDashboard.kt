@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
@@ -212,15 +213,17 @@ fun TokenXDashboard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Text(
-                    if (running) "ACTIVE" else "OFFLINE",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (running) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.error
-                )
+                Box(Modifier.width(72.dp), contentAlignment = Alignment.CenterEnd) {
+                    Text(
+                        if (running) "ACTIVE" else "OFFLINE",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (running) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.error
+                    )
+                }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TokenXBackendChip(
                     label = "System",
                     value = if (uid == 1000) "UID 1000" else "Standby",
@@ -241,11 +244,11 @@ fun TokenXDashboard(
                 )
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatusLine(Icons.Rounded.Token, "Token Boot", "Session coordination", Modifier.weight(1f))
                 StatusLine(Icons.Rounded.Security, "Watchdog", "Existing engine", Modifier.weight(1f))
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatusLine(Icons.Rounded.AdminPanelSettings, "LSPosed", "Bridge discovery", Modifier.weight(1f))
                 StatusLine(Icons.Rounded.Terminal, "TokenX Router", "Multi-backend", Modifier.weight(1f))
             }
@@ -260,11 +263,11 @@ fun TokenXDashboard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatusLine(Icons.Rounded.VerifiedUser, "Serv", "UID 1000", Modifier.weight(1f))
                 StatusLine(Icons.Rounded.SystemSecurityUpdateGood, "FOTA", "UID 1000", Modifier.weight(1f))
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatusLine(Icons.Rounded.Lock, "D2 Gate", "Dual gate", Modifier.weight(1f))
                 StatusLine(Icons.Rounded.Security, "Receiver Compatibility", "Xposed", Modifier.weight(1f))
             }
@@ -304,7 +307,7 @@ fun TokenXDashboard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TokenXGlassButton(
                     onClick = { runProvision("System Bridge Verify • Live") { SystemUidProvisioner.verify() } },
                     enabled = rootAvailable && !provisioning,
@@ -365,14 +368,24 @@ private fun StatusLine(
     modifier: Modifier = Modifier,
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.width(40.dp), contentAlignment = Alignment.CenterStart) {
             Icon(icon, null, Modifier.size(26.dp), tint = MaterialTheme.colorScheme.primary)
         }
-        Column(Modifier.padding(start = 8.dp)) {
+        Column(
+            Modifier
+                .padding(start = 8.dp)
+                .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
             Text(label, style = MaterialTheme.typography.labelMedium)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.CheckCircle, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
-                Text(value, Modifier.padding(start = 5.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    value,
+                    Modifier.padding(start = 5.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
