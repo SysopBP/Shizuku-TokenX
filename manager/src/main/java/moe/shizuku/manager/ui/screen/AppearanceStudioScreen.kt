@@ -193,7 +193,7 @@ fun AppearanceStudioScreen() {
             }
         }
 
-        TextButton(onClick = {
+        TextButton(shape = RoundedCornerShape(10.dp), onClick = {
             themePreset = TokenXThemePreset.TOKENX
             TokenXThemeEngine.applyPreset(prefs, TokenXThemePreset.TOKENX)
             glass = prefs.getBoolean(TokenXAppearanceKeys.GLASS_ENABLED, true)
@@ -328,7 +328,7 @@ fun AppearanceStudioScreen() {
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Button(onClick = {
+                    Button(shape = RoundedCornerShape(10.dp), onClick = {
                         runCatching { AndroidColor.parseColor(customAccent) }.onSuccess { parsed ->
                             prefs.edit()
                                 .putLong(TokenXAppearanceKeys.ACCENT_COLOR, parsed.toLong() and 0xFFFFFFFFL)
@@ -363,7 +363,7 @@ fun AppearanceStudioScreen() {
                 label = { Text("Background color (#AARRGGBB)") },
                 singleLine = true
             )
-            Button(onClick = {
+            Button(shape = RoundedCornerShape(10.dp), onClick = {
                 runCatching { AndroidColor.parseColor(colorHex) }.onSuccess { parsed ->
                     prefs.edit().putLong(TokenXAppearanceKeys.BACKGROUND_COLOR, parsed.toLong() and 0xFFFFFFFFL).apply()
                     refresh()
@@ -371,38 +371,38 @@ fun AppearanceStudioScreen() {
             }) { Text("Apply color") }
         }
         if (mode == BackgroundMode.CUSTOM_IMAGE) {
-            Button(onClick = { imagePicker.launch(arrayOf("image/*")) }) { Text("Choose background image") }
+            Button(shape = RoundedCornerShape(10.dp), onClick = { imagePicker.launch(arrayOf("image/*")) }) { Text("Choose background image") }
         }
         StudioSlider("Background dim", dim, 0f..0.8f) { dim = it; putFloat(TokenXAppearanceKeys.BACKGROUND_DIM, it) }
 
         Text("Glass presets", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         Text("Neutral glass keeps wallpaper colors intact while the accent stays on controls.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = {
+            Button(shape = RoundedCornerShape(10.dp), onClick = {
                 glass=true; opacity=.42f; blur=10f; radius=30f; border=.24f
                 prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_BLUR,blur).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).apply(); refresh()
             }) { Text("Clear") }
-            Button(onClick = {
+            Button(shape = RoundedCornerShape(10.dp), onClick = {
                 glass=true; opacity=.72f; blur=28f; radius=28f; border=.18f
                 prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_BLUR,blur).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).apply(); refresh()
             }) { Text("Frosted") }
-            Button(onClick = {
+            Button(shape = RoundedCornerShape(10.dp), onClick = {
                 mode=BackgroundMode.AMOLED; opacity=.58f; border=.12f
                 prefs.edit().putString(TokenXAppearanceKeys.BACKGROUND_MODE,mode.name).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).apply(); refresh()
             }) { Text("AMOLED") }
-            Button(onClick = {
+            Button(shape = RoundedCornerShape(10.dp), onClick = {
                 glass=true; opacity=.82f; radius=28f; border=.16f; dim=.32f
                 prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).putFloat(TokenXAppearanceKeys.BACKGROUND_DIM,dim).apply(); refresh()
             }) { Text("Readable") }
-            Button(onClick = {
+            Button(shape = RoundedCornerShape(10.dp), onClick = {
                 glass=true; opacity=.34f; radius=32f; border=.22f; dim=.12f
                 prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).putFloat(TokenXAppearanceKeys.BACKGROUND_DIM,dim).apply(); refresh()
             }) { Text("Crystal") }
-            Button(onClick = {
+            Button(shape = RoundedCornerShape(10.dp), onClick = {
                 glass=true; opacity=.52f; radius=34f; border=.28f; dim=.20f
                 prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).putFloat(TokenXAppearanceKeys.BACKGROUND_DIM,dim).apply(); refresh()
             }) { Text("Smoke") }
-            Button(onClick = {
+            Button(shape = RoundedCornerShape(10.dp), onClick = {
                 glass=true; opacity=.64f; radius=26f; border=.10f; dim=.26f
                 prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).putFloat(TokenXAppearanceKeys.BACKGROUND_DIM,dim).apply(); refresh()
             }) { Text("One UI") }
