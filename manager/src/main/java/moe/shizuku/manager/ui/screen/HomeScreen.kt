@@ -359,6 +359,17 @@ fun HomeScreen(bottomPadding: Dp) {
                     uid = liveUid
                     ShizukuStateMachine.set(ShizukuStateMachine.State.RUNNING)
                     StartStatusReporter.succeeded()
+
+                    // Recreate only the TokenX manager after a verified backend change.
+                    // The privilege backend stays alive; the fresh manager process then
+                    // attaches to the newly verified Binder instead of retaining stale
+                    // client-side Binder/state objects from the previous mode.
+                    if (liveUid != StartStatusReporter.sourceUid) {
+                        ShellSession().run(
+                            ShellBackend.ROOT,
+                            "(sleep 1; am force-stop com.vikram.exp; sleep 1; monkey -p com.vikram.exp -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1) >/dev/null 2>&1 &"
+                        ) { }
+                    }
                     break
                 }
                 if (android.os.SystemClock.elapsedRealtime() >= deadline) {
