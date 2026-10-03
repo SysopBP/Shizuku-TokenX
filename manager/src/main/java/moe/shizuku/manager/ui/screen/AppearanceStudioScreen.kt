@@ -65,6 +65,7 @@ fun AppearanceStudioScreen() {
     var radius by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_RADIUS, 28f)) }
     var border by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.GLASS_BORDER, .18f)) }
     var textContrast by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.TEXT_CONTRAST, 1f)) }
+    var glassPreset by remember { mutableStateOf(prefs.getString(TokenXAppearanceKeys.GLASS_PRESET, "Frosted") ?: "Frosted") }
     var barOpacity by remember { mutableFloatStateOf(prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_OPACITY, .82f)) }
     var barStyle by remember {
         mutableStateOf(runCatching {
@@ -418,35 +419,39 @@ fun AppearanceStudioScreen() {
 
         Text("Glass presets", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         Text("Neutral glass keeps wallpaper colors intact while the accent stays on controls.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(shape = RoundedCornerShape(10.dp), onClick = {
-                glass=true; opacity=.42f; blur=10f; radius=30f; border=.24f
+        fun selectGlassPreset(name: String) {
+            glassPreset = name
+            prefs.edit().putString(TokenXAppearanceKeys.GLASS_PRESET, name).apply()
+        }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(selected = glassPreset == "Clear", shape = RoundedCornerShape(10.dp), onClick = {
+                selectGlassPreset("Clear"); glass=true; opacity=.42f; blur=10f; radius=30f; border=.24f
                 prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_BLUR,blur).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).apply(); refresh()
-            }) { Text("Clear") }
-            Button(shape = RoundedCornerShape(10.dp), onClick = {
-                glass=true; opacity=.72f; blur=28f; radius=28f; border=.18f
+            }, label = { Text("Clear") })
+            FilterChip(selected = glassPreset == "Frosted", shape = RoundedCornerShape(10.dp), onClick = {
+                selectGlassPreset("Frosted"); glass=true; opacity=.72f; blur=28f; radius=28f; border=.18f
                 prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_BLUR,blur).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).apply(); refresh()
-            }) { Text("Frosted") }
-            Button(shape = RoundedCornerShape(10.dp), onClick = {
-                mode=BackgroundMode.AMOLED; opacity=.58f; border=.12f
+            }, label = { Text("Frosted") })
+            FilterChip(selected = glassPreset == "AMOLED", shape = RoundedCornerShape(10.dp), onClick = {
+                selectGlassPreset("AMOLED"); mode=BackgroundMode.AMOLED; opacity=.58f; border=.12f
                 prefs.edit().putString(TokenXAppearanceKeys.BACKGROUND_MODE,mode.name).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).apply(); refresh()
-            }) { Text("AMOLED") }
-            Button(shape = RoundedCornerShape(10.dp), onClick = {
-                glass=true; opacity=.82f; radius=28f; border=.16f; dim=.32f
+            }, label = { Text("AMOLED") })
+            FilterChip(selected = glassPreset == "Readable", shape = RoundedCornerShape(10.dp), onClick = {
+                selectGlassPreset("Readable"); glass=true; opacity=.82f; radius=28f; border=.16f; dim=.32f
                 prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).putFloat(TokenXAppearanceKeys.BACKGROUND_DIM,dim).apply(); refresh()
-            }) { Text("Readable") }
-            Button(shape = RoundedCornerShape(10.dp), onClick = {
-                glass=true; opacity=.34f; radius=32f; border=.22f; dim=.12f
+            }, label = { Text("Readable") })
+            FilterChip(selected = glassPreset == "Crystal", shape = RoundedCornerShape(10.dp), onClick = {
+                selectGlassPreset("Crystal"); glass=true; opacity=.34f; radius=32f; border=.22f; dim=.12f
                 prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).putFloat(TokenXAppearanceKeys.BACKGROUND_DIM,dim).apply(); refresh()
-            }) { Text("Crystal") }
-            Button(shape = RoundedCornerShape(10.dp), onClick = {
-                glass=true; opacity=.52f; radius=34f; border=.28f; dim=.20f
+            }, label = { Text("Crystal") })
+            FilterChip(selected = glassPreset == "Smoke", shape = RoundedCornerShape(10.dp), onClick = {
+                selectGlassPreset("Smoke"); glass=true; opacity=.52f; radius=34f; border=.28f; dim=.20f
                 prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).putFloat(TokenXAppearanceKeys.BACKGROUND_DIM,dim).apply(); refresh()
-            }) { Text("Smoke") }
-            Button(shape = RoundedCornerShape(10.dp), onClick = {
-                glass=true; opacity=.64f; radius=26f; border=.10f; dim=.26f
+            }, label = { Text("Smoke") })
+            FilterChip(selected = glassPreset == "One UI", shape = RoundedCornerShape(10.dp), onClick = {
+                selectGlassPreset("One UI"); glass=true; opacity=.64f; radius=26f; border=.10f; dim=.26f
                 prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).putFloat(TokenXAppearanceKeys.BACKGROUND_DIM,dim).apply(); refresh()
-            }) { Text("One UI") }
+            }, label = { Text("One UI") })
         }
     }
 }
