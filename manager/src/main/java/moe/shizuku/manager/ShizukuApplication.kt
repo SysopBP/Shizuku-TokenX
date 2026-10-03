@@ -61,7 +61,7 @@ class ShizukuApplication : Application() {
         // Serv.apk, root or shell may be replaced while the user still expects the same
         // enabled apps. Replay the persisted list every time a server Binder arrives.
         Shizuku.addBinderReceivedListener {
-            runCatching { AuthorizationManager.restoreDesiredGrants() }
+            runCatching { AuthorizationManager.restoreDesiredGrantsWithRetry() }
                 .onFailure { Log.w("TokenX", "Unable to restore app grants", it) }
         }
     }
