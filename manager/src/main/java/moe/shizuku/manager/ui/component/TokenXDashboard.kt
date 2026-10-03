@@ -22,6 +22,8 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -81,6 +83,29 @@ fun TokenXDashboard(
                 ViewCompat.performHapticFeedback(hapticView, HapticFeedbackConstantsCompat.CONFIRM)
                 delay(820L)
             }
+        }
+    }
+
+    fun runRootAction(title: String, command: String) {
+        if (provisioning) return
+        provisioning = true
+        dialogTitle = title
+        dialogMode = "bridge"
+        showVaultDialog = true
+        provisionStatus = "TOKENX • requesting privileged restart…"
+        scope.launch {
+            val result = withContext(Dispatchers.IO) { SystemUidProvisioner.runPrivilegedAction(command) }
+            provisionStatus = buildString {
+                append(if (result.success) "SUCCESS" else "FAILED")
+                append(" (exit ")
+                append(result.exitCode)
+                append(")")
+                if (result.output.isNotBlank()) {
+                    append("\n")
+                    append(result.output.trim())
+                }
+            }
+            provisioning = false
         }
     }
 
@@ -253,6 +278,35 @@ fun TokenXDashboard(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatusLine(Icons.Rounded.AdminPanelSettings, "LSPosed", "Bridge discovery", Modifier.weight(1f))
                 StatusLine(Icons.Rounded.Terminal, "TokenX Router", "Multi-backend", Modifier.weight(1f))
+            }
+
+            HorizontalDivider(Modifier.padding(vertical = 2.dp))
+            Text(
+                "Restart Controls",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TokenXGlassButton(
+                    onClick = { runRootAction("Soft Reboot • Live", "setprop ctl.restart zygote") },
+                    enabled = rootAvailable && !provisioning,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Rounded.RestartAlt, contentDescription = null, Modifier.size(18.dp))
+                        Text("Soft Reboot", style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+                TokenXGlassButton(
+                    onClick = { runRootAction("System UI Restart • Live", "pkill -TERM -f com.android.systemui") },
+                    enabled = rootAvailable && !provisioning,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Rounded.Refresh, contentDescription = null, Modifier.size(18.dp))
+                        Text("System UI", style = MaterialTheme.typography.labelLarge)
+                    }
+                }
             }
 
             HorizontalDivider(Modifier.padding(vertical = 2.dp))
