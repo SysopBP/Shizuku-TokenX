@@ -7,9 +7,10 @@ import java.io.InputStreamReader
 /**
  * Helpers for the current TokenX System UID / System Server backend.
  *
- * Legacy Serv.dex provisioning is retired. The bridge is installed by the KernelSU
- * module; this class only verifies the live Serv.apk/com.vikram.exp bridge and stages
- * TokenX's isolated UID-1000 Shizuku worker when needed.
+ * The KernelSU module is the primary installer. A module-local provisioning DEX may
+ * remain available as a fallback; this class audits that fallback without executing it.
+ * It also verifies the live Serv.apk/com.vikram.exp bridge and stages TokenX's isolated
+ * UID-1000 Shizuku worker when needed.
  */
 object SystemUidProvisioner {
 
@@ -18,7 +19,7 @@ object SystemUidProvisioner {
     const val FOTA_PACKAGE = "com.sdet.fotaagent"
     const val STAGED_SHIZUKU = "/data/local/tmp/libshizuku.so"
 
-    enum class Stage { D2_GATE, SERV_UID, FOTA_UID, FOTA_DOMAIN, RX_COMPAT, SYSTEM_BRIDGE }
+    enum class Stage { D2_GATE, SERV_UID, FOTA_UID, FOTA_DOMAIN, DEX_FALLBACK, RX_COMPAT, SYSTEM_BRIDGE }
     enum class StageState { WAITING, CHECKING, VERIFIED, WARNING, FAILED }
     data class Progress(val stage: Stage, val state: StageState, val detail: String)
 
@@ -101,6 +102,7 @@ object SystemUidProvisioner {
             Triple(Stage.SERV_UID, "Checking Serv UID 1000", "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000'"),
             Triple(Stage.FOTA_UID, "Checking FOTA UID 1000", "cmd package list packages -U | grep -F 'package:$FOTA_PACKAGE uid:1000'"),
             Triple(Stage.FOTA_DOMAIN, "Checking FOTA system identity", "dumpsys package $FOTA_PACKAGE 2>/dev/null | grep -m1 -E 'sharedUser=.*android.uid.system/1000'"),
+            Triple(Stage.DEX_FALLBACK, "Checking provisioning DEX fallback", "DEX=$(find /data/adb/modules/tokenx_system_server -type f -name '*.dex' 2>/dev/null | head -n 1); test -n \"$DEX\" && test -r \"$DEX\" && echo DEX_FALLBACK=present && echo DEX_PATH=\"$DEX\" && echo DEX_STATE=standby"),
             Triple(Stage.RX_COMPAT, "Checking TokenX Receiver Compatibility", "echo TOKENX_RECEIVER_COMPAT=integrated; echo TOKENX_RECEIVER_SCOPE=$FOTA_PACKAGE")
         )
         for ((stage, label, script) in checks) {
@@ -108,6 +110,7 @@ object SystemUidProvisioner {
             transcript.append(result.output)
             if (!result.success) return Result(false, result.exitCode, transcript.toString(), result.command)
         }
+        transcript.append("NOTE=DEX fallback presence is audited only; the Vault does not execute it or claim it was used\n")
         transcript.append("NOTE=Receiver Compatibility is integrated into TokenX Xposed; no external Receiver Flag Fix APK is required\n")
         return Result(true, 0, transcript.toString(), "TokenX staged provisioning audit")
     }
