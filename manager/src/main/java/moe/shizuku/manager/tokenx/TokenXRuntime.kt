@@ -51,11 +51,20 @@ object TokenXRuntime {
             shellAvailable = uid == 2000,
         )
 
+        val preferredBackend = when (ShizukuSettings.getStartMethod()) {
+            ShizukuSettings.StartMethod.ROOT -> TokenXBackend.ROOT
+            ShizukuSettings.StartMethod.SYSTEM -> TokenXBackend.SYSTEM_SERVER
+            ShizukuSettings.StartMethod.WIRELESS,
+            ShizukuSettings.StartMethod.USB,
+            ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK -> TokenXBackend.SHELL
+            else -> null
+        }
+
         return TokenXRuntimeState(
             backendState = state,
             xposedFrameworkDetected = xposedDetected,
             xposedBridgeActive = bridgeActive,
-            routes = TokenXCapability.entries.associateWith { TokenXRouter.route(it, state) },
+            routes = TokenXCapability.entries.associateWith { TokenXRouter.route(it, state, preferredBackend) },
         )
     }
 
