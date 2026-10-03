@@ -30,6 +30,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import moe.shizuku.manager.ui.theme.ThemeState
 import moe.shizuku.manager.ui.theme.TokenXUiStyle
 import com.materialkolor.PaletteStyle
@@ -265,44 +266,81 @@ fun AppearanceStudioScreen() {
         }
 
         Text("Accent color", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-        Text("Changes Material, TokenX glass highlights and active-state accents across the app.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Choose a tonal palette for every TokenX renderer. Swipe for more.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        val selectedAccent = prefs.getString(TokenXAppearanceKeys.ACCENT_PRESET, TokenXAccent.TOKEN_PURPLE.name)
+        val useSystemAccent = prefs.getBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
+        var showCustomAccent by remember { mutableStateOf(selectedAccent == "CUSTOM") }
+        var customAccent by remember {
+            mutableStateOf(String.format("#%08X", prefs.getLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.TOKEN_PURPLE.argb)))
+        }
+
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
+            TonalAccentSwatch(
+                label = "System",
+                base = MaterialTheme.colorScheme.primary,
+                selected = useSystemAccent,
+                onClick = {
+                    showCustomAccent = false
+                    prefs.edit()
+                        .putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, true)
+                        .putString(TokenXAppearanceKeys.ACCENT_PRESET, "SYSTEM")
+                        .apply()
+                    refresh()
+                }
+            )
+
             TokenXAccent.entries.forEach { preset ->
-                Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                    Box(
-                        Modifier
-                            .size(44.dp)
-                            .background(Color(preset.argb.toInt()), CircleShape)
-                            .clickable {
-                                prefs.edit()
-                                    .putLong(TokenXAppearanceKeys.ACCENT_COLOR, preset.argb)
-                                    .putString(TokenXAppearanceKeys.ACCENT_PRESET, preset.name)
-                                    .putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
-                                    .apply()
-                                refresh()
-                            }
+                TonalAccentSwatch(
+                    label = preset.label,
+                    base = Color(preset.argb.toInt()),
+                    selected = !useSystemAccent && selectedAccent == preset.name,
+                    onClick = {
+                        showCustomAccent = false
+                        prefs.edit()
+                            .putLong(TokenXAppearanceKeys.ACCENT_COLOR, preset.argb)
+                            .putString(TokenXAppearanceKeys.ACCENT_PRESET, preset.name)
+                            .putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
+                            .apply()
+                        refresh()
+                    }
+                )
+            }
+
+            TonalAccentSwatch(
+                label = "Custom",
+                base = Color(prefs.getLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.TOKEN_PURPLE.argb).toInt()),
+                selected = !useSystemAccent && selectedAccent == "CUSTOM",
+                onClick = { showCustomAccent = true }
+            )
+        }
+
+        if (showCustomAccent) {
+            TokenXGlassCard {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = customAccent,
+                        onValueChange = { customAccent = it.take(9) },
+                        label = { Text("Custom accent (#AARRGGBB)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    Text(preset.label, style = MaterialTheme.typography.labelSmall)
+                    Button(onClick = {
+                        runCatching { AndroidColor.parseColor(customAccent) }.onSuccess { parsed ->
+                            prefs.edit()
+                                .putLong(TokenXAppearanceKeys.ACCENT_COLOR, parsed.toLong() and 0xFFFFFFFFL)
+                                .putString(TokenXAppearanceKeys.ACCENT_PRESET, "CUSTOM")
+                                .putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
+                                .apply()
+                            refresh()
+                        }
+                    }) { Text("Apply custom accent") }
                 }
             }
         }
-        var customAccent by remember { mutableStateOf(String.format("#%08X", prefs.getLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.TOKEN_PURPLE.argb))) }
-        OutlinedTextField(
-            value = customAccent,
-            onValueChange = { customAccent = it.take(9) },
-            label = { Text("Custom accent (#AARRGGBB)") },
-            singleLine = true
-        )
-        Button(onClick = {
-            runCatching { AndroidColor.parseColor(customAccent) }.onSuccess { parsed ->
-                prefs.edit()
-                    .putLong(TokenXAppearanceKeys.ACCENT_COLOR, parsed.toLong() and 0xFFFFFFFFL)
-                    .putString(TokenXAppearanceKeys.ACCENT_PRESET, "CUSTOM")
-                    .putBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
-                    .apply()
-                refresh()
-            }
-        }) { Text("Apply custom accent") }
 
         Text("Background", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -369,6 +407,62 @@ fun AppearanceStudioScreen() {
                 prefs.edit().putBoolean(TokenXAppearanceKeys.GLASS_ENABLED,true).putFloat(TokenXAppearanceKeys.GLASS_OPACITY,opacity).putFloat(TokenXAppearanceKeys.GLASS_RADIUS,radius).putFloat(TokenXAppearanceKeys.GLASS_BORDER,border).putFloat(TokenXAppearanceKeys.BACKGROUND_DIM,dim).apply(); refresh()
             }) { Text("One UI") }
         }
+    }
+}
+
+@Composable
+private fun TonalAccentSwatch(
+    label: String,
+    base: Color,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val darkTone = androidx.compose.ui.graphics.lerp(base, Color.Black, .42f)
+    val midTone = androidx.compose.ui.graphics.lerp(base, Color.White, .18f)
+    val lightTone = androidx.compose.ui.graphics.lerp(base, Color.White, .62f)
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(7.dp),
+        modifier = Modifier.width(76.dp)
+    ) {
+        Box(
+            Modifier
+                .size(66.dp)
+                .border(
+                    width = if (selected) 3.dp else 1.dp,
+                    color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant,
+                    shape = CircleShape
+                )
+                .padding(4.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onClick)
+        ) {
+            Column(Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxWidth().weight(1f).background(darkTone))
+                Row(Modifier.fillMaxWidth().weight(1f)) {
+                    Box(Modifier.weight(1f).fillMaxHeight().background(midTone))
+                    Box(Modifier.weight(1f).fillMaxHeight().background(lightTone))
+                }
+            }
+            Box(
+                Modifier
+                    .align(Alignment.Center)
+                    .size(24.dp)
+                    .background(base, CircleShape)
+                    .border(1.dp, MaterialTheme.colorScheme.surface.copy(alpha = .65f), CircleShape)
+            )
+            if (selected) {
+                Text(
+                    "✓",
+                    modifier = Modifier.align(Alignment.TopEnd).background(MaterialTheme.colorScheme.surface, CircleShape).padding(horizontal = 4.dp),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+        Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
     }
 }
 
