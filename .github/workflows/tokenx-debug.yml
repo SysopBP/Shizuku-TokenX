@@ -6,6 +6,7 @@ on:
     branches:
       - tokenx-dev
       - tokenx-recovery
+      - tokenx-uid1000-cleanup
     paths:
       - 'manager/**'
       - 'xposed/**'
