@@ -4,10 +4,15 @@ import android.app.Activity;
 import android.app.Application;
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.ComponentName;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.Parcel;
 import android.os.Process;
 import android.provider.Settings;
 import android.util.Log;
@@ -30,6 +35,7 @@ import rikka.shizuku.Shizuku;
 public class MainActivity extends Activity {
     private static final String TAG = "TokenXBridgeTest";
     private TextView output;
+    private IBinder identityBackend;
     private final List<String> report = new ArrayList<>();
 
     @Override public void onCreate(Bundle state) {
@@ -60,6 +66,25 @@ public class MainActivity extends Activity {
         setContentView(root);
 
         run.setOnClickListener(v -> runScan());
+
+        // Bind to the identity-only headless backend. The Activity remains in the safe UI process.
+        try {
+            Intent backend = new Intent(this, IdentityService.class);
+            boolean requested = bindService(backend, new ServiceConnection() {
+                @Override public void onServiceConnected(ComponentName name, IBinder service) {
+                    identityBackend = service;
+                    runScan();
+                }
+
+                @Override public void onServiceDisconnected(ComponentName name) {
+                    identityBackend = null;
+                }
+            }, Context.BIND_AUTO_CREATE);
+            Log.i(TAG, "Identity backend bind requested=" + requested);
+        } catch (Throwable t) {
+            Log.e(TAG, "Identity backend bind failed", t);
+        }
+
         runScan();
     }
 
@@ -135,6 +160,40 @@ public class MainActivity extends Activity {
         line("samePid=" + (ss > 0 && ss == Process.myPid()));
         line("uiProcessSafe=" + !(ss > 0 && ss == Process.myPid()));
         line("NOTE: UI is intentionally isolated from system_server; privileged backend transport is tested separately.");
+
+        line("");
+        line("=== SYSTEM_SERVER IDENTITY BACKEND ===");
+        if (identityBackend == null) {
+            line("connected=false");
+            line("NOTE: backend bind has not completed yet.");
+        } else {
+            Parcel data = Parcel.obtain();
+            Parcel reply = Parcel.obtain();
+            try {
+                boolean tx = identityBackend.transact(IdentityService.TRANSACTION_GET_IDENTITY, data, reply, 0);
+                line("connected=" + tx);
+                if (tx) {
+                    reply.readException();
+                    int backendPid = reply.readInt();
+                    int backendUid = reply.readInt();
+                    String backendSelinux = reply.readString();
+                    String backendCmdline = reply.readString();
+                    line("backendPid=" + backendPid);
+                    line("backendUid=" + backendUid);
+                    line("backendSelinux=" + backendSelinux);
+                    line("backendCmdline=" + backendCmdline);
+                    line("systemServerPid=" + ss);
+                    line("backendSamePid=" + (ss > 0 && backendPid == ss));
+                    line("backendSystemServerDomain=" + (backendSelinux != null && backendSelinux.startsWith("u:r:system_server:")));
+                }
+            } catch (Throwable t) {
+                line("connected=false");
+                line("backendError=" + t.getClass().getSimpleName() + ": " + t.getMessage());
+            } finally {
+                reply.recycle();
+                data.recycle();
+            }
+        }
 
         line("");
         line("=== BINDER HANDLES (IN-PROCESS) ===");
