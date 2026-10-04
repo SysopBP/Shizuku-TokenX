@@ -23,6 +23,8 @@ import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.VerifiedUser
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.BlurOn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -149,6 +151,22 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                     label = "CorePatch Labs",
                     badge = "PACKAGE MANAGER · EXPERIMENTAL",
                     onClick = { onOpenDetail(Detail.COREPATCH_LABS) }
+                )
+            }
+            item {
+                LabTile(
+                    icon = Icons.Outlined.Shield,
+                    label = "Disable FLAG_SECURE",
+                    badge = "LSPOSED",
+                    onClick = { onOpenDetail(Detail.FLAG_SECURE_LABS) }
+                )
+            }
+            item {
+                LabTile(
+                    icon = Icons.Outlined.BlurOn,
+                    label = "TokenX Liquid Glass",
+                    badge = "SYSTEMUI",
+                    onClick = { onOpenDetail(Detail.LIQUID_GLASS_LABS) }
                 )
             }
         }
