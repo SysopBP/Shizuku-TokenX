@@ -13,3 +13,7 @@ android {
         versionName "1.0-test"
     }
 }
+
+dependencies {
+    implementation project(":api")
+}
