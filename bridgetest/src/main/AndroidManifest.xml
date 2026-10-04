@@ -16,10 +16,10 @@
         android:label="TokenX BridgeTest"
         android:theme="@style/AppTheme">
 
+        <!-- UI must stay in the package's normal app process. Never run an Activity in system_server. -->
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:process="system">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
