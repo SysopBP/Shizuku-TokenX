@@ -1,0 +1,15 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace = "com.tokenx.uidtest"
+    defaultConfig {
+        applicationId = "com.tokenx.uidtest"
+        versionCode = 1
+        versionName = "1.0"
+    }
+    lint {
+        abortOnError = false
+    }
+}
