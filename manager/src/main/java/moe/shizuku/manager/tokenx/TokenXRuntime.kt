@@ -22,6 +22,8 @@ data class TokenXRuntimeState(
     val systemServerBridgeActive: Boolean,
     /** Capability bits reported by the live TokenX system_server Binder. */
     val systemServerCapabilities: Int,
+    /** Read-only operations executed by the headless Binder endpoint in system_server. */
+    val systemServerFunctionalResult: TokenXBridgeFunctionalResult?,
     val backendRegistry: TokenXBackendRegistry,
     val xposedFrameworkDetected: Boolean,
     /** CorePatch package presence; hook effectiveness is inferred separately from PM UID1000 verification. */
@@ -54,8 +56,10 @@ object TokenXRuntime {
         val bridgeIdentity = TokenXBridgeClient.identity()
         val bridgeAttached = bridgeIdentity != null
         val bridgeActive = bridgeIdentity?.verifiedSystemServer == true
-        // Identity/health is intentionally the only contract in this first integration.
-        val bridgeCapabilities = 0
+        // v2 BridgeTest can additionally prove harmless framework reads inside system_server.
+        // Keep identity verification authoritative so older bridge payloads remain compatible.
+        val bridgeFunctional = if (bridgeActive) TokenXBridgeClient.functionalResult() else null
+        val bridgeCapabilities = bridgeFunctional?.passCount ?: 0
         val nativeUid1000 = isNativeUid1000Verified()
         // The System UID route is READY only when the live Shizuku Binder belongs to UID 1000
         // and the TKN Bridge has independently verified real system_server identity.
@@ -94,6 +98,7 @@ object TokenXRuntime {
             systemServerBridgeAttached = bridgeAttached,
             systemServerBridgeActive = bridgeActive,
             systemServerCapabilities = bridgeCapabilities,
+            systemServerFunctionalResult = bridgeFunctional,
             backendRegistry = registry,
             xposedFrameworkDetected = xposedDetected,
             corePatchDetected = corePatchDetected,
