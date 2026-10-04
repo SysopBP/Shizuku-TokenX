@@ -48,7 +48,57 @@ object TokenXCapabilityScanner {
             val result = Shell.cmd(
                 "settings put secure $secureProbeKey $secureProbeValue && " +
                     "test \"$(settings get secure $secureProbeKey)\" = \"$secureProbeValue\"; " +
-                    "rc=$?; settings delete secure $secureProbeKey >/dev/null 2>&1; exit $rc"
+                    "rc=${'
+            ).exec()
+            result.isSuccess
+        }.getOrDefault(false) else false
+        val secureRuntimeVerified = directWriteSecureSettings || secureSettingsViaRoot
+        val secureRoute = when {
+            directWriteSecureSettings -> "Direct package grant"
+            secureSettingsViaRoot -> "Via Root"
+            else -> null
+        }
+
+        return TokenXCapabilityProbe(
+            writeSecureSettings = directWriteSecureSettings,
+            writeSettings = writeSettings,
+            secureSettingsRuntimeVerified = secureRuntimeVerified,
+            secureSettingsRoute = secureRoute,
+            dumpViaRoot = rootProbe("dumpsys activity activities >/dev/null"),
+            packageManagerViaRoot = rootProbe("cmd package list packages >/dev/null"),
+            systemPropertiesViaRoot = rootProbe("getprop ro.build.version.release >/dev/null"),
+            rootSelinuxContext = rootContext,
+            rootUid = runCatching { Shell.cmd("id").exec().out.firstOrNull() }.getOrNull(),
+            shellUid = if (rikka.shizuku.Shizuku.pingBinder()) runCatching { rikka.shizuku.Shizuku.getUid() }.getOrDefault(-1) else -1,
+        )
+    }
+}
+}?; settings delete secure $secureProbeKey >/dev/null 2>&1; exit ${'
+            ).exec()
+            result.isSuccess
+        }.getOrDefault(false) else false
+        val secureRuntimeVerified = directWriteSecureSettings || secureSettingsViaRoot
+        val secureRoute = when {
+            directWriteSecureSettings -> "Direct package grant"
+            secureSettingsViaRoot -> "Via Root"
+            else -> null
+        }
+
+        return TokenXCapabilityProbe(
+            writeSecureSettings = directWriteSecureSettings,
+            writeSettings = writeSettings,
+            secureSettingsRuntimeVerified = secureRuntimeVerified,
+            secureSettingsRoute = secureRoute,
+            dumpViaRoot = rootProbe("dumpsys activity activities >/dev/null"),
+            packageManagerViaRoot = rootProbe("cmd package list packages >/dev/null"),
+            systemPropertiesViaRoot = rootProbe("getprop ro.build.version.release >/dev/null"),
+            rootSelinuxContext = rootContext,
+            rootUid = runCatching { Shell.cmd("id").exec().out.firstOrNull() }.getOrNull(),
+            shellUid = if (rikka.shizuku.Shizuku.pingBinder()) runCatching { rikka.shizuku.Shizuku.getUid() }.getOrDefault(-1) else -1,
+        )
+    }
+}
+}rc"
             ).exec()
             result.isSuccess
         }.getOrDefault(false) else false
