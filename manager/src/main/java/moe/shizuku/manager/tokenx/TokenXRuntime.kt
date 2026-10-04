@@ -17,6 +17,8 @@ import rikka.shizuku.Shizuku
  */
 data class TokenXRuntimeState(
     val backendState: TokenXBackendState,
+    /** Controlled TokenX package was admitted by PackageManager to android.uid.system/1000. */
+    val nativeUid1000Verified: Boolean,
     /** Serv.apk is provisioned as UID 1000 and associated with the live system process. */
     val systemServerBridgeAttached: Boolean,
     /** A TokenX Binder transaction completed inside system_server as UID 1000. */
@@ -49,6 +51,7 @@ object TokenXRuntime {
         // association proves that the bridge is attached to Android's system process, but
         // ACTIVE is reserved for a successful TokenX Binder transaction in system_server.
         val servUid1000 = isServUid1000()
+        val nativeUid1000 = isNativeUid1000Verified()
         val bridgeAttached = servUid1000 && isServAssociatedWithSystemServer()
         val bridgeActive = bridgeAttached && pingSystemServerBridge()
         val bridgeCapabilities = if (bridgeActive) readSystemServerCapabilities() else 0
@@ -60,6 +63,7 @@ object TokenXRuntime {
             serverRunning = running,
             serverUid = uid,
             rootAvailable = root || uid == 0,
+            nativeUid1000Available = nativeUid1000,
             systemServerBridgeAvailable = sserverBinderReady,
             shellAvailable = uid == 2000,
         )
@@ -77,6 +81,7 @@ object TokenXRuntime {
         val registry = TokenXBackendRegistryBuilder.build(
             selected = selectedBackend,
             rootReady = state.rootAvailable,
+            nativeUidReady = nativeUid1000,
             systemUidReady = sserverBinderReady,
             systemServerReady = bridgeActive,
             shellReady = running && uid == 2000,
@@ -84,6 +89,7 @@ object TokenXRuntime {
 
         return TokenXRuntimeState(
             backendState = state,
+            nativeUid1000Verified = nativeUid1000,
             systemServerBridgeAttached = bridgeAttached,
             systemServerBridgeActive = bridgeActive,
             systemServerCapabilities = bridgeCapabilities,
@@ -129,6 +135,19 @@ object TokenXRuntime {
     private fun isServUid1000(): Boolean = runCatching {
         val result = Shell.cmd("cmd package list packages -U | grep -F 'package:com.vikram.exp uid:1000'").exec()
         result.isSuccess && result.out.any { it.contains("package:com.vikram.exp uid:1000") }
+    }.getOrDefault(false)
+
+    /**
+     * Native UID1000 is deliberately stricter than package presence: both PackageManager's
+     * assigned UID and the shared-user record must agree before TokenX advertises it.
+     */
+    private fun isNativeUid1000Verified(): Boolean = runCatching {
+        val uidCheck = Shell.cmd("cmd package list packages -U | grep -F 'package:com.tokenx.uidtest uid:1000'").exec()
+        if (!uidCheck.isSuccess || uidCheck.out.none { it.contains("package:com.tokenx.uidtest uid:1000") }) return false
+        val sharedCheck = Shell.cmd("dumpsys package com.tokenx.uidtest | grep -E 'appId=1000|sharedUser=.*android.uid.system/1000'").exec()
+        sharedCheck.isSuccess &&
+            sharedCheck.out.any { it.contains("appId=1000") } &&
+            sharedCheck.out.any { it.contains("android.uid.system/1000") }
     }.getOrDefault(false)
 
     private fun isServAssociatedWithSystemServer(): Boolean = runCatching {
