@@ -61,9 +61,11 @@ object TokenXRuntime {
         val bridgeFunctional = if (bridgeActive) TokenXBridgeClient.functionalResult() else null
         val bridgeCapabilities = bridgeFunctional?.passCount ?: 0
         val nativeUid1000 = isNativeUid1000Verified()
-        // The System UID route is READY only when the live Shizuku Binder belongs to UID 1000
-        // and the TKN Bridge has independently verified real system_server identity.
-        val sserverBinderReady = running && uid == 1000 && bridgeActive
+        // Preserve the build-173 Sserver/rish contract: the executable Server route is
+        // authoritative when the live Shizuku-compatible Binder itself reports UID 1000.
+        // BridgeTest remains independent proof that the headless bridge is truly in
+        // system_server, but it must not gate the known-good rish Server transport.
+        val sserverBinderReady = running && uid == 1000
         val state = TokenXBackendState(
             serverRunning = running,
             serverUid = uid,
