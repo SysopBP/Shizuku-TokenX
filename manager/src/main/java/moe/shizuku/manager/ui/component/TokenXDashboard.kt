@@ -188,7 +188,7 @@ fun TokenXDashboard(
                     )
                     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         VaultChainRow("D2 Gate", stageLabel(SystemUidProvisioner.Stage.D2_GATE, liveStage, provisioning, "OPEN"), modeColor)
-                        VaultChainRow("Serv", stageLabel(SystemUidProvisioner.Stage.SERV_UID, liveStage, provisioning, "UID 1000"), modeColor)
+                        VaultChainRow("TKN Bridge", stageLabel(SystemUidProvisioner.Stage.BRIDGE_UID, liveStage, provisioning, "UID 1000"), modeColor)
                         VaultChainRow("FOTA", stageLabel(SystemUidProvisioner.Stage.FOTA_UID, liveStage, provisioning, "UID 1000"), modeColor)
                         VaultChainRow("DEX Fallback", stageLabel(SystemUidProvisioner.Stage.DEX_FALLBACK, liveStage, provisioning, "STANDBY"), modeColor)
                         VaultChainRow("Receiver Compatibility", stageLabel(SystemUidProvisioner.Stage.RX_COMPAT, liveStage, provisioning, "INTEGRATED"), modeColor)
@@ -322,7 +322,7 @@ fun TokenXDashboard(
                 color = MaterialTheme.colorScheme.primary
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusLine(Icons.Rounded.VerifiedUser, "Serv", "UID 1000", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.VerifiedUser, "TKN Bridge", "UID 1000", Modifier.weight(1f))
                 StatusLine(Icons.Rounded.SystemSecurityUpdateGood, "FOTA", "UID 1000", Modifier.weight(1f))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -340,7 +340,7 @@ fun TokenXDashboard(
             }
             if (showVaultDetails) {
                 Text(
-                    "Read-only audit of Serv, FOTA, shared-system identity, FOTA SELinux state, the provisioning DEX fallback, and Receiver Compatibility. It does not execute the DEX, launch FOTA, or invoke update_engine.",
+                    "Read-only audit of TKN Bridge, FOTA, shared-system identity, FOTA SELinux state, and Receiver Compatibility. It does not execute the DEX, launch FOTA, or invoke update_engine.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -373,7 +373,7 @@ fun TokenXDashboard(
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "TokenX uses Serv.apk (UID 1000) for supported system-level operations.",
+                "TokenX uses TKN Bridge (UID 1000) for verified System Server identity and supported system-level operations.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -401,7 +401,7 @@ fun TokenXDashboard(
             }
             if (showBridgeDetails) {
                 Text(
-                    "Serv.apk remains UID 1000 and provides the TokenX System Server Bridge for supported framework operations. Interactive rish sessions remain isolated from system_server for stability and safety. Use Verify System Bridge to confirm the live bridge before relying on system-level operations.",
+                    "TKN Bridge remains UID 1000 and provides the verified TokenX System Server Bridge for supported framework operations. Interactive rish sessions remain isolated from system_server for stability and safety. Use Verify System Bridge to confirm the live bridge before relying on system-level operations.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
