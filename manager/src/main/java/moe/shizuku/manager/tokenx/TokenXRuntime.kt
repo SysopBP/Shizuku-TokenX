@@ -56,12 +56,10 @@ object TokenXRuntime {
         val bridgeActive = bridgeIdentity?.verifiedSystemServer == true
         // Identity/health is intentionally the only contract in this first integration.
         val bridgeCapabilities = 0
-        val servUid1000 = isServUid1000()
         val nativeUid1000 = isNativeUid1000Verified()
-        // Sserver is READY only when the live Shizuku Binder itself belongs to UID 1000.
-        // Serv.apk being UID 1000 means the environment is provisioned, not that the
-        // UID-1000 Shizuku server has actually published a usable Binder.
-        val sserverBinderReady = running && uid == 1000 && servUid1000
+        // The System UID route is READY only when the live Shizuku Binder belongs to UID 1000
+        // and the TKN Bridge has independently verified real system_server identity.
+        val sserverBinderReady = running && uid == 1000 && bridgeActive
         val state = TokenXBackendState(
             serverRunning = running,
             serverUid = uid,
@@ -101,17 +99,10 @@ object TokenXRuntime {
             corePatchDetected = corePatchDetected,
             androidApiLevel = android.os.Build.VERSION.SDK_INT,
             oneUiVersion = oneUiVersion,
-            xposedBridgeActive = bridgeActive,
+            xposedBridgeActive = xposedDetected && bridgeActive,
             routes = TokenXCapability.entries.associateWith { TokenXRouter.route(it, state, preferredBackend) },
         )
     }
-
-    /** Serv.apk is the Sserver backend. Package presence alone is insufficient: it must
-     * resolve to Android's system UID before TokenX advertises UID 1000 as available. */
-    private fun isServUid1000(): Boolean = runCatching {
-        val result = Shell.cmd("cmd package list packages -U | grep -F 'package:com.vikram.exp uid:1000'").exec()
-        result.isSuccess && result.out.any { it.contains("package:com.vikram.exp uid:1000") }
-    }.getOrDefault(false)
 
     /**
      * Native UID1000 is deliberately stricter than package presence: both PackageManager's
