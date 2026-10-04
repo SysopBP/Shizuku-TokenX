@@ -171,7 +171,24 @@ jobs:
           # The token should be a classic PAT with read:packages only.
           GITHUB_ACTOR: ${{ secrets.SESL_GITHUB_USERNAME }}
           GITHUB_TOKEN: ${{ secrets.SESL_GITHUB_TOKEN }}
-        run: ./gradlew :manager:assembleDebug --stacktrace
+        run: |
+          # Build the rish shell first. shell/build.gradle extracts its classes.dex
+          # into manager assets as rish_shizuku.dex, guaranteeing rish + dex match.
+          ./gradlew :shell:assembleDebug
+          test -s manager/src/main/assets/rish_shizuku.dex
+          ./gradlew :manager:assembleDebug --stacktrace
+
+      - name: Verify bundled rish pair
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s manager/src/main/assets/rish
+          test -s manager/src/main/assets/rish_shizuku.dex
+          FILE="$(find manager/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          test -n "$FILE"
+          unzip -l "$FILE" | grep -F 'assets/rish'
+          unzip -l "$FILE" | grep -F 'assets/rish_shizuku.dex'
+          echo "TokenX rish + rish_shizuku.dex pair verified"
 
       - name: Verify TokenX Xposed packaging
         shell: bash
