@@ -178,7 +178,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                         }
                     )
                     BackendRow(Icons.Outlined.Terminal, "Shell", "UID 2000", if (runtime.backendState.shellAvailable) "ACTIVE • compatibility fallback" else "Standby")
-                    BackendRow(Icons.Outlined.Extension, "Xposed / LSPosed", "system_server bridge", when { runtime.xposedBridgeActive -> "ACTIVE • handshake verified"; runtime.xposedFrameworkDetected -> "Framework detected • bridge waiting"; else -> "Not detected" })
+                    BackendRow(Icons.Outlined.Extension, "Xposed / LSPosed", "framework integration", when { runtime.xposedBridgeActive -> "ACTIVE • handshake verified"; runtime.xposedFrameworkDetected -> "Framework detected • bridge waiting"; else -> "Not detected" })
                 }
             }
 
@@ -256,7 +256,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                             ) { Text(mode) }
                         }
                     }
-                    PreviewSwitch("Prefer Root when capable", "Root-first policy; UID-1000 work can route to Sserver.", rootFirst) {
+                    PreviewSwitch("Prefer Root when capable", "Root-first policy; UID-1000 work can route through TKN Bridge.", rootFirst) {
                         rootFirst = it; prefs.edit().putBoolean("tokenx_root_first", it).apply()
                     }
                     CapabilityLine("Filesystem", runtime.routes.getValue(TokenXCapability.FILESYSTEM).backend.name)
