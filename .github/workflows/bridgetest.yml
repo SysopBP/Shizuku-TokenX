@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - tokenx-bridgetest-full-scope
+      - tokenx-bridgetest-safe-ui
 
 jobs:
   build:
