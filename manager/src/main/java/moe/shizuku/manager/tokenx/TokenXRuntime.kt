@@ -24,6 +24,7 @@ data class TokenXRuntimeState(
     /** Capability bits reported by the live TokenX system_server Binder. */
     val systemServerCapabilities: Int,
     val backendRegistry: TokenXBackendRegistry,
+    val retailSystem: TokenXRetailSnapshot,
     val xposedFrameworkDetected: Boolean,
     val xposedBridgeActive: Boolean,
     val routes: Map<TokenXCapability, TokenXRoute>,
@@ -42,6 +43,8 @@ object TokenXRuntime {
         val uid = if (running) runCatching { Shizuku.getUid() }.getOrDefault(-1) else -1
         val root = runCatching { Shell.getCachedShell()?.isRoot == true }.getOrDefault(false)
         val xposedDetected = knownXposedManagers.any { isInstalled(context.packageManager, it) }
+        val retailInstalled = isInstalled(context.packageManager, TokenXRetailBridge.PACKAGE_NAME)
+        val retail = TokenXRetailBridge.snapshot(retailInstalled)
 
         // A package/manager being installed is not enough. Trust the UID 1000
         // backend only after the Binder service in system_server answers our ping.
@@ -62,6 +65,7 @@ object TokenXRuntime {
             rootAvailable = root || uid == 0,
             systemServerBridgeAvailable = sserverBinderReady,
             shellAvailable = uid == 2000,
+            retailSystemAvailable = retail.state == TokenXRetailState.UID1000_VERIFIED,
         )
 
         val preferredBackend = when (ShizukuSettings.getStartMethod()) {
@@ -80,6 +84,7 @@ object TokenXRuntime {
             systemUidReady = sserverBinderReady,
             systemServerReady = bridgeActive,
             shellReady = running && uid == 2000,
+            retailReady = retail.state == TokenXRetailState.UID1000_VERIFIED,
         )
 
         return TokenXRuntimeState(
@@ -88,6 +93,7 @@ object TokenXRuntime {
             systemServerBridgeActive = bridgeActive,
             systemServerCapabilities = bridgeCapabilities,
             backendRegistry = registry,
+            retailSystem = retail,
             xposedFrameworkDetected = xposedDetected,
             xposedBridgeActive = bridgeActive,
             routes = TokenXCapability.entries.associateWith { TokenXRouter.route(it, state, preferredBackend) },
