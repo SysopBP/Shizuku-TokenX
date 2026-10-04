@@ -139,7 +139,7 @@ class TokenXXposedEntry : XposedModule() {
 
     private companion object {
         const val TAG = "TokenX/Xposed"
-        const val MANAGER_PACKAGE = "moe.shizuku.privileged.api"
+        const val MANAGER_PACKAGE = "com.vikram.exp"
         const val FOTA_PACKAGE = "com.sdet.fotaagent"
         val embeddedStartScheduled = AtomicBoolean(false)
     }
