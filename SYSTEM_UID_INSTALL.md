@@ -2,7 +2,7 @@
 
 > **Advanced / root-only:** the current TokenX bridge is installed through its KernelSU module. Do not use the old manual `/data/app` or provisioning-DEX procedure.
 
-This document describes the current **Shizuku-TokenX v14.2** System UID / System Server architecture. The old manual `Serv.dex` provisioning instructions are no longer the normal installation path.
+This document describes the current **Shizuku-TokenX v14.2** System UID / System Server architecture. The old manual `legacy Serv.dex` provisioning instructions are no longer the normal installation path.
 
 ## Requirements
 
@@ -27,16 +27,16 @@ Install the current **TokenX System Server Bridge** ZIP through KernelSU, then r
 The module owns provisioning of the System UID companion. The current companion package is:
 
 ```text
-com.vikram.exp
+com.tokenx.bridgetest
 ```
 
 The companion APK is exposed systemlessly as:
 
 ```text
-/system/priv-app/TokenXServ/Serv.apk
+TKN Bridge APK (com.tokenx.bridgetest)
 ```
 
-There is no normal installation step that requires copying or executing `Serv.dex`.
+There is no normal installation step that requires copying or executing `legacy Serv.dex`.
 
 ## 3. Boot and unlock normally
 
@@ -62,11 +62,11 @@ cat "$MOD/state" 2>/dev/null
 
 echo
 echo "=== TOKENX PACKAGE ==="
-pm path com.vikram.exp
+pm path com.tokenx.bridgetest
 
 echo
 echo "=== TOKENX UID ==="
-cmd package list packages -U | grep -F "com.vikram.exp"
+cmd package list packages -U | grep -F "com.tokenx.bridgetest"
 
 echo
 echo "=== SYSTEM SERVER ==="
@@ -80,7 +80,7 @@ A healthy installation should report the bridge state:
 SYSTEM_SERVER_ATTACHED
 ```
 
-and `com.vikram.exp` should remain associated with **UID 1000**.
+and `com.tokenx.bridgetest` should remain associated with **UID 1000**.
 
 ## UID 1000 rish
 
@@ -143,7 +143,7 @@ Shizuku-TokenX
       |
       +-- TokenX System Server Bridge
       |        |
-      |        +-- Serv.apk / com.vikram.exp
+      |        +-- TKN Bridge / com.tokenx.bridgetest
       |        +-- KernelSU-managed provisioning
       |        +-- D2-safe boot gating
       |
@@ -218,9 +218,9 @@ If TokenX does not report the System Server bridge as attached, first verify the
 ```sh
 su -c '
 ls -ld /data/adb/modules/tokenx_system_server 2>/dev/null
-ls -l /system/priv-app/TokenXServ/Serv.apk 2>/dev/null
-pm path com.vikram.exp
-cmd package list packages -U | grep -F "com.vikram.exp"
+ls -l TKN Bridge APK (com.tokenx.bridgetest) 2>/dev/null
+pm path com.tokenx.bridgetest
+cmd package list packages -U | grep -F "com.tokenx.bridgetest"
 '
 ```
 
@@ -233,8 +233,8 @@ For D2-equipped devices, also inspect `tokenx-boot.log` before changing the boot
 Current installations should **not**:
 
 - manually create `/data/app/com.android.settings/vikram_shell`
-- manually install `com.vikram.shell`
-- copy `Serv.dex` to `/data/local/tmp`
+- manually install legacy `com.vikram.shell` or `com.vikram.exp`
+- copy `legacy Serv.dex` to `/data/local/tmp`
 - run a provisioning DEX with `app_process`
 - repeatedly reprovision the companion for ordinary command failures
 
