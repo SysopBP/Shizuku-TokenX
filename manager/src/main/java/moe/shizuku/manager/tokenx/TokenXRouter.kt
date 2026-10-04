@@ -101,7 +101,7 @@ object TokenXRouter {
     ): String = when (backend) {
         TokenXBackend.ROOT -> "Root/UID 0 selected as the primary privilege engine"
         TokenXBackend.NATIVE_UID -> "PackageManager-verified android.uid.system/UID 1000 selected"
-        TokenXBackend.SYSTEM_UID -> "Serv.apk/System UID 1000 selected for privileged execution"
+        TokenXBackend.SYSTEM_UID -> "TKN Bridge/System UID 1000 selected for privileged execution"
         TokenXBackend.SYSTEM_SERVER ->
             if (capability == TokenXCapability.FRAMEWORK) {
                 "System Server selected for Android framework access"
