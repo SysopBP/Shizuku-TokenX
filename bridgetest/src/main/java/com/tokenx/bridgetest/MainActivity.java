@@ -1,6 +1,7 @@
 package com.tokenx.bridgetest;
 
 import android.app.Activity;
+import android.app.Application;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
