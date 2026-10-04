@@ -376,6 +376,30 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                         }
                     )
                     FeatureRow(Icons.Outlined.Link, "Shizuku compatibility", "Preserved • existing Binder model stays intact")
+                    runtime.systemServerFunctionalResult?.let { functional ->
+                        FeatureRow(
+                            Icons.Outlined.VerifiedUser,
+                            "System Server functional",
+                            if (functional.verified)
+                                "VERIFIED • DIRECT BINDER • ${functional.passCount} read-only checks passed"
+                            else
+                                "PARTIAL • ${functional.passCount} passed • ${functional.denyCount} denied"
+                        )
+                        Text(
+                            "PID ${functional.pid} • UID ${functional.uid} • ${functional.selinux}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        functional.checks.forEach { check ->
+                            Text(
+                                check,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (check.startsWith("PASS "))
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
                 }
             }
 
