@@ -67,6 +67,8 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
     var systemServerOperations by remember { mutableStateOf(false) }
     var showSystemServerWarning by remember { mutableStateOf(false) }
     var pendingPowerAction by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var rootRequestInFlight by remember { mutableStateOf(false) }
+    var rootRequestStatus by remember { mutableStateOf<String?>(null) }
     val powerScope = rememberCoroutineScope()
 
     pendingPowerAction?.let { (label, command) ->
@@ -133,7 +135,38 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
             SectionTitle("Privilege backends")
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    BackendRow(Icons.Outlined.AdminPanelSettings, "Root", "UID 0", if (runtime.backendState.rootAvailable) if (uid == 0) "ACTIVE • current server" else "READY" else "Unavailable")
+                    BackendRow(Icons.Outlined.AdminPanelSettings, "Root", "UID 0", if (runtime.backendState.rootAvailable) if (uid == 0) "ACTIVE • current server" else "READY" else rootRequestStatus ?: "Permission required")
+                    if (!runtime.backendState.rootAvailable) {
+                        Button(
+                            enabled = !rootRequestInFlight,
+                            onClick = {
+                                rootRequestInFlight = true
+                                rootRequestStatus = "Requesting KernelSU permission…"
+                                powerScope.launch {
+                                    val result = runCatching { Shell.getShell() }.getOrNull()
+                                    val granted = result?.isRoot == true
+                                    rootRequestStatus = if (granted) "GRANTED • UID 0" else "DENIED / unavailable"
+                                    runtime = TokenXRuntime.snapshot(context)
+                                    rootRequestInFlight = false
+                                }
+                            }
+                        ) {
+                            if (rootRequestInFlight) {
+                                CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Requesting…")
+                            } else {
+                                Icon(Icons.Outlined.AdminPanelSettings, null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Request Superuser Access")
+                            }
+                        }
+                        Text(
+                            "Requests root through TokenX's existing libsu backend. KernelSU remains the authority that grants or denies access.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     BackendRow(
                         Icons.Outlined.Security,
                         "Sserver / Serv.apk",
