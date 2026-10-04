@@ -101,7 +101,32 @@ public class ShizukuShellLoader {
         }
     }
 
+    private static int remoteUid(IBinder binder) {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        try {
+            data.writeInterfaceToken("moe.shizuku.server.IShizukuService");
+            if (!binder.transact(IBinder.FIRST_CALL_TRANSACTION + 1, data, reply, 0)) return -1;
+            reply.readException();
+            return reply.readInt();
+        } catch (Throwable ignored) {
+            return -1;
+        } finally {
+            data.recycle();
+            reply.recycle();
+        }
+    }
+
     private static void onBinderReceived(IBinder binder, String sourceDir) {
+        String requested = System.getenv("TOKENX_RISH_BACKEND");
+        if ("sserver".equals(requested)) {
+            int uid = remoteUid(binder);
+            if (uid != 1000) {
+                abort("Sserver Binder is not active (received Shizuku UID " + uid + "). Start Sserver in TokenX first.");
+                return;
+            }
+            System.out.println("TokenX Sserver Binder verified: UID 1000");
+        }
         var base = sourceDir.substring(0, sourceDir.lastIndexOf('/'));
         String librarySearchPath = base + "/lib/" + VMRuntimeHidden.getRuntime().vmInstructionSet();
         String systemLibrarySearchPath = System.getProperty("java.library.path");
