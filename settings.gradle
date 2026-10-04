@@ -56,7 +56,7 @@ dependencyResolutionManagement {
     }
 }
 
-include ":server", ":starter", ":shell", ":manager", ":common"
+include ":server", ":starter", ":shell", ":manager", ":common", ":bridgetest"
 
 def root = "api"
 
