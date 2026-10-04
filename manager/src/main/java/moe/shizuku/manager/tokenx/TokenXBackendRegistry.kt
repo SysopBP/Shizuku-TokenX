@@ -38,8 +38,8 @@ object TokenXBackendRegistryBuilder {
         backends = listOf(
             TokenXRegisteredBackend(TokenXBackend.ROOT, 0, rootReady, rootReady, if (rootReady) "KernelSU/root ready" else "Root unavailable"),
             TokenXRegisteredBackend(TokenXBackend.NATIVE_UID, 1000, nativeUidReady, nativeUidReady, if (nativeUidReady) "PackageManager android.uid.system verified" else "Native PM UID 1000 unavailable"),
-            TokenXRegisteredBackend(TokenXBackend.SYSTEM_UID, 1000, systemUidReady, systemUidReady, if (systemUidReady) "Serv.apk UID 1000 ready" else "System UID backend unavailable"),
-            TokenXRegisteredBackend(TokenXBackend.SYSTEM_SERVER, 1000, systemServerReady, systemServerReady, if (systemServerReady) "system_server Binder verified" else "System Server bridge unavailable"),
+            TokenXRegisteredBackend(TokenXBackend.SYSTEM_UID, 1000, systemUidReady, systemUidReady, if (systemUidReady) "TKN Bridge + Shizuku UID 1000 ready" else "System UID backend unavailable"),
+            TokenXRegisteredBackend(TokenXBackend.SYSTEM_SERVER, 1000, systemServerReady, systemServerReady, if (systemServerReady) "system_server Binder verified" else "TKN Bridge system_server unavailable"),
             TokenXRegisteredBackend(TokenXBackend.SHELL, 2000, shellReady, shellReady, if (shellReady) "Shizuku shell ready" else "Shell backend unavailable"),
         ).associateBy { it.backend },
     )
