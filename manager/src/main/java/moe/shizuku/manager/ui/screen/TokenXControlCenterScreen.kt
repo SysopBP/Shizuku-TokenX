@@ -181,6 +181,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     FeatureRow(Icons.Outlined.Route, "Selected backend", runtime.backendRegistry.selected.name.replace('_', ' '))
                     FeatureRow(Icons.Outlined.Badge, "Identity", selected?.let { "UID ${it.uid} • ${if (it.verified) "verified" else "discovered"}" } ?: "Unavailable")
                     FeatureRow(Icons.Outlined.Link, "System Server Binder", if (runtime.systemServerBridgeActive) "VERIFIED • capability mask 0x${runtime.systemServerCapabilities.toString(16)}" else "Not active")
+                    FeatureRow(Icons.Outlined.Security, "Native / PM UID 1000", if (runtime.nativeUid1000Verified) "VERIFIED • com.tokenx.uidtest • android.uid.system" else "Unavailable")
                     FeatureRow(Icons.Outlined.Security, "Serv / System UID", if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID)) "READY • UID 1000" else "Unavailable")
                     FeatureRow(Icons.Outlined.Terminal, "Root", if (runtime.backendRegistry.isReady(TokenXBackend.ROOT)) "READY • UID 0" else "Unavailable")
                 }
@@ -358,6 +359,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     FeatureRow(Icons.Outlined.Api, "Capability discovery", "LIVE • runtime backend state feeds the router")
                     FeatureRow(Icons.Outlined.Route, "Per-capability routing", "LIVE • Root first, System Server for framework work, Shell fallback")
                     FeatureRow(Icons.Outlined.Code, "Root execution", if (runtime.backendState.rootAvailable) "READY • UID 0 backend available" else "Unavailable")
+                    FeatureRow(Icons.Outlined.Badge, "Native UID 1000", if (runtime.nativeUid1000Verified) "VERIFIED • PackageManager shared UID android.uid.system" else "Unavailable • PM admission not verified")
                     FeatureRow(
                         Icons.Outlined.AdminPanelSettings,
                         "UID 1000 operations",
@@ -387,7 +389,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     FeatureRow(Icons.Outlined.Security, "D2 Dual Gate", "Serv + FOTA remain held until the D2 security boundary is released")
                     FeatureRow(Icons.Outlined.Token, "Provisioning Vault", "Token Pulse • live Secure Chain • technical console")
-                    FeatureRow(Icons.Outlined.AdminPanelSettings, "Privileged payloads", "Serv UID 1000 • FOTA system_app")
+                    FeatureRow(Icons.Outlined.AdminPanelSettings, "Privileged payloads", "Native PM UID 1000 • Serv UID 1000 • FOTA system_app")
                     FeatureRow(Icons.Outlined.Extension, "Android 17 compatibility", "Receiver compatibility scoped to the tested FOTA path")
                     Text("System Server contribution: @Vikramaditya015", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
