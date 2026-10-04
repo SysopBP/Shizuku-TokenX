@@ -75,6 +75,7 @@ fun TokenXDashboard(
     var showTechnicalConsole by remember { mutableStateOf(false) }
     var showVaultDetails by remember { mutableStateOf(false) }
     var showBridgeDetails by remember { mutableStateOf(false) }
+    var bridgeVerified by remember { mutableStateOf(false) }
     var liveStage by remember { mutableStateOf<SystemUidProvisioner.Progress?>(null) }
     LaunchedEffect(provisioning) {
         if (provisioning) {
@@ -129,6 +130,7 @@ fun TokenXDashboard(
                     append(result.output.trim())
                 }
             }
+            if (dialogMode == "bridge") bridgeVerified = result.success
             provisioning = false
             ViewCompat.performHapticFeedback(hapticView, if (result.success) HapticFeedbackConstantsCompat.CONFIRM else HapticFeedbackConstantsCompat.REJECT)
         }
@@ -182,7 +184,7 @@ fun TokenXDashboard(
                         color = modeColor
                     )
                     Text(
-                        if (provisioning) "TOKEN PULSE • SECURE CHAIN ACTIVE" else "TOKENX • CHAIN VERIFIED",
+                        if (provisioning) "TOKEN PULSE • SECURE CHAIN ACTIVE" else if (provisionStatus?.startsWith("SUCCESS") == true) "TOKENX • CHAIN VERIFIED" else "TOKENX • CHECK FAILED",
                         style = MaterialTheme.typography.labelSmall,
                         color = modeColor
                     )
@@ -190,9 +192,9 @@ fun TokenXDashboard(
                         VaultChainRow("D2 Gate", stageLabel(SystemUidProvisioner.Stage.D2_GATE, liveStage, provisioning, "OPEN"), modeColor)
                         VaultChainRow("TKN Bridge", stageLabel(SystemUidProvisioner.Stage.BRIDGE_UID, liveStage, provisioning, "UID 1000"), modeColor)
                         VaultChainRow("FOTA", stageLabel(SystemUidProvisioner.Stage.FOTA_UID, liveStage, provisioning, "UID 1000"), modeColor)
-                        VaultChainRow("DEX Fallback", stageLabel(SystemUidProvisioner.Stage.DEX_FALLBACK, liveStage, provisioning, "STANDBY"), modeColor)
+                        VaultChainRow("Legacy DEX", stageLabel(SystemUidProvisioner.Stage.DEX_FALLBACK, liveStage, provisioning, "RETIRED / STANDBY"), modeColor)
                         VaultChainRow("Receiver Compatibility", stageLabel(SystemUidProvisioner.Stage.RX_COMPAT, liveStage, provisioning, "INTEGRATED"), modeColor)
-                        if (dialogMode == "bridge") VaultChainRow("System Bridge", if (provisioning) "HANDSHAKE" else "VERIFIED", modeColor)
+                        if (dialogMode == "bridge") VaultChainRow("System Bridge", if (provisioning) "HANDSHAKE" else if (provisionStatus?.startsWith("SUCCESS") == true) "VERIFIED" else "FAILED", modeColor)
                     }
                     HorizontalDivider()
                     if (showTechnicalConsole) {
@@ -254,8 +256,8 @@ fun TokenXDashboard(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TokenXBackendChip(
                     label = "System",
-                    value = if (uid == 1000) "UID 1000" else "Standby",
-                    active = uid == 1000,
+                    value = if (uid == 1000) "UID 1000" else if (bridgeVerified) "Ready" else "Standby",
+                    active = uid == 1000 || bridgeVerified,
                     modifier = Modifier.weight(1f)
                 )
                 TokenXBackendChip(
@@ -340,7 +342,7 @@ fun TokenXDashboard(
             }
             if (showVaultDetails) {
                 Text(
-                    "Read-only audit of TKN Bridge, FOTA, shared-system identity, FOTA SELinux state, and Receiver Compatibility. It does not execute the DEX, launch FOTA, or invoke update_engine.",
+                    "Read-only audit of TKN Bridge, FOTA, shared-system identity, FOTA SELinux state, and Receiver Compatibility. Legacy DEX is optional/retired and does not affect Vault success. The audit does not execute DEX payloads, launch FOTA, or invoke update_engine.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
