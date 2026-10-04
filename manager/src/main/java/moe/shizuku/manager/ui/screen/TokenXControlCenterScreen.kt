@@ -19,6 +19,8 @@ import moe.shizuku.manager.tokenx.TokenXBootState
 import moe.shizuku.manager.tokenx.TokenXRuntime
 import moe.shizuku.manager.tokenx.TokenXRuntimeState
 import moe.shizuku.manager.tokenx.TokenXCapability
+import moe.shizuku.manager.tokenx.TokenXFotaBridge
+import moe.shizuku.manager.tokenx.TokenXFotaBridgeState
 import moe.shizuku.manager.tokenx.TokenXBackend
 import moe.shizuku.manager.tokenx.TokenXRouteState
 import kotlinx.coroutines.delay
@@ -41,10 +43,12 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
     val prefs = ShizukuSettings.getPreferences()
     var runtime by remember { mutableStateOf(TokenXRuntime.snapshot(context)) }
     var boot by remember { mutableStateOf(TokenXBootSession.current()) }
+    var fotaBridge by remember { mutableStateOf(TokenXFotaBridge.snapshot(context)) }
     LaunchedEffect(Unit) {
         while (true) {
             runtime = TokenXRuntime.snapshot(context)
             boot = TokenXBootSession.current()
+            fotaBridge = TokenXFotaBridge.snapshot(context)
             delay(TokenXRuntime.REFRESH_INTERVAL_MS)
         }
     }
@@ -223,6 +227,41 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     boot.failure?.let { FeatureRow(Icons.Outlined.Warning, "Last boot failure", it) }
                     PreviewSwitch("Recovery handoff", "Prepare fallback ownership when the preferred backend cannot confirm.", recovery) {
                         recovery = it; prefs.edit().putBoolean("tokenx_recovery_preview", it).apply()
+                    }
+                }
+            }
+
+            SectionTitle("FOTA Bridge")
+            TokenXGlassCard {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    FeatureRow(
+                        Icons.Outlined.SystemUpdate,
+                        "Samsung FOTA",
+                        fotaBridge.detail
+                    )
+                    FeatureRow(
+                        Icons.Outlined.Badge,
+                        "Package identity",
+                        if (fotaBridge.installed) "com.sdet.fotaagent • UID ${fotaBridge.uid ?: -1}" else "Not detected"
+                    )
+                    FeatureRow(
+                        Icons.Outlined.Sensors,
+                        "Receiver discovery",
+                        if (fotaBridge.receiverNames.isNotEmpty())
+                            "${fotaBridge.receiverNames.size} declared • ${fotaBridge.exportedReceiverNames.size} exported"
+                        else "No receivers visible"
+                    )
+                    FeatureRow(
+                        Icons.Outlined.Shield,
+                        "Transmit gate",
+                        "LOCKED • passive inspection only"
+                    )
+                    if (fotaBridge.state == TokenXFotaBridgeState.READY_PASSIVE) {
+                        Text(
+                            "Passive handshake complete. TokenX will not send CP_FILE, recovery, factory-reset, update-package, or wipe actions.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
