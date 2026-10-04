@@ -19,7 +19,7 @@
         <!-- Identity-only headless probe. No UI and no privileged mutation surface. -->
         <service
             android:name=".IdentityService"
-            android:exported="false"
+            android:exported="true"
             android:process="system" />
 
         <!-- UI must stay in the package's normal app process. Never run an Activity in system_server. -->
