@@ -88,6 +88,8 @@
 
     <queries>
         <package android:name="moe.shizuku.privileged.api" />
+        <!-- Passive TokenX FOTA bridge discovery only. No FOTA intents are transmitted. -->
+        <package android:name="com.sdet.fotaagent" />
         <!-- TokenX only uses these for framework-presence discovery. An installed manager is not an active bridge. -->
         <package android:name="org.lsposed.manager" />
         <package android:name="org.meowcat.edxposed.manager" />
