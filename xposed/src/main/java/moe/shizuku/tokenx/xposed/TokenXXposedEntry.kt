@@ -172,7 +172,6 @@ class TokenXXposedEntry : XposedModule() {
 
     private companion object {
         const val TAG = "TokenX/Xposed"
-        const val MANAGER_PACKAGE = "com.vikram.exp"
         const val FOTA_PACKAGE = "com.sdet.fotaagent"
         const val RETAIL_MODE_PACKAGE = "com.samsung.sea.rm"
         const val SYSTEM_UI_PACKAGE = "com.android.systemui"
