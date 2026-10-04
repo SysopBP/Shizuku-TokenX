@@ -827,26 +827,36 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             }
 
             final long[] retryDelays = {250L, 750L, 1500L, 3000L};
-            for (long retryDelay : retryDelays) {
-                try {
-                    Thread.sleep(retryDelay);
-                } catch (InterruptedException ignored) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
+            scheduleManagerBinderRetry(binder, userId, retryDelays, 0);
+        }
+    }
 
-                ServerLog.mark("manager binder handoff retry after " + retryDelay
-                        + "ms, serverUid=" + Process.myUid());
-                success = sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
-                if (success) {
-                    ServerLog.mark("manager binder handoff retry succeeded");
-                    LOGGER.i("manager binder handoff retry succeeded in user %d", userId);
-                    return;
-                }
-            }
-
+    /**
+     * Retry manager publication without sleeping on system_server's main looper.
+     * The embedded backend is constructed on that looper, so blocking it while the
+     * manager provider is starting can delay the framework itself.
+     */
+    private static void scheduleManagerBinderRetry(
+            Binder binder, int userId, long[] retryDelays, int index) {
+        if (index >= retryDelays.length) {
             ServerLog.mark("manager binder handoff retries exhausted; server remains alive");
             LOGGER.e("manager binder handoff retries exhausted in user %d", userId);
+            return;
+        }
+
+        final long retryDelay = retryDelays[index];
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(() -> {
+            ServerLog.mark("manager binder handoff retry after " + retryDelay
+                    + "ms, serverUid=" + Process.myUid());
+            boolean success = sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
+            if (success) {
+                ServerLog.mark("manager binder handoff retry succeeded");
+                LOGGER.i("manager binder handoff retry succeeded in user %d", userId);
+                return;
+            }
+            scheduleManagerBinderRetry(binder, userId, retryDelays, index + 1);
+        }, retryDelay);
         }
     }
 
