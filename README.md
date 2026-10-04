@@ -76,16 +76,16 @@ A package running as UID 1000 is not, by itself, proof that code is executing in
 
 ## TokenX System Server Bridge
 
-The optional KernelSU module provides the current System / UID 1000 path.
+The optional KernelSU module and TKN Bridge provide the current System / UID 1000 path.
 
-The bridge provisions and verifies the TokenX system companion, tracks boot and migration state, and exposes health information to the manager. The current bridge design uses `Serv.apk` as the system companion and keeps legacy DEX handling isolated from the active path.
+The current System Server path uses **TKN Bridge** (`com.tokenx.bridgetest`) as the identity/health companion. TokenX binds to its exported `IdentityService` and accepts the bridge only when it reports UID 1000, `system_server` as its process identity, and the `u:r:system_server:s0` SELinux domain. The retired Serv/com.vikram.exp path is no longer a readiness signal.
 
 Current bridge behavior includes:
 
 - UID 1000 provisioning and verification.
 - System-server bridge health reporting.
 - D2-safe startup gating.
-- Legacy `com.vikram.shell` guard/migration.
+- Legacy Serv / `com.vikram.exp` migration cleanup only; it is not used for readiness.
 - Module-local boot, provisioning, migration, and verification diagnostics.
 - Safe recovery when the privileged backend is temporarily unavailable.
 
