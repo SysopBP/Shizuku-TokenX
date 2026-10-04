@@ -130,7 +130,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         // APK was not installed. Use TokenX's real manager package in the embedded path and
         // retain the upstream CLASSPATH discovery for root/shell standalone launches.
         if (Process.myUid() == Process.SYSTEM_UID) {
-            packageName = "moe.shizuku.privileged.api";
+            packageName = "com.vikram.exp";
             LOGGER.i("Embedded system_server manager package is " + packageName);
             ServerLog.mark("MANAGER_RESOLVED: embedded system_server -> " + packageName);
         } else {
