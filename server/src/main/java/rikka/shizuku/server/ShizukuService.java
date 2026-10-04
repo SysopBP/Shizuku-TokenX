@@ -67,6 +67,13 @@ import rikka.shizuku.server.util.UserHandleCompat;
 
 public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuClientManager, ShizukuConfigManager> {
 
+    private static final String TOKENX_TAG = "TokenX-SystemServer";
+
+    private static void tokenxCheckpoint(String message) {
+        ServerLog.mark(message);
+        Log.i(TOKENX_TAG, message);
+    }
+
     /**
      * True only when LSPosed loaded the server into system_server. In this mode System.exit
      * would reboot/kill Android's core process, so every standalone-server exit path must be
@@ -114,7 +121,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             throw new SecurityException("Embedded backend requires system_server UID 1000");
         }
         EMBEDDED_SYSTEM_SERVER = true;
-        ServerLog.mark("embedded system_server start, uid=" + Process.myUid());
+        tokenxCheckpoint("TOKENX_START_ATTEMPT embedded system_server start uid=" + Process.myUid() + " pid=" + Process.myPid());
 
         /*
          * LSPosed invokes this from a worker thread inside system_server. Unlike the
@@ -132,7 +139,9 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }
 
         if (Looper.myLooper() == mainLooper) {
+            tokenxCheckpoint("TOKENX_BINDER_CREATE_ENTER already on system_server main looper");
             new ShizukuService();
+            tokenxCheckpoint("TOKENX_BINDER_CREATED pid=" + Process.myPid());
             return;
         }
 
@@ -140,15 +149,15 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         final CountDownLatch startupComplete = new CountDownLatch(1);
         final AtomicReference<Throwable> startupFailure = new AtomicReference<>();
 
-        ServerLog.mark("TOKENX_BINDER_CREATE_REQUEST pid=" + Process.myPid());
+        tokenxCheckpoint("TOKENX_BINDER_CREATE_REQUEST pid=" + Process.myPid());
         if (!mainHandler.post(() -> {
             try {
-                ServerLog.mark("TOKENX_BINDER_CREATE_ENTER on system_server main looper");
+                tokenxCheckpoint("TOKENX_BINDER_CREATE_ENTER on system_server main looper");
                 new ShizukuService();
-                ServerLog.mark("TOKENX_BINDER_CREATED; manager handoff scheduled");
+                tokenxCheckpoint("TOKENX_BINDER_CREATED pid=" + Process.myPid() + "; manager handoff scheduled");
             } catch (Throwable tr) {
                 startupFailure.set(tr);
-                ServerLog.mark("TOKENX_BINDER_CREATE_FAILED: " + Log.getStackTraceString(tr));
+                tokenxCheckpoint("TOKENX_BINDER_CREATE_FAILED: " + Log.getStackTraceString(tr));
                 LOGGER.e(tr, "embedded system_server startup failed");
             } finally {
                 startupComplete.countDown();
@@ -171,7 +180,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             throw new IllegalStateException("TokenX binder construction failed", failure);
         }
 
-        ServerLog.mark("TOKENX_SERVICE_REGISTERED construction confirmed");
+        tokenxCheckpoint("TOKENX_SERVICE_REGISTERED construction confirmed");
     }
 
     public static void main(String[] args) {
@@ -258,13 +267,17 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         });
 
         BinderSender.register(this);
-        ServerLog.mark("TOKENX_BINDER_SENDER_REGISTERED");
+        tokenxCheckpoint("TOKENX_BINDER_SENDER_REGISTERED");
 
         mainHandler.post(() -> {
-            ServerLog.mark("TOKENX_HANDOFF_BEGIN");
+            tokenxCheckpoint("TOKENX_HANDOFF_BEGIN manager=" + MANAGER_APPLICATION_ID);
             sendBinderToClient();
-            sendBinderToManager();
-            ServerLog.mark("TOKENX_HANDOFF_SENT");
+            boolean managerHandoff = sendBinderToManagerVerified();
+            if (managerHandoff) {
+                tokenxCheckpoint("TOKENX_HANDOFF_SENT manager=" + MANAGER_APPLICATION_ID);
+            } else {
+                tokenxCheckpoint("TOKENX_HANDOFF_FAILED manager=" + MANAGER_APPLICATION_ID);
+            }
         });
     }
 
@@ -656,6 +669,27 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     void sendBinderToManager() {
         sendBinderToManager(this);
+    }
+
+    private boolean sendBinderToManagerVerified() {
+        boolean success = false;
+        for (int userId : UserManagerApis.getUserIdsNoThrow()) {
+            boolean installed;
+            try {
+                installed = Android17Compat.getApplicationInfo(MANAGER_APPLICATION_ID, 0, userId) != null;
+            } catch (Throwable tr) {
+                installed = true;
+            }
+            if (!installed) continue;
+            tokenxCheckpoint("TOKENX_HANDOFF_TARGET user=" + userId + " provider=" + MANAGER_APPLICATION_ID + ".shizuku");
+            if (sendBinderToUserApp(this, MANAGER_APPLICATION_ID, userId)) {
+                tokenxCheckpoint("TOKENX_HANDOFF_ACK user=" + userId);
+                success = true;
+            } else {
+                tokenxCheckpoint("TOKENX_HANDOFF_NO_ACK user=" + userId);
+            }
+        }
+        return success;
     }
 
     private static void sendBinderToManager(Binder binder) {
