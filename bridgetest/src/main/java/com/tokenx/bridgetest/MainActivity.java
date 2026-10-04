@@ -185,6 +185,7 @@ public class MainActivity extends Activity {
                     line("systemServerPid=" + ss);
                     line("backendSamePid=" + (ss > 0 && backendPid == ss));
                     line("backendSystemServerDomain=" + (backendSelinux != null && backendSelinux.startsWith("u:r:system_server:")));
+                    runFunctionalBackendChecks(ss);
                 }
             } catch (Throwable t) {
                 line("connected=false");
@@ -271,6 +272,61 @@ public class MainActivity extends Activity {
         line("NOTE: binder handle PASS proves discovery only; it does not prove a privileged transaction.");
         line("NOTE: no su, Shizuku, rish, trap_king, or shell fallback is used by this scanner.");
         line("========================================");
+    }
+
+    private void runFunctionalBackendChecks(int systemServerPid) {
+        line("");
+        line("=== SYSTEM_SERVER FUNCTIONAL VERIFICATION ===");
+        if (identityBackend == null) {
+            line("Functional: NOT_CONNECTED");
+            return;
+        }
+
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        try {
+            boolean tx = identityBackend.transact(
+                    IdentityService.TRANSACTION_RUN_FUNCTIONAL_CHECKS, data, reply, 0);
+            if (!tx) {
+                line("Functional: TRANSACTION_REJECTED");
+                return;
+            }
+            reply.readException();
+            int backendPid = reply.readInt();
+            int backendUid = reply.readInt();
+            String backendSelinux = reply.readString();
+            String checks = reply.readString();
+
+            line("Host PID: " + backendPid +
+                    (backendPid == systemServerPid ? " • VERIFIED system_server" : " • MISMATCH"));
+            line("UID: " + backendUid + (backendUid == 1000 ? " • VERIFIED" : " • MISMATCH"));
+            line("SELinux: " + backendSelinux);
+            line("Binder transaction: PASS");
+
+            int pass = 0;
+            int deny = 0;
+            if (checks != null) {
+                for (String result : checks.split("\\n")) {
+                    if (result.isEmpty()) continue;
+                    line(result);
+                    if (result.startsWith("PASS ")) pass++;
+                    if (result.startsWith("DENY ")) deny++;
+                }
+            }
+            boolean identityOk = backendPid == systemServerPid
+                    && backendUid == 1000
+                    && backendSelinux != null
+                    && backendSelinux.startsWith("u:r:system_server:");
+            line("Backend: SYSTEM_SERVER");
+            line("Transport: DIRECT BINDER");
+            line("Functional: " + (identityOk && pass > 0 && deny == 0 ? "VERIFIED" : "PARTIAL")
+                    + " • pass=" + pass + " deny=" + deny);
+        } catch (Throwable t) {
+            line("Functional: ERROR • " + t.getClass().getSimpleName() + ": " + t.getMessage());
+        } finally {
+            reply.recycle();
+            data.recycle();
+        }
     }
 
     private String findStatus(String prefix) {
