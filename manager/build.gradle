@@ -63,7 +63,16 @@ android {
             // Upstream stripped every Java resource from the APK. TokenX's modern
             // LSPosed module descriptor lives under META-INF/xposed, so keep that
             // namespace while continuing to discard unrelated dependency resources.
-            excludes += ["META-INF/**"]
+            // Do not blanket-exclude META-INF: modern libxposed discovers this APK
+            // through META-INF/xposed. Keep those descriptors in the final APK.
+            excludes += [
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/*.kotlin_module"
+            ]
             pickFirsts += [
                 "META-INF/xposed/java_init.list",
                 "META-INF/xposed/scope.list",
