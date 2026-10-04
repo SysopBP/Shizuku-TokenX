@@ -21,6 +21,8 @@ import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.Route
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -131,6 +133,22 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                     label = "Secure Chain Monitor",
                     badge = "LIVE · SERV · FOTA",
                     onClick = { onOpenDetail(Detail.TOKENX) }
+                )
+            }
+            item {
+                LabTile(
+                    icon = Icons.Outlined.Tune,
+                    label = "OneUIX Labs",
+                    badge = "SYSTEMUI · SAMSUNG",
+                    onClick = { onOpenDetail(Detail.ONEUIX_LABS) }
+                )
+            }
+            item {
+                LabTile(
+                    icon = Icons.Outlined.VerifiedUser,
+                    label = "CorePatch Labs",
+                    badge = "PACKAGE MANAGER · EXPERIMENTAL",
+                    onClick = { onOpenDetail(Detail.COREPATCH_LABS) }
                 )
             }
         }
