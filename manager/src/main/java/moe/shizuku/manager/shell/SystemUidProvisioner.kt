@@ -9,17 +9,17 @@ import java.io.InputStreamReader
  *
  * The KernelSU module is the primary installer. A module-local provisioning DEX may
  * remain available as a fallback; this class audits that fallback without executing it.
- * It also verifies the live Serv.apk/com.vikram.exp bridge and stages TokenX's isolated
+ * It also verifies the live TKN Bridge/com.tokenx.bridgetest backend and stages TokenX's isolated
  * UID-1000 Shizuku worker when needed.
  */
 object SystemUidProvisioner {
 
-    const val LIVE_PACKAGE = "com.vikram.exp"
-    const val LEGACY_PACKAGE = "com.vikram.shell"
+    const val LIVE_PACKAGE = "com.tokenx.bridgetest"
+    const val LEGACY_PACKAGE = "com.vikram.exp"
     const val FOTA_PACKAGE = "com.sdet.fotaagent"
     const val STAGED_SHIZUKU = "/data/local/tmp/libshizuku.so"
 
-    enum class Stage { D2_GATE, SERV_UID, FOTA_UID, FOTA_DOMAIN, DEX_FALLBACK, RX_COMPAT, SYSTEM_BRIDGE }
+    enum class Stage { D2_GATE, BRIDGE_UID, FOTA_UID, FOTA_DOMAIN, DEX_FALLBACK, RX_COMPAT, SYSTEM_BRIDGE }
     enum class StageState { WAITING, CHECKING, VERIFIED, WARNING, FAILED }
     data class Progress(val stage: Stage, val state: StageState, val detail: String)
 
@@ -99,7 +99,7 @@ object SystemUidProvisioner {
         val transcript = StringBuilder("=== TokenX provisioned payloads ===\n")
         val checks = listOf(
             Triple(Stage.D2_GATE, "Checking D2 dual-gate module", "test -d /data/adb/modules/tokenx_system_server && echo D2_GATE=module-present"),
-            Triple(Stage.SERV_UID, "Checking Serv UID 1000", "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000'"),
+            Triple(Stage.BRIDGE_UID, "Checking TKN Bridge UID 1000", "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000'"),
             Triple(Stage.FOTA_UID, "Checking FOTA UID 1000", "cmd package list packages -U | grep -F 'package:$FOTA_PACKAGE uid:1000'"),
             Triple(Stage.FOTA_DOMAIN, "Checking FOTA system identity", "dumpsys package $FOTA_PACKAGE 2>/dev/null | grep -m1 -E 'sharedUser=.*android.uid.system/1000'"),
             Triple(Stage.DEX_FALLBACK, "Checking provisioning DEX fallback", "DEX=$(find /data/adb/modules/tokenx_system_server -type f -name '*.dex' 2>/dev/null | head -n 1); test -n \"${'$'}DEX\" && test -r \"${'$'}DEX\" && echo DEX_FALLBACK=present && echo DEX_PATH=\"${'$'}DEX\" && echo DEX_STATE=standby"),
@@ -117,10 +117,10 @@ object SystemUidProvisioner {
 
     fun verify(): Result {
         // Verify the live package and Android's real persistent system_server.
-        // The legacy com.vikram.shell synthetic record is not a readiness signal.
+        // The legacy com.vikram.exp Serv record is not a readiness signal.
         val packageName = q(LIVE_PACKAGE)
         val script = listOf(
-            "echo '=== TokenX System Server bridge ==='",
+            "echo '=== TKN Bridge System Server backend ==='",
             // Samsung/Android 17 can return FAILED_TRANSACTION from pm path even while
             // PackageManager has a valid UID-1000 record. Keep it as diagnostic only.
             "(pm path " + packageName + " 2>&1 || true) | sed 's/^/pm_path=/'",
