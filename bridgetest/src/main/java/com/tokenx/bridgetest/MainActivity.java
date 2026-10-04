@@ -33,6 +33,15 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+
+        // Hard safety boundary: never inflate/render app UI inside the real system_server process.
+        // A UI exception there is a FATAL EXCEPTION IN SYSTEM PROCESS and restarts Android services.
+        int systemServerPid = findSystemServerPid();
+        if (systemServerPid > 0 && systemServerPid == Process.myPid()) {
+            Log.e(TAG, "SAFETY BLOCK: MainActivity attempted to run inside system_server; UI creation skipped.");
+            return;
+        }
+
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(28, 28, 28, 28);
@@ -118,11 +127,13 @@ public class MainActivity extends Activity {
         } catch (Throwable t) { line("packageInfo=ERROR " + t); }
 
         line("");
-        line("=== PROCESS=SYSTEM VALIDATION ===");
+        line("=== PROCESS BOUNDARY VALIDATION ===");
         int ss = findSystemServerPid();
         line("ourPid=" + Process.myPid());
         line("systemServerPid=" + ss);
         line("samePid=" + (ss > 0 && ss == Process.myPid()));
+        line("uiProcessSafe=" + !(ss > 0 && ss == Process.myPid()));
+        line("NOTE: UI is intentionally isolated from system_server; privileged backend transport is tested separately.");
 
         line("");
         line("=== BINDER HANDLES (IN-PROCESS) ===");
