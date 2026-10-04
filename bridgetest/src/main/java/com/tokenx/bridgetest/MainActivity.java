@@ -111,7 +111,6 @@ public class MainActivity extends Activity {
             ApplicationInfo ai = getPackageManager().getApplicationInfo(getPackageName(), 0);
             line("sourceDir=" + ai.sourceDir);
             line("flags=0x" + Integer.toHexString(ai.flags));
-            line("privateFlags=0x" + Integer.toHexString(ai.privateFlags));
             line("systemFlag=" + ((ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0));
             line("debuggable=" + ((ai.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0));
         } catch (Throwable t) { line("packageInfo=ERROR " + t); }
