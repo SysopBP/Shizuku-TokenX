@@ -32,12 +32,14 @@ object TokenXBackendRegistryBuilder {
         systemUidReady: Boolean,
         systemServerReady: Boolean,
         shellReady: Boolean,
+        retailReady: Boolean = false,
     ): TokenXBackendRegistry = TokenXBackendRegistry(
         selected = selected,
         backends = listOf(
             TokenXRegisteredBackend(TokenXBackend.ROOT, 0, rootReady, rootReady, if (rootReady) "KernelSU/root ready" else "Root unavailable"),
             TokenXRegisteredBackend(TokenXBackend.SYSTEM_UID, 1000, systemUidReady, systemUidReady, if (systemUidReady) "Serv.apk UID 1000 ready" else "System UID backend unavailable"),
             TokenXRegisteredBackend(TokenXBackend.SYSTEM_SERVER, 1000, systemServerReady, systemServerReady, if (systemServerReady) "system_server Binder verified" else "System Server bridge unavailable"),
+            TokenXRegisteredBackend(TokenXBackend.RETAIL_SYSTEM, 1000, retailReady, retailReady, if (retailReady) "Samsung Retail Mode UID 1000 session verified" else "Retail System disconnected"),
             TokenXRegisteredBackend(TokenXBackend.SHELL, 2000, shellReady, shellReady, if (shellReady) "Shizuku shell ready" else "Shell backend unavailable"),
         ).associateBy { it.backend },
     )
