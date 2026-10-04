@@ -56,6 +56,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.shell.SystemUidProvisioner
+import moe.shizuku.manager.tokenx.TokenXRetailBridge
+import moe.shizuku.manager.tokenx.TokenXRetailSnapshot
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,6 +78,14 @@ fun TokenXDashboard(
     var showVaultDetails by remember { mutableStateOf(false) }
     var showBridgeDetails by remember { mutableStateOf(false) }
     var liveStage by remember { mutableStateOf<SystemUidProvisioner.Progress?>(null) }
+    var retail by remember { mutableStateOf(TokenXRetailBridge.snapshot(false)) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            retail = withContext(Dispatchers.IO) { TokenXRetailBridge.snapshot(SystemUidProvisioner.isRetailInstalled()) }
+            delay(2500L)
+        }
+    }
 
     LaunchedEffect(provisioning) {
         if (provisioning) {
@@ -191,6 +201,7 @@ fun TokenXDashboard(
                         VaultChainRow("D2 Gate", stageLabel(SystemUidProvisioner.Stage.D2_GATE, liveStage, provisioning, "OPEN"), modeColor)
                         VaultChainRow("Serv", stageLabel(SystemUidProvisioner.Stage.SERV_UID, liveStage, provisioning, "UID 1000"), modeColor)
                         VaultChainRow("FOTA", stageLabel(SystemUidProvisioner.Stage.FOTA_UID, liveStage, provisioning, "UID 1000"), modeColor)
+                        VaultChainRow("Retail", stageLabel(SystemUidProvisioner.Stage.RETAIL_UID, liveStage, provisioning, if (retail.installed) "READY" else "MISSING"), modeColor)
                         VaultChainRow("DEX Fallback", stageLabel(SystemUidProvisioner.Stage.DEX_FALLBACK, liveStage, provisioning, "STANDBY"), modeColor)
                         VaultChainRow("Receiver Compatibility", stageLabel(SystemUidProvisioner.Stage.RX_COMPAT, liveStage, provisioning, "INTEGRATED"), modeColor)
                         if (dialogMode == "bridge") VaultChainRow("System Bridge", if (provisioning) "HANDSHAKE" else "VERIFIED", modeColor)
@@ -274,6 +285,10 @@ fun TokenXDashboard(
             }
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StatusLine(Icons.Rounded.VerifiedUser, "Retail", if (retail.connected) "UID 1000" else if (retail.installed) "Ready" else "Missing", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.Token, "Token Boot", "Session coordination", Modifier.weight(1f))
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatusLine(Icons.Rounded.Token, "Token Boot", "Session coordination", Modifier.weight(1f))
                 StatusLine(Icons.Rounded.Security, "Watchdog", "Existing engine", Modifier.weight(1f))
             }
@@ -327,7 +342,10 @@ fun TokenXDashboard(
                 StatusLine(Icons.Rounded.SystemSecurityUpdateGood, "FOTA", "UID 1000", Modifier.weight(1f))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StatusLine(Icons.Rounded.VerifiedUser, "Samsung Retail", if (retail.connected) "UID 1000" else if (retail.installed) "Provisioned" else "Missing", Modifier.weight(1f))
                 StatusLine(Icons.Rounded.Lock, "D2 Gate", "Dual gate", Modifier.weight(1f))
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatusLine(Icons.Rounded.Security, "Receiver Compatibility", "Xposed", Modifier.weight(1f))
             }
             TextButton(
