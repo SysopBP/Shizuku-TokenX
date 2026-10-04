@@ -57,11 +57,6 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
     var routerMode by remember { mutableStateOf(prefs.getString("tokenx_router_mode", "Automatic") ?: "Automatic") }
     var rootFirst by remember { mutableStateOf(prefs.getBoolean("tokenx_root_first", true)) }
     var recovery by remember { mutableStateOf(prefs.getBoolean("tokenx_recovery_preview", true)) }
-    var oneUiXLabsEnabled by remember { mutableStateOf(prefs.getBoolean("tokenx_oneuix_labs", false)) }
-    var oneUiXStatusBar by remember { mutableStateOf(prefs.getBoolean("tokenx_oneuix_statusbar", false)) }
-    var oneUiXQuickSettings by remember { mutableStateOf(prefs.getBoolean("tokenx_oneuix_qs", false)) }
-    var oneUiXNotifications by remember { mutableStateOf(prefs.getBoolean("tokenx_oneuix_notifications", false)) }
-    var oneUiXFramework by remember { mutableStateOf(prefs.getBoolean("tokenx_oneuix_framework", false)) }
     // Deliberately session-only: experimental system_server operations reset OFF
     // whenever this screen/app process is recreated, including after reboot.
     var systemServerOperations by remember { mutableStateOf(false) }
@@ -276,50 +271,6 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                         if (enabled) showSystemServerWarning = true
                         else systemServerOperations = false
                     }
-                }
-            }
-
-            SectionTitle("OneUIX Labs")
-            TokenXGlassCard {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Samsung hook experiments", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "Inspired by SoClear/OneUIX's package/process-scoped LibXposed architecture. Labs stay isolated from TokenX backend routing and are OFF by default.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    PreviewSwitch("Enable OneUIX Labs", "Master gate for experimental Samsung / SystemUI hooks.", oneUiXLabsEnabled) {
-                        oneUiXLabsEnabled = it
-                        prefs.edit().putBoolean("tokenx_oneuix_labs", it).apply()
-                        powerScope.launch { Shell.cmd("setprop persist.tokenx.labs.oneuix " + if (it) "1" else "0").exec() }
-                    }
-                    HorizontalDivider()
-                    PreviewSwitch("Status bar experiments", "Clock, battery, icon and status-bar behavior staging.", oneUiXStatusBar) {
-                        oneUiXStatusBar = it
-                        prefs.edit().putBoolean("tokenx_oneuix_statusbar", it).apply()
-                        powerScope.launch { Shell.cmd("setprop persist.tokenx.labs.statusbar " + if (it) "1" else "0").exec() }
-                    }
-                    PreviewSwitch("Quick Settings experiments", "QS layout, tile and panel behavior staging.", oneUiXQuickSettings) {
-                        oneUiXQuickSettings = it
-                        prefs.edit().putBoolean("tokenx_oneuix_qs", it).apply()
-                    }
-                    PreviewSwitch("Notification experiments", "Notification grouping, expansion and SystemUI behavior staging.", oneUiXNotifications) {
-                        oneUiXNotifications = it
-                        prefs.edit().putBoolean("tokenx_oneuix_notifications", it).apply()
-                    }
-                    PreviewSwitch("Framework experiments", "Rotation and Samsung framework-rune staging. Highest-risk hooks remain opt-in.", oneUiXFramework) {
-                        oneUiXFramework = it
-                        prefs.edit().putBoolean("tokenx_oneuix_framework", it).apply()
-                    }
-                    Text(
-                        "Foundation only in this build: controls persist, but no OneUIX-derived hook is activated until its One UI 9 target is verified. Core TokenX Xposed/System Server behavior is unchanged.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "Source inspiration: SoClear/OneUIX • AGPL-3.0. Directly ported code will retain attribution and compatible licensing.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
 
