@@ -9,6 +9,7 @@ package moe.shizuku.manager.tokenx
  */
 enum class TokenXBackend(val uid: Int?) {
     ROOT(0),
+    NATIVE_UID(1000),
     SYSTEM_UID(1000),
     SYSTEM_SERVER(1000),
     SHELL(2000),
@@ -27,6 +28,7 @@ data class TokenXBackendState(
     val serverRunning: Boolean,
     val serverUid: Int,
     val rootAvailable: Boolean,
+    val nativeUid1000Available: Boolean = false,
     val systemServerBridgeAvailable: Boolean = false,
     val shellAvailable: Boolean = true,
 ) {
@@ -54,6 +56,7 @@ object TokenXRouter {
     ): TokenXRoute {
         val preferredAvailable = when (preferredBackend) {
             TokenXBackend.ROOT -> state.rootAvailable
+            TokenXBackend.NATIVE_UID -> state.nativeUid1000Available
             TokenXBackend.SYSTEM_UID -> state.systemServerBridgeAvailable
             TokenXBackend.SYSTEM_SERVER -> state.systemServerBridgeAvailable
             TokenXBackend.SHELL -> state.shellAvailable
@@ -71,6 +74,7 @@ object TokenXRouter {
             TokenXCapability.PROCESS,
             TokenXCapability.GENERAL -> when {
                 state.rootAvailable -> TokenXBackend.ROOT
+                state.nativeUid1000Available -> TokenXBackend.NATIVE_UID
                 state.systemServerBridgeAvailable -> TokenXBackend.SYSTEM_SERVER
                 state.shellAvailable -> TokenXBackend.SHELL
                 else -> TokenXBackend.UNAVAILABLE
@@ -96,6 +100,7 @@ object TokenXRouter {
         backend: TokenXBackend,
     ): String = when (backend) {
         TokenXBackend.ROOT -> "Root/UID 0 selected as the primary privilege engine"
+        TokenXBackend.NATIVE_UID -> "PackageManager-verified android.uid.system/UID 1000 selected"
         TokenXBackend.SYSTEM_UID -> "Serv.apk/System UID 1000 selected for privileged execution"
         TokenXBackend.SYSTEM_SERVER ->
             if (capability == TokenXCapability.FRAMEWORK) {
