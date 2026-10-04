@@ -1,0 +1,15 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "com.tokenx.bridgetest"
+
+    defaultConfig {
+        applicationId "com.tokenx.bridgetest"
+        minSdk 24
+        targetSdk 33
+        versionCode 1
+        versionName "1.0-test"
+    }
+}
