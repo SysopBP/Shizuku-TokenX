@@ -24,6 +24,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import rikka.shizuku.Shizuku;
+
 public class MainActivity extends Activity {
     private static final String TAG = "TokenXBridgeTest";
     private TextView output;
@@ -128,6 +130,18 @@ public class MainActivity extends Activity {
                 "appops","permission","input","display","connectivity","wifi","device_policy",
                 "account","jobscheduler","deviceidle","batteryproperties"};
         for (String s : services) binder(s);
+
+        line("");
+        line("=== SHIZUKU (SEPARATE CONTROL PATH) ===");
+        try {
+            line("binderReceived=" + Shizuku.pingBinder());
+            line("binderAlive=" + Shizuku.getBinder().isBinderAlive());
+            line("shizukuUid=" + Shizuku.getUid());
+            line("permission=" + (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED ? "GRANTED" : "DENIED"));
+            line("NOTE: Shizuku results are not counted as native UID1000 capability.");
+        } catch (Throwable t) {
+            line("SHIZUKU UNAVAILABLE " + t.getClass().getSimpleName() + ": " + t.getMessage());
+        }
 
         line("");
         line("=== SETTINGS READS (IN-PROCESS) ===");
