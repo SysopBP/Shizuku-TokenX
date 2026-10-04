@@ -26,7 +26,7 @@ import java.util.List;
 
 import rikka.shizuku.Shizuku;
 
-public class MainActivity extends Activity {
+// Safe-UI build trigger: keep Activity isolated from system_server.\npublic class MainActivity extends Activity {
     private static final String TAG = "TokenXBridgeTest";
     private TextView output;
     private final List<String> report = new ArrayList<>();
