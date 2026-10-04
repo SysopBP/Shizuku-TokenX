@@ -2,7 +2,6 @@ package moe.shizuku.tokenx.xposed
 
 import android.content.Context
 import android.os.Process
-import android.os.SystemProperties
 import android.util.Log
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
@@ -120,9 +119,15 @@ class TokenXXposedEntry : XposedModule() {
         }
     }
 
+    private fun systemPropertyEnabled(key: String): Boolean = runCatching {
+        val clazz = Class.forName("android.os.SystemProperties")
+        val method = clazz.getDeclaredMethod("getBoolean", String::class.java, Boolean::class.javaPrimitiveType)
+        method.invoke(null, key, false) as Boolean
+    }.getOrDefault(false)
+
     private fun installStatusBarLabs(param: XposedModuleInterface.PackageLoadedParam) {
-        if (!SystemProperties.getBoolean(PROP_ONEUIX_LABS, false) ||
-            !SystemProperties.getBoolean(PROP_STATUS_BAR_LABS, false)
+        if (!systemPropertyEnabled(PROP_ONEUIX_LABS) ||
+            !systemPropertyEnabled(PROP_STATUS_BAR_LABS)
         ) {
             log(Log.INFO, TAG, "ONEUIX_LABS_STATUSBAR_OFF")
             return
