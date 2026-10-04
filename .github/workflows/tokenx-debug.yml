@@ -182,7 +182,10 @@ jobs:
           unzip -l "$FILE" | grep -F 'META-INF/xposed/java_init.list'
           unzip -l "$FILE" | grep -F 'META-INF/xposed/scope.list'
           unzip -l "$FILE" | grep -F 'META-INF/xposed/module.prop'
-          echo "TokenX modern Xposed module metadata verified in manager APK"
+          unzip -p "$FILE" META-INF/xposed/java_init.list | grep -Fx 'moe.shizuku.tokenx.xposed.TokenXXposedEntry'
+          unzip -p "$FILE" META-INF/xposed/scope.list | grep -Fx 'system'
+          unzip -p "$FILE" 'classes*.dex' | strings | grep -F 'TokenXXposedEntry' >/dev/null
+          echo "TokenX modern Xposed descriptors + entry class verified in manager APK"
 
       - name: Collect APK
         id: apk
