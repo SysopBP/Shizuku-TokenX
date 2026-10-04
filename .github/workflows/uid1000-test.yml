@@ -21,6 +21,9 @@ jobs:
     steps:
       - name: Checkout exact test branch
         uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
       - name: Setup Java 21
         uses: actions/setup-java@v5
