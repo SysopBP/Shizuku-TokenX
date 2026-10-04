@@ -2,7 +2,7 @@
 
 > **Advanced / root-only:** the current TokenX bridge is installed through its KernelSU module. Do not use the old manual `/data/app` or provisioning-DEX procedure.
 
-This document describes the current **Shizuku-TokenX v14.2** System UID / System Server architecture. The old manual `legacy Serv.dex` provisioning instructions are no longer the normal installation path.
+This document describes the current **Shizuku-TokenX v14.2** System UID / System Server architecture. The old manual `Serv.dex` provisioning instructions are no longer the normal installation path.
 
 ## Requirements
 
@@ -36,7 +36,7 @@ The companion APK is exposed systemlessly as:
 TKN Bridge APK (com.tokenx.bridgetest)
 ```
 
-There is no normal installation step that requires copying or executing `legacy Serv.dex`.
+There is no normal installation step that requires copying or executing `Serv.dex`.
 
 ## 3. Boot and unlock normally
 
@@ -234,7 +234,7 @@ Current installations should **not**:
 
 - manually create `/data/app/com.android.settings/vikram_shell`
 - manually install legacy `com.vikram.shell` or `com.vikram.exp`
-- copy `legacy Serv.dex` to `/data/local/tmp`
+- copy `Serv.dex` to `/data/local/tmp`
 - run a provisioning DEX with `app_process`
 - repeatedly reprovision the companion for ordinary command failures
 
