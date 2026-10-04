@@ -67,6 +67,12 @@ import rikka.shizuku.server.util.UserHandleCompat;
 public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuClientManager, ShizukuConfigManager> {
 
     private static volatile boolean EMBEDDED_SYSTEM_SERVER = false;
+    private static final String TOKENX_TRACE_TAG = "TokenX-SystemServer";
+
+    private static void tokenxTrace(String message) {
+        ServerLog.mark(message);
+        Log.i(TOKENX_TRACE_TAG, message);
+    }
     private static final String TOKENX_SYSTEM_SERVER_SERVICE = "tokenx_system_server";
     private static final String TOKENX_SYSTEM_SERVER_DESCRIPTOR = "moe.shizuku.tokenx.ISystemServerBridge";
     private static final int TOKENX_TX_HEALTH = IBinder.FIRST_CALL_TRANSACTION;
@@ -204,6 +210,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
         EMBEDDED_SYSTEM_SERVER = true;
         publishTokenXSystemServerHealthBinder();
+        tokenxTrace("TOKENX_START_ATTEMPT uid=" + Process.myUid() + ", pid=" + Process.myPid());
         ServerLog.mark("SYSTEM_SERVER_HOOK: embedded start uid=" + Process.myUid()
                 + ", pid=" + Process.myPid());
         ServerLog.mark("NATIVE_READY: embedded backend does not require librish");
@@ -215,7 +222,9 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }
 
         if (Looper.myLooper() == mainLooper) {
+            tokenxTrace("TOKENX_BINDER_CREATE_ENTER main-looper");
             new ShizukuService();
+            tokenxTrace("TOKENX_BINDER_CREATED uid=" + Process.myUid() + " pid=" + Process.myPid());
             ServerLog.mark("SERVER_CREATED: embedded backend ready on main looper");
             ServerLog.mark("BINDER_PUBLISHED: provider binder handoff scheduled");
             return;
@@ -225,8 +234,11 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         final AtomicReference<Throwable> failure = new AtomicReference<>();
         Runnable start = () -> {
             try {
+                tokenxTrace("TOKENX_BINDER_CREATE_REQUEST system_server-main-looper");
                 ServerLog.mark("embedded service constructing on system_server main looper");
+                tokenxTrace("TOKENX_BINDER_CREATE_ENTER posted-main-looper");
                 new ShizukuService();
+                tokenxTrace("TOKENX_BINDER_CREATED uid=" + Process.myUid() + " pid=" + Process.myPid());
                 ServerLog.mark("SERVER_CREATED: embedded service constructed");
                 ServerLog.mark("BINDER_PUBLISHED: provider binder handoff scheduled");
             } catch (Throwable tr) {
@@ -323,10 +335,13 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         });
 
         BinderSender.register(this);
+        tokenxTrace("TOKENX_BINDER_SENDER_REGISTERED");
 
         mainHandler.post(() -> {
+            tokenxTrace("TOKENX_HANDOFF_BEGIN manager=" + MANAGER_APPLICATION_ID);
             sendBinderToClient();
             sendBinderToManager();
+            tokenxTrace("TOKENX_HANDOFF_DISPATCHED manager=" + MANAGER_APPLICATION_ID);
 
             // The embedded UID-1000 backend may be ready before the manager provider.
             // Retry Binder publication only; do not launch another Shizuku server.
@@ -788,8 +803,10 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     }
 
     static void sendBinderToManager(Binder binder, int userId) {
+        tokenxTrace("TOKENX_HANDOFF_TARGET user=" + userId + " provider=" + MANAGER_APPLICATION_ID + ".shizuku");
         ServerLog.mark("handing the binder to " + MANAGER_APPLICATION_ID + " in user " + userId);
         boolean success = sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
+        tokenxTrace(success ? "TOKENX_HANDOFF_SENT user=" + userId : "TOKENX_HANDOFF_NO_ACK user=" + userId);
         ServerLog.mark(success
                 ? "the manager took the binder"
                 : "the manager did not take the binder: retrying without force-stop");
