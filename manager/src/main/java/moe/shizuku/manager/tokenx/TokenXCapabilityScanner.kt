@@ -15,6 +15,7 @@ data class TokenXCapabilityProbe(
     val dumpViaRoot: Boolean,
     val packageManagerViaRoot: Boolean,
     val systemPropertiesViaRoot: Boolean,
+    val recoveryRebootViaRoot: Boolean,
     val rootSelinuxContext: String?,
     val rootUid: String?,
     val shellUid: Int,
@@ -66,6 +67,7 @@ object TokenXCapabilityScanner {
             dumpViaRoot = rootProbe("dumpsys activity activities >/dev/null"),
             packageManagerViaRoot = rootProbe("cmd package list packages >/dev/null"),
             systemPropertiesViaRoot = rootProbe("getprop ro.build.version.release >/dev/null"),
+            recoveryRebootViaRoot = rootProbe("[ -x /system/bin/reboot ] || command -v reboot >/dev/null 2>&1"),
             rootSelinuxContext = rootContext,
             rootUid = runCatching { Shell.cmd("id").exec().out.firstOrNull() }.getOrNull(),
             shellUid = if (rikka.shizuku.Shizuku.pingBinder()) {
