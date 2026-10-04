@@ -27,6 +27,10 @@ data class TokenXRuntimeState(
     val systemServerCapabilities: Int,
     val backendRegistry: TokenXBackendRegistry,
     val xposedFrameworkDetected: Boolean,
+    /** CorePatch package presence; hook effectiveness is inferred separately from PM UID1000 verification. */
+    val corePatchDetected: Boolean,
+    val androidApiLevel: Int,
+    val oneUiVersion: String,
     val xposedBridgeActive: Boolean,
     val routes: Map<TokenXCapability, TokenXRoute>,
 )
@@ -44,6 +48,8 @@ object TokenXRuntime {
         val uid = if (running) runCatching { Shizuku.getUid() }.getOrDefault(-1) else -1
         val root = runCatching { Shell.getCachedShell()?.isRoot == true }.getOrDefault(false)
         val xposedDetected = knownXposedManagers.any { isInstalled(context.packageManager, it) }
+        val corePatchDetected = isInstalled(context.packageManager, "org.lsposed.corepatch")
+        val oneUiVersion = readOneUiVersion()
 
         // A package/manager being installed is not enough. Trust the UID 1000
         // backend only after the Binder service in system_server answers our ping.
@@ -95,6 +101,9 @@ object TokenXRuntime {
             systemServerCapabilities = bridgeCapabilities,
             backendRegistry = registry,
             xposedFrameworkDetected = xposedDetected,
+            corePatchDetected = corePatchDetected,
+            androidApiLevel = android.os.Build.VERSION.SDK_INT,
+            oneUiVersion = oneUiVersion,
             xposedBridgeActive = bridgeActive,
             routes = TokenXCapability.entries.associateWith { TokenXRouter.route(it, state, preferredBackend) },
         )
@@ -156,6 +165,17 @@ object TokenXRuntime {
         ).exec()
         result.isSuccess && result.out.any { it.contains("com.vikram.exp") }
     }.getOrDefault(false)
+
+    private fun readOneUiVersion(): String = runCatching {
+        val direct = Shell.cmd("getprop ro.build.version.oneui").exec().out.firstOrNull()?.trim().orEmpty()
+        if (direct.isNotBlank()) return direct
+        val sep = Shell.cmd("getprop ro.build.version.sep").exec().out.firstOrNull()?.trim()?.toIntOrNull()
+        if (sep != null && sep >= 90000) {
+            val encoded = sep - 90000
+            return "${encoded / 10000}.${(encoded % 10000) / 100}"
+        }
+        "Unknown"
+    }.getOrDefault("Unknown")
 
     private fun isInstalled(pm: PackageManager, packageName: String): Boolean =
         runCatching { pm.getPackageInfo(packageName, 0) }.isSuccess
