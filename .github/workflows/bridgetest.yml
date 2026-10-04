@@ -1,0 +1,42 @@
+name: Build TokenX BridgeTest
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build BridgeTest
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
+          ./gradlew :bridgetest:assembleDebug
+
+      - name: Rename APK
+        run: |
+          APK=$(ls bridgetest/build/outputs/apk/debug/*.apk | head -1)
+          cp "$APK" TokenX-BridgeTest-FullScope-debug.apk
+
+      - name: Upload BridgeTest APK
+        uses: actions/upload-artifact@v6
+        with:
+          name: TokenX-BridgeTest-FullScope-debug
+          path: TokenX-BridgeTest-FullScope-debug.apk
