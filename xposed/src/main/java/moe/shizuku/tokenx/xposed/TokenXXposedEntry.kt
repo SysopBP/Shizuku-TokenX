@@ -6,10 +6,8 @@ import android.util.Log
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
-import rikka.rish.RishConfig
 import rikka.shizuku.server.ShizukuService
 import rikka.shizuku.server.util.Android17Compat
-import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** TokenX modern LSPosed UID 1000 bridge and Receiver Compatibility layer. */
@@ -67,20 +65,9 @@ class TokenXXposedEntry : XposedModule() {
             return
         }
         runCatching {
-            val nativeDir = Android17Compat.getApplicationInfo(MANAGER_PACKAGE, 0, 0)
-                ?.nativeLibraryDir
-                ?.takeIf { it.isNotBlank() }
-                ?: findExtractedNativeLibraryDir()
-                ?: throw IllegalStateException(
-                    "TokenX nativeLibraryDir is unavailable during early system_server startup"
-                )
-            val rish = File(nativeDir, "librish.so")
-            if (!rish.isFile) {
-                throw UnsatisfiedLinkError("librish.so missing from extracted nativeLibraryDir: $nativeDir")
-            }
-            System.load(rish.absolutePath)
-            RishConfig.setLibraryPath(nativeDir)
-            log(Log.INFO, TAG, "NATIVE_READY: librish.so preloaded from ${rish.absolutePath}")
+            // The embedded system_server backend is pure Binder/Java and must not depend on
+            // librish.so. Rish remains configured by the standalone root/shell server path.
+            log(Log.INFO, TAG, "EMBEDDED_NATIVE_BYPASS: system_server backend does not require librish.so")
 
             // Never perform the embedded Binder/provider handoff inline on LSPosed's
             // system_server startup callback. Samsung A17 can stall this path while package/
@@ -118,23 +105,6 @@ class TokenXXposedEntry : XposedModule() {
         }.onFailure {
             log(Log.ERROR, TAG, "embedded system_server preparation failed open: ${it.javaClass.simpleName}: ${it.message}\n${Log.getStackTraceString(it)}")
         }
-    }
-
-    private fun findExtractedNativeLibraryDir(): String? {
-        val dataApp = File("/data/app")
-        return runCatching {
-            dataApp.walkTopDown()
-                .maxDepth(6)
-                .firstOrNull { file ->
-                    file.isFile &&
-                        file.name == "librish.so" &&
-                        file.absolutePath.contains(MANAGER_PACKAGE)
-                }
-                ?.parentFile
-                ?.absolutePath
-        }.onFailure {
-            log(Log.WARN, TAG, "early native library scan failed: ${it.javaClass.simpleName}: ${it.message}")
-        }.getOrNull()
     }
 
     private companion object {
