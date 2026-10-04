@@ -17,9 +17,10 @@ object SystemUidProvisioner {
     const val LIVE_PACKAGE = "com.vikram.exp"
     const val LEGACY_PACKAGE = "com.vikram.shell"
     const val FOTA_PACKAGE = "com.sdet.fotaagent"
+    const val RETAIL_PACKAGE = "com.samsung.sea.rm"
     const val STAGED_SHIZUKU = "/data/local/tmp/libshizuku.so"
 
-    enum class Stage { D2_GATE, SERV_UID, FOTA_UID, FOTA_DOMAIN, DEX_FALLBACK, RX_COMPAT, SYSTEM_BRIDGE }
+    enum class Stage { D2_GATE, SERV_UID, FOTA_UID, FOTA_DOMAIN, RETAIL_UID, RETAIL_MOUNT, DEX_FALLBACK, RX_COMPAT, SYSTEM_BRIDGE }
     enum class StageState { WAITING, CHECKING, VERIFIED, WARNING, FAILED }
     data class Progress(val stage: Stage, val state: StageState, val detail: String)
 
@@ -84,8 +85,10 @@ object SystemUidProvisioner {
         return startShizukuUid1000(context)
     }
 
+    fun isRetailInstalled(): Boolean = runRoot("cmd package list packages -U | grep -F 'package:$RETAIL_PACKAGE'").success
+
     /**
-     * Non-destructive provisioning audit for the two UID-1000 payloads. This deliberately
+     * Non-destructive provisioning audit for the privileged payloads. This deliberately
      * does not launch FOTA, reboot, enter recovery, factory-reset, or invoke update_engine.
      * The KernelSU module remains the installer; the manager reports exactly what survived.
      */
@@ -102,8 +105,10 @@ object SystemUidProvisioner {
             Triple(Stage.SERV_UID, "Checking Serv UID 1000", "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000'"),
             Triple(Stage.FOTA_UID, "Checking FOTA UID 1000", "cmd package list packages -U | grep -F 'package:$FOTA_PACKAGE uid:1000'"),
             Triple(Stage.FOTA_DOMAIN, "Checking FOTA system identity", "dumpsys package $FOTA_PACKAGE 2>/dev/null | grep -m1 -E 'sharedUser=.*android.uid.system/1000'"),
+            Triple(Stage.RETAIL_UID, "Checking Samsung Retail package", "cmd package list packages -U | grep -F 'package:$RETAIL_PACKAGE'"),
+            Triple(Stage.RETAIL_MOUNT, "Checking Samsung Retail privileged mount", "test -r /system/priv-app/TokenXRetailMode/RetailMode.apk -o -r /data/adb/modules/tokenx_system_server/system/priv-app/TokenXRetailMode/RetailMode.apk && echo RETAIL_MOUNT=present"),
             Triple(Stage.DEX_FALLBACK, "Checking provisioning DEX fallback", "DEX=$(find /data/adb/modules/tokenx_system_server -type f -name '*.dex' 2>/dev/null | head -n 1); test -n \"${'$'}DEX\" && test -r \"${'$'}DEX\" && echo DEX_FALLBACK=present && echo DEX_PATH=\"${'$'}DEX\" && echo DEX_STATE=standby"),
-            Triple(Stage.RX_COMPAT, "Checking TokenX Receiver Compatibility", "echo TOKENX_RECEIVER_COMPAT=integrated; echo TOKENX_RECEIVER_SCOPE=$FOTA_PACKAGE")
+            Triple(Stage.RX_COMPAT, "Checking TokenX Receiver Compatibility", "echo TOKENX_RECEIVER_COMPAT=integrated; echo TOKENX_RECEIVER_SCOPE=$FOTA_PACKAGE,$RETAIL_PACKAGE")
         )
         for ((stage, label, script) in checks) {
             val result = check(stage, label, script)
