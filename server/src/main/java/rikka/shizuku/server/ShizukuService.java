@@ -857,7 +857,6 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             }
             scheduleManagerBinderRetry(binder, userId, retryDelays, index + 1);
         }, retryDelay);
-        }
     }
 
     static boolean sendBinderToUserApp(Binder binder, String packageName, int userId) {
