@@ -169,7 +169,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     }
                     BackendRow(
                         Icons.Outlined.Security,
-                        "Sserver / Serv.apk",
+                        "TKN Bridge / System Server",
                         "UID 1000",
                         when {
                             runtime.systemServerBridgeActive -> "ACTIVE • live system_server transaction verified"
@@ -192,7 +192,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                         else -> "Not detected"
                     })
                     FeatureRow(Icons.Outlined.Badge, "Native PM UID1000", if (runtime.nativeUid1000Verified) "VERIFIED • android.uid.system/1000" else "Not verified")
-                    FeatureRow(Icons.Outlined.AdminPanelSettings, "Serv UID1000", if (runtime.systemServerBridgeAttached) "ATTACHED" else if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID)) "READY" else "Not verified")
+                    FeatureRow(Icons.Outlined.AdminPanelSettings, "TKN Bridge UID1000", if (runtime.systemServerBridgeAttached) "ATTACHED" else if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID)) "READY" else "Not verified")
                     FeatureRow(Icons.Outlined.Link, "System Server Binder", if (runtime.systemServerBridgeActive) "VERIFIED • live UID1000 handshake" else "Not active")
                     HorizontalDivider()
                     FeatureRow(Icons.Outlined.Android, "Platform", "Android API ${runtime.androidApiLevel} • One UI ${runtime.oneUiVersion}")
@@ -236,8 +236,8 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     FeatureRow(Icons.Outlined.Route, "Selected backend", runtime.backendRegistry.selected.name.replace('_', ' '))
                     FeatureRow(Icons.Outlined.Badge, "Identity", selected?.let { "UID ${it.uid} • ${if (it.verified) "verified" else "discovered"}" } ?: "Unavailable")
                     FeatureRow(Icons.Outlined.Link, "System Server Binder", if (runtime.systemServerBridgeActive) "VERIFIED • capability mask 0x${runtime.systemServerCapabilities.toString(16)}" else "Not active")
-                    FeatureRow(Icons.Outlined.Security, "Native / PM UID 1000", if (runtime.nativeUid1000Verified) "VERIFIED • com.tokenx.uidtest • android.uid.system" else "Unavailable")
-                    FeatureRow(Icons.Outlined.Security, "Serv / System UID", if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID)) "READY • UID 1000" else "Unavailable")
+                    FeatureRow(Icons.Outlined.Security, "Native / PM UID 1000", if (runtime.nativeUid1000Verified) "VERIFIED • com.tokenx.bridgetest • android.uid.system" else "Unavailable")
+                    FeatureRow(Icons.Outlined.Security, "TKN Bridge / System UID", if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID)) "READY • UID 1000" else "Unavailable")
                     FeatureRow(Icons.Outlined.Terminal, "Root", if (runtime.backendRegistry.isReady(TokenXBackend.ROOT)) "READY • UID 0" else "Unavailable")
                 }
             }
@@ -420,8 +420,8 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                         "UID 1000 operations",
                         when {
                             runtime.systemServerBridgeActive -> "ACTIVE • execution handshake verified in system_server"
-                            runtime.systemServerBridgeAttached -> "ATTACHED • Serv.apk is UID 1000 in system_server; execution not yet verified"
-                            else -> "Not attached • Serv.apk compatibility path unavailable"
+                            runtime.systemServerBridgeAttached -> "ATTACHED • TKN Bridge identity received; live system_server verification pending"
+                            else -> "Not attached • TKN Bridge unavailable"
                         }
                     )
                     FeatureRow(Icons.Outlined.Link, "Shizuku compatibility", "Preserved • existing Binder model stays intact")
@@ -442,9 +442,9 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
             SectionTitle("About TokenX")
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    FeatureRow(Icons.Outlined.Security, "D2 Dual Gate", "Serv + FOTA remain held until the D2 security boundary is released")
+                    FeatureRow(Icons.Outlined.Security, "D2 Dual Gate", "TKN Bridge + FOTA remain held until the D2 security boundary is released")
                     FeatureRow(Icons.Outlined.Token, "Provisioning Vault", "Token Pulse • live Secure Chain • technical console")
-                    FeatureRow(Icons.Outlined.AdminPanelSettings, "Privileged payloads", "Native PM UID 1000 • Serv UID 1000 • FOTA system_app")
+                    FeatureRow(Icons.Outlined.AdminPanelSettings, "Privileged payloads", "TKN Bridge UID 1000 • FOTA system_app")
                     FeatureRow(Icons.Outlined.Extension, "Android 17 compatibility", "Receiver compatibility scoped to the tested FOTA path")
                     Text("System Server contribution: @Vikramaditya015", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
