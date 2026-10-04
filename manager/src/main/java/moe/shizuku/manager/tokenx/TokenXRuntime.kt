@@ -2,9 +2,6 @@ package moe.shizuku.manager.tokenx
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.IBinder
-import android.os.Parcel
-import android.os.ServiceManager
 import com.topjohnwu.superuser.Shell
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.utils.ShizukuStateMachine
@@ -19,7 +16,7 @@ data class TokenXRuntimeState(
     val backendState: TokenXBackendState,
     /** Controlled TokenX package was admitted by PackageManager to android.uid.system/1000. */
     val nativeUid1000Verified: Boolean,
-    /** Serv.apk is provisioned as UID 1000 and associated with the live system process. */
+    /** Standalone headless TokenX bridge returned a verified system_server identity. */
     val systemServerBridgeAttached: Boolean,
     /** A TokenX Binder transaction completed inside system_server as UID 1000. */
     val systemServerBridgeActive: Boolean,
@@ -51,16 +48,16 @@ object TokenXRuntime {
         val corePatchDetected = isInstalled(context.packageManager, "org.lsposed.corepatch")
         val oneUiVersion = readOneUiVersion()
 
-        // A package/manager being installed is not enough. Trust the UID 1000
-        // backend only after the Binder service in system_server answers our ping.
-        // Keep provisioning/attachment separate from live execution. A UID-1000 package
-        // association proves that the bridge is attached to Android's system process, but
-        // ACTIVE is reserved for a successful TokenX Binder transaction in system_server.
+        // The standalone headless bridge is authoritative for SYSTEM_SERVER.
+        // Package presence and the legacy Serv association are not accepted as proof.
+        TokenXBridgeClient.ensureBound(context)
+        val bridgeIdentity = TokenXBridgeClient.identity()
+        val bridgeAttached = bridgeIdentity != null
+        val bridgeActive = bridgeIdentity?.verifiedSystemServer == true
+        // Identity/health is intentionally the only contract in this first integration.
+        val bridgeCapabilities = 0
         val servUid1000 = isServUid1000()
         val nativeUid1000 = isNativeUid1000Verified()
-        val bridgeAttached = servUid1000 && isServAssociatedWithSystemServer()
-        val bridgeActive = bridgeAttached && pingSystemServerBridge()
-        val bridgeCapabilities = if (bridgeActive) readSystemServerCapabilities() else 0
         // Sserver is READY only when the live Shizuku Binder itself belongs to UID 1000.
         // Serv.apk being UID 1000 means the environment is provisioned, not that the
         // UID-1000 Shizuku server has actually published a usable Binder.
@@ -70,7 +67,7 @@ object TokenXRuntime {
             serverUid = uid,
             rootAvailable = root || uid == 0,
             nativeUid1000Available = nativeUid1000,
-            systemServerBridgeAvailable = sserverBinderReady,
+            systemServerBridgeAvailable = bridgeActive,
             shellAvailable = uid == 2000,
         )
 
@@ -109,36 +106,6 @@ object TokenXRuntime {
         )
     }
 
-    private fun pingSystemServerBridge(): Boolean = runCatching {
-        val binder = ServiceManager.getService(SYSTEM_SERVER_SERVICE) ?: return false
-        val data = Parcel.obtain()
-        val reply = Parcel.obtain()
-        try {
-            data.writeInterfaceToken(SYSTEM_SERVER_DESCRIPTOR)
-            if (!binder.transact(IBinder.FIRST_CALL_TRANSACTION, data, reply, 0)) return false
-            reply.readException()
-            reply.readInt() == 1000
-        } finally {
-            data.recycle()
-            reply.recycle()
-        }
-    }.getOrDefault(false)
-
-    private fun readSystemServerCapabilities(): Int = runCatching {
-        val binder = ServiceManager.getService(SYSTEM_SERVER_SERVICE) ?: return 0
-        val data = Parcel.obtain()
-        val reply = Parcel.obtain()
-        try {
-            data.writeInterfaceToken(SYSTEM_SERVER_DESCRIPTOR)
-            if (!binder.transact(IBinder.FIRST_CALL_TRANSACTION + 1, data, reply, 0)) return 0
-            reply.readException()
-            reply.readInt()
-        } finally {
-            data.recycle()
-            reply.recycle()
-        }
-    }.getOrDefault(0)
-
     /** Serv.apk is the Sserver backend. Package presence alone is insufficient: it must
      * resolve to Android's system UID before TokenX advertises UID 1000 as available. */
     private fun isServUid1000(): Boolean = runCatching {
@@ -159,13 +126,6 @@ object TokenXRuntime {
             sharedCheck.out.any { it.contains("android.uid.system/1000") }
     }.getOrDefault(false)
 
-    private fun isServAssociatedWithSystemServer(): Boolean = runCatching {
-        val result = Shell.cmd(
-            "dumpsys activity processes | grep -A16 -m1 -E '[0-9]+:system/1000' | grep -F 'com.vikram.exp'"
-        ).exec()
-        result.isSuccess && result.out.any { it.contains("com.vikram.exp") }
-    }.getOrDefault(false)
-
     private fun readOneUiVersion(): String = runCatching {
         val direct = Shell.cmd("getprop ro.build.version.oneui").exec().out.firstOrNull()?.trim().orEmpty()
         if (direct.isNotBlank()) return direct
@@ -180,6 +140,4 @@ object TokenXRuntime {
     private fun isInstalled(pm: PackageManager, packageName: String): Boolean =
         runCatching { pm.getPackageInfo(packageName, 0) }.isSuccess
 
-    private const val SYSTEM_SERVER_SERVICE = "tokenx_system_server"
-    private const val SYSTEM_SERVER_DESCRIPTOR = "moe.shizuku.tokenx.ISystemServerBridge"
 }
