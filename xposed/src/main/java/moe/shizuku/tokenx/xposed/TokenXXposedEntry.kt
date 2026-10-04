@@ -18,7 +18,9 @@ class TokenXXposedEntry : XposedModule() {
     }
 
     override fun onPackageLoaded(param: XposedModuleInterface.PackageLoadedParam) {
-        if (param.packageName != FOTA_PACKAGE || !param.isFirstPackage) return
+        if (param.packageName !in RECEIVER_COMPAT_PACKAGES || !param.isFirstPackage) return
+
+        val receiverCompatPackage = param.packageName
 
         runCatching {
             val contextImpl = Class.forName("android.app.ContextImpl", false, param.defaultClassLoader)
@@ -46,14 +48,14 @@ class TokenXXposedEntry : XposedModule() {
                             // the app omitted both modern export flags. Existing explicit flags
                             // are never rewritten, and the hook remains scoped to FOTA.
                             args[flagsIndex] = oldFlags or Context.RECEIVER_EXPORTED
-                            log(Log.INFO, TAG, "TOKENX_RECEIVER_COMPAT_APPLIED: flags=$oldFlags -> ${args[flagsIndex]}")
+                            log(Log.INFO, TAG, "TOKENX_RECEIVER_COMPAT_APPLIED: package=$receiverCompatPackage flags=$oldFlags -> ${args[flagsIndex]}")
                             chain.proceed(args)
                         } else {
                             chain.proceed()
                         }
                     }
             }
-            log(Log.INFO, TAG, "TOKENX_RECEIVER_COMPAT_READY: hooked ${methods.size} receiver overload(s)")
+            log(Log.INFO, TAG, "TOKENX_RECEIVER_COMPAT_READY: package=$receiverCompatPackage hooked ${methods.size} receiver overload(s)")
         }.onFailure {
             log(Log.ERROR, TAG, "TOKENX_RECEIVER_COMPAT_FAIL_OPEN: ${it.javaClass.simpleName}: ${it.message}")
         }
@@ -115,6 +117,8 @@ class TokenXXposedEntry : XposedModule() {
         const val TAG = "TokenX/Xposed"
         const val MANAGER_PACKAGE = "com.vikram.exp"
         const val FOTA_PACKAGE = "com.sdet.fotaagent"
+        const val RETAIL_MODE_PACKAGE = "com.samsung.sea.rm"
+        val RECEIVER_COMPAT_PACKAGES = setOf(FOTA_PACKAGE, RETAIL_MODE_PACKAGE)
         val embeddedStartScheduled = AtomicBoolean(false)
     }
 }
