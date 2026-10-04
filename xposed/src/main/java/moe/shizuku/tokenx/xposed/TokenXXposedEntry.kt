@@ -2,6 +2,7 @@ package moe.shizuku.tokenx.xposed
 
 import android.content.Context
 import android.os.Process
+import android.os.SystemProperties
 import android.util.Log
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
@@ -18,7 +19,13 @@ class TokenXXposedEntry : XposedModule() {
     }
 
     override fun onPackageLoaded(param: XposedModuleInterface.PackageLoadedParam) {
-        if (param.packageName !in RECEIVER_COMPAT_PACKAGES || !param.isFirstPackage) return
+        if (!param.isFirstPackage) return
+
+        if (param.packageName == SYSTEM_UI_PACKAGE) {
+            installStatusBarLabs(param)
+        }
+
+        if (param.packageName !in RECEIVER_COMPAT_PACKAGES) return
 
         val receiverCompatPackage = param.packageName
 
@@ -113,11 +120,59 @@ class TokenXXposedEntry : XposedModule() {
         }
     }
 
+    private fun installStatusBarLabs(param: XposedModuleInterface.PackageLoadedParam) {
+        if (!SystemProperties.getBoolean(PROP_ONEUIX_LABS, false) ||
+            !SystemProperties.getBoolean(PROP_STATUS_BAR_LABS, false)
+        ) {
+            log(Log.INFO, TAG, "ONEUIX_LABS_STATUSBAR_OFF")
+            return
+        }
+
+        // First OneUIX Labs hook: restore Samsung's Bluetooth status-bar icon by
+        // bypassing SystemUI icon simplification for Bluetooth slots only.
+        // Inspired by SoClear/OneUIX StatusBar.restoreBluetoothStatusBarIcon()
+        // (AGPL-3.0). Kept fail-open for One UI version drift.
+        runCatching {
+            val controller = Class.forName(
+                "com.android.systemui.statusbar.phone.ui.StatusBarIconControllerImpl",
+                false,
+                param.defaultClassLoader
+            )
+            val iconManager = Class.forName(
+                "com.android.systemui.statusbar.phone.ui.IconManager",
+                false,
+                param.defaultClassLoader
+            )
+            val method = controller.getDeclaredMethod(
+                "hideBySimplification",
+                iconManager,
+                String::class.java
+            )
+            hook(method)
+                .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+                .intercept { chain ->
+                    val slot = chain.args.getOrNull(1) as? String
+                    if (slot == "bluetooth" || slot == "bluetooth_connected") false
+                    else chain.proceed()
+                }
+            log(Log.INFO, TAG, "ONEUIX_LABS_STATUSBAR_READY: bluetooth icon simplification hook installed")
+        }.onFailure {
+            log(
+                Log.WARN,
+                TAG,
+                "ONEUIX_LABS_STATUSBAR_FAIL_OPEN: ${it.javaClass.simpleName}: ${it.message}"
+            )
+        }
+    }
+
     private companion object {
         const val TAG = "TokenX/Xposed"
         const val MANAGER_PACKAGE = "com.vikram.exp"
         const val FOTA_PACKAGE = "com.sdet.fotaagent"
         const val RETAIL_MODE_PACKAGE = "com.samsung.sea.rm"
+        const val SYSTEM_UI_PACKAGE = "com.android.systemui"
+        const val PROP_ONEUIX_LABS = "persist.tokenx.labs.oneuix"
+        const val PROP_STATUS_BAR_LABS = "persist.tokenx.labs.statusbar"
         val RECEIVER_COMPAT_PACKAGES = setOf(FOTA_PACKAGE, RETAIL_MODE_PACKAGE)
         val embeddedStartScheduled = AtomicBoolean(false)
     }
