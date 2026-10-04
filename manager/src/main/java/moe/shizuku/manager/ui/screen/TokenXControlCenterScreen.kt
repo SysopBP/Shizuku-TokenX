@@ -243,11 +243,13 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     PreviewSwitch("Enable OneUIX Labs", "Master gate for experimental Samsung / SystemUI hooks.", oneUiXLabsEnabled) {
                         oneUiXLabsEnabled = it
                         prefs.edit().putBoolean("tokenx_oneuix_labs", it).apply()
+                        powerScope.launch { Shell.cmd("setprop persist.tokenx.labs.oneuix " + if (it) "1" else "0").exec() }
                     }
                     HorizontalDivider()
                     PreviewSwitch("Status bar experiments", "Clock, battery, icon and status-bar behavior staging.", oneUiXStatusBar) {
                         oneUiXStatusBar = it
                         prefs.edit().putBoolean("tokenx_oneuix_statusbar", it).apply()
+                        powerScope.launch { Shell.cmd("setprop persist.tokenx.labs.statusbar " + if (it) "1" else "0").exec() }
                     }
                     PreviewSwitch("Quick Settings experiments", "QS layout, tile and panel behavior staging.", oneUiXQuickSettings) {
                         oneUiXQuickSettings = it
