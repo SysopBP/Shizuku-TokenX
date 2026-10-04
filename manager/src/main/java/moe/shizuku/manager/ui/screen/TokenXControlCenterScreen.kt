@@ -22,6 +22,8 @@ import moe.shizuku.manager.tokenx.TokenXCapability
 import moe.shizuku.manager.tokenx.TokenXBackend
 import moe.shizuku.manager.tokenx.TokenXRouteState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import com.topjohnwu.superuser.Shell
 import androidx.compose.ui.platform.LocalContext
 import moe.shizuku.manager.utils.ShizukuStateMachine
 
@@ -55,6 +57,23 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
     // whenever this screen/app process is recreated, including after reboot.
     var systemServerOperations by remember { mutableStateOf(false) }
     var showSystemServerWarning by remember { mutableStateOf(false) }
+    var pendingPowerAction by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val powerScope = rememberCoroutineScope()
+
+    pendingPowerAction?.let { (label, command) ->
+        AlertDialog(
+            onDismissRequest = { pendingPowerAction = null },
+            title = { Text("$label?") },
+            text = { Text("TokenX will request $label through the root backend. No FOTA agent, recovery command file, update package, or wipe operation is used.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingPowerAction = null
+                    powerScope.launch { Shell.cmd(command).exec() }
+                }) { Text(label) }
+            },
+            dismissButton = { TextButton(onClick = { pendingPowerAction = null }) { Text("Cancel") } }
+        )
+    }
 
     if (showSystemServerWarning) {
         AlertDialog(
@@ -205,6 +224,43 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     PreviewSwitch("Recovery handoff", "Prepare fallback ownership when the preferred backend cannot confirm.", recovery) {
                         recovery = it; prefs.edit().putBoolean("tokenx_recovery_preview", it).apply()
                     }
+                }
+            }
+
+            SectionTitle("Power Controls")
+            TokenXGlassCard {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Privileged device controls", style = MaterialTheme.typography.titleMedium)
+                    Text("Root backend only • isolated from Samsung FOTA/update paths.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { pendingPowerAction = "Reboot" to "reboot" },
+                            enabled = runtime.backendState.rootAvailable,
+                            modifier = Modifier.weight(1f)
+                        ) { Text("Reboot") }
+                        Button(
+                            onClick = { pendingPowerAction = "Recovery Reboot" to "reboot recovery" },
+                            enabled = runtime.backendState.rootAvailable,
+                            modifier = Modifier.weight(1f)
+                        ) { Text("Recovery") }
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = { pendingPowerAction = "SystemUI Restart" to "pkill -TERM -f com.android.systemui" },
+                            enabled = runtime.backendState.rootAvailable,
+                            modifier = Modifier.weight(1f)
+                        ) { Text("SystemUI") }
+                        OutlinedButton(
+                            onClick = { pendingPowerAction = "Soft Reboot" to "setprop ctl.restart zygote" },
+                            enabled = runtime.backendState.rootAvailable,
+                            modifier = Modifier.weight(1f)
+                        ) { Text("Soft Reboot") }
+                    }
+                    FeatureRow(
+                        Icons.Outlined.RestartAlt,
+                        "Recovery Reboot",
+                        if (runtime.backendState.rootAvailable) "AVAILABLE • root backend" else "Unavailable • root required"
+                    )
                 }
             }
 
