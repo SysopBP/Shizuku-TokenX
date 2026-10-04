@@ -49,7 +49,7 @@ object TokenXRuntime {
         val oneUiVersion = readOneUiVersion()
 
         // The standalone headless bridge is authoritative for SYSTEM_SERVER.
-        // Package presence and the legacy Serv association are not accepted as proof.
+        // Package presence and the legacy backend association are not accepted as proof.
         TokenXBridgeClient.ensureBound(context)
         val bridgeIdentity = TokenXBridgeClient.identity()
         val bridgeAttached = bridgeIdentity != null
@@ -109,9 +109,9 @@ object TokenXRuntime {
      * assigned UID and the shared-user record must agree before TokenX advertises it.
      */
     private fun isNativeUid1000Verified(): Boolean = runCatching {
-        val uidCheck = Shell.cmd("cmd package list packages -U | grep -F 'package:com.tokenx.uidtest uid:1000'").exec()
-        if (!uidCheck.isSuccess || uidCheck.out.none { it.contains("package:com.tokenx.uidtest uid:1000") }) return false
-        val sharedCheck = Shell.cmd("dumpsys package com.tokenx.uidtest | grep -E 'appId=1000|sharedUser=.*android.uid.system/1000'").exec()
+        val uidCheck = Shell.cmd("cmd package list packages -U | grep -F 'package:com.tokenx.bridgetest uid:1000'").exec()
+        if (!uidCheck.isSuccess || uidCheck.out.none { it.contains("package:com.tokenx.bridgetest uid:1000") }) return false
+        val sharedCheck = Shell.cmd("dumpsys package com.tokenx.bridgetest | grep -E 'appId=1000|sharedUser=.*android.uid.system/1000'").exec()
         sharedCheck.isSuccess &&
             sharedCheck.out.any { it.contains("appId=1000") } &&
             sharedCheck.out.any { it.contains("android.uid.system/1000") }
