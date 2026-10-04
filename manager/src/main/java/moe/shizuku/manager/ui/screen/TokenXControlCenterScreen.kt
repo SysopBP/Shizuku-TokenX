@@ -23,6 +23,8 @@ import moe.shizuku.manager.tokenx.TokenXFotaBridge
 import moe.shizuku.manager.tokenx.TokenXFotaBridgeState
 import moe.shizuku.manager.tokenx.TokenXBackend
 import moe.shizuku.manager.tokenx.TokenXRouteState
+import moe.shizuku.manager.tokenx.TokenXRetailBridge
+import moe.shizuku.manager.tokenx.TokenXRetailState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.topjohnwu.superuser.Shell
@@ -139,6 +141,12 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                             else -> "AVAILABLE check pending • no verified system_server attachment"
                         }
                     )
+                    BackendRow(
+                        Icons.Outlined.Storefront,
+                        "Retail System",
+                        "UID 1000",
+                        runtime.retailSystem.detail
+                    )
                     BackendRow(Icons.Outlined.Terminal, "Shell", "UID 2000", if (runtime.backendState.shellAvailable) "ACTIVE • compatibility fallback" else "Standby")
                     BackendRow(Icons.Outlined.Extension, "Xposed / LSPosed", "system_server bridge", when { runtime.xposedBridgeActive -> "ACTIVE • handshake verified"; runtime.xposedFrameworkDetected -> "Framework detected • bridge waiting"; else -> "Not detected" })
                 }
@@ -178,6 +186,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     FeatureRow(Icons.Outlined.Link, "System Server Binder", if (runtime.systemServerBridgeActive) "VERIFIED • capability mask 0x${runtime.systemServerCapabilities.toString(16)}" else "Not active")
                     FeatureRow(Icons.Outlined.Security, "Serv / System UID", if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID)) "READY • UID 1000" else "Unavailable")
                     FeatureRow(Icons.Outlined.Terminal, "Root", if (runtime.backendRegistry.isReady(TokenXBackend.ROOT)) "READY • UID 0" else "Unavailable")
+                    FeatureRow(Icons.Outlined.Storefront, "Retail System", runtime.retailSystem.detail)
                 }
             }
 
@@ -266,6 +275,47 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                 }
             }
 
+            SectionTitle("Retail System")
+            TokenXGlassCard {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    FeatureRow(Icons.Outlined.Storefront, "Samsung Retail Mode", runtime.retailSystem.detail)
+                    FeatureRow(
+                        Icons.Outlined.Badge,
+                        "Package identity",
+                        if (runtime.retailSystem.installed) "com.samsung.sea.rm • Retail command interface detected" else "Not installed"
+                    )
+                    FeatureRow(
+                        Icons.Outlined.Security,
+                        "Identity gate",
+                        if (runtime.retailSystem.state == TokenXRetailState.UID1000_VERIFIED)
+                            "VERIFIED • UID 1000"
+                        else
+                            "LOCKED • session must pass id probe"
+                    )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = {
+                                TokenXRetailBridge.connect { }
+                            },
+                            enabled = runtime.retailSystem.installed &&
+                                runtime.retailSystem.state != TokenXRetailState.CONNECTING &&
+                                runtime.retailSystem.state != TokenXRetailState.UID1000_VERIFIED,
+                            modifier = Modifier.weight(1f)
+                        ) { Text(if (runtime.retailSystem.state == TokenXRetailState.CONNECTING) "Connecting…" else "Connect") }
+                        OutlinedButton(
+                            onClick = { TokenXRetailBridge.disconnect() },
+                            enabled = runtime.retailSystem.connected,
+                            modifier = Modifier.weight(1f)
+                        ) { Text("Disconnect") }
+                    }
+                    Text(
+                        "Retail uses its verified socket transport directly. rish remains unchanged for Shizuku/System routes.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
             SectionTitle("Power Controls")
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -338,8 +388,8 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     FeatureRow(Icons.Outlined.Security, "D2 Dual Gate", "Serv + FOTA remain held until the D2 security boundary is released")
                     FeatureRow(Icons.Outlined.Token, "Provisioning Vault", "Token Pulse • live Secure Chain • technical console")
-                    FeatureRow(Icons.Outlined.AdminPanelSettings, "Privileged payloads", "Serv UID 1000 • FOTA UID 1000 / system_app")
-                    FeatureRow(Icons.Outlined.Extension, "Android 17 compatibility", "Receiver Flag Fix currently required for the tested FOTA path")
+                    FeatureRow(Icons.Outlined.AdminPanelSettings, "Privileged payloads", "Serv UID 1000 • FOTA system_app • Retail UID 1000 transport")
+                    FeatureRow(Icons.Outlined.Extension, "Android 17 compatibility", "Receiver Flag Fix scoped to tested FOTA + Samsung Retail Mode paths")
                     Text("System Server contribution: @Vikramaditya015", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
