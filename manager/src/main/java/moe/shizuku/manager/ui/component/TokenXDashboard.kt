@@ -287,9 +287,6 @@ fun TokenXDashboard(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatusLine(Icons.Rounded.VerifiedUser, "Retail", if (retail.connected) "UID 1000" else if (retail.installed) "Ready" else "Missing", Modifier.weight(1f))
                 StatusLine(Icons.Rounded.Token, "Token Boot", "Session coordination", Modifier.weight(1f))
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusLine(Icons.Rounded.Token, "Token Boot", "Session coordination", Modifier.weight(1f))
                 StatusLine(Icons.Rounded.Security, "Watchdog", "Existing engine", Modifier.weight(1f))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
