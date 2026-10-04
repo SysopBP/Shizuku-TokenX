@@ -17,6 +17,21 @@ data class TokenXBridgeIdentity(
         get() = uid == 1000 && cmdline == "system_server" && selinux.startsWith("u:r:system_server:s0")
 }
 
+data class TokenXBridgeFunctionalResult(
+    val pid: Int,
+    val uid: Int,
+    val selinux: String,
+    val checks: List<String>,
+) {
+    val passCount: Int get() = checks.count { it.startsWith("PASS ") }
+    val denyCount: Int get() = checks.count { it.startsWith("DENY ") }
+    val verified: Boolean
+        get() = uid == 1000 &&
+            selinux.startsWith("u:r:system_server:s0") &&
+            passCount > 0 &&
+            denyCount == 0
+}
+
 /**
  * Read-only client for the standalone TokenX headless bridge.
  *
@@ -27,6 +42,7 @@ object TokenXBridgeClient {
     private const val BRIDGE_PACKAGE = "com.tokenx.bridgetest"
     private const val BRIDGE_SERVICE = "com.tokenx.bridgetest.IdentityService"
     private const val TRANSACTION_GET_IDENTITY = IBinder.FIRST_CALL_TRANSACTION
+    private const val TRANSACTION_RUN_FUNCTIONAL_CHECKS = IBinder.FIRST_CALL_TRANSACTION + 1
 
     @Volatile private var binder: IBinder? = null
     @Volatile private var identity: TokenXBridgeIdentity? = null
@@ -93,6 +109,36 @@ object TokenXBridgeClient {
             return null
         }
         return queryIdentity(current)?.also { identity = it } ?: identity
+    }
+
+
+    /**
+     * Optional v2 read-only capability probe. Older BridgeTest backends reject this
+     * transaction cleanly, so identity verification remains backward compatible.
+     */
+    fun functionalResult(): TokenXBridgeFunctionalResult? {
+        val remote = binder ?: return null
+        if (!remote.isBinderAlive) return null
+        return runCatching {
+            val data = Parcel.obtain()
+            val reply = Parcel.obtain()
+            try {
+                if (!remote.transact(TRANSACTION_RUN_FUNCTIONAL_CHECKS, data, reply, 0)) return null
+                reply.readException()
+                val pid = reply.readInt()
+                val uid = reply.readInt()
+                val selinux = reply.readString().orEmpty()
+                val checks = reply.readString().orEmpty()
+                    .lineSequence()
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+                    .toList()
+                TokenXBridgeFunctionalResult(pid, uid, selinux, checks)
+            } finally {
+                data.recycle()
+                reply.recycle()
+            }
+        }.getOrNull()
     }
 
     private fun queryIdentity(remote: IBinder): TokenXBridgeIdentity? = runCatching {
