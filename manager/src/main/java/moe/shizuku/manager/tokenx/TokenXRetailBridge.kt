@@ -101,7 +101,7 @@ object TokenXRetailBridge {
                     while (System.currentTimeMillis() < deadline) {
                         if (reader.ready()) {
                             val line = reader.readLine() ?: break
-                            append(line).append('\\n')
+                            appendLine(line)
                             if (line.contains("uid=")) break
                         } else Thread.sleep(40)
                     }
@@ -152,7 +152,7 @@ object TokenXRetailBridge {
                 }
                 val line = reader.readLine() ?: break
                 if (line.startsWith(marker)) break
-                append(line).append('\\n')
+                appendLine(line)
             }
         }.trimEnd()
     }
