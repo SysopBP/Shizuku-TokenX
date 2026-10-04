@@ -60,6 +60,7 @@ class TokenXXposedEntry : XposedModule() {
     }
 
     override fun onSystemServerStarting(param: XposedModuleInterface.SystemServerStartingParam) {
+        log(Log.INFO, TAG, "BINDER_HOOK_ENTERED: onSystemServerStarting uid=${Process.myUid()} pid=${Process.myPid()}")
         if (Process.myUid() != Process.SYSTEM_UID) {
             log(Log.WARN, TAG, "refusing bridge outside UID 1000 (uid=${Process.myUid()})")
             return
@@ -79,15 +80,18 @@ class TokenXXposedEntry : XposedModule() {
 
             Thread({
                 log(Log.INFO, TAG, "PUBLISH_BEGIN: async embedded backend startup")
+                log(Log.INFO, TAG, "BINDER_CREATE_BEGIN: dispatching embedded ShizukuService startup")
                 runCatching {
                     ShizukuService.startEmbeddedSystemServer()
                 }.onSuccess {
+                    log(Log.INFO, TAG, "BINDER_CREATE_RETURNED: embedded startup completed without exception")
                     log(
                         Log.INFO,
                         TAG,
                         "PUBLISH_OK: BOOT_TOKEN CONFIRMED: embedded Shizuku backend started in system_server UID ${Process.myUid()} PID ${Process.myPid()} via provider binder handoff"
                     )
                 }.onFailure {
+                    log(Log.ERROR, TAG, "BINDER_CREATE_FAILED: ${it.javaClass.simpleName}: ${it.message}")
                     // Fail open: never crash/terminate system_server because TokenX could not
                     // publish its Binder during early boot. Root/shell can recover after boot.
                     log(
