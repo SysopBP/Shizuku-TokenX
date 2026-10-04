@@ -110,7 +110,7 @@ object SystemUidProvisioner {
             transcript.append(result.output)
             if (!result.success) return Result(false, result.exitCode, transcript.toString(), result.command)
         }
-        transcript.append("NOTE=DEX fallback presence is audited only; the Vault does not execute it or claim it was used\n")
+        transcript.append("NOTE=Legacy DEX fallback is optional/retired; STANDBY does not fail the Vault and TokenX does not execute it\n")
         transcript.append("NOTE=Receiver Compatibility is integrated into TokenX Xposed; no external Receiver Flag Fix APK is required\n")
         return Result(true, 0, transcript.toString(), "TokenX staged provisioning audit")
     }
