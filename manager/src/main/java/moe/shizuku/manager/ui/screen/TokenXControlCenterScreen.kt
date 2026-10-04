@@ -149,6 +149,28 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                 }
             }
 
+            SectionTitle("System Hook Health")
+            TokenXGlassCard {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FeatureRow(Icons.Outlined.Extension, "LSPosed framework", if (runtime.xposedFrameworkDetected) "DETECTED" else "Not detected")
+                    FeatureRow(Icons.Outlined.Security, "CorePatch", when {
+                        runtime.corePatchDetected && runtime.nativeUid1000Verified -> "DETECTED • shared UID bypass behavior verified"
+                        runtime.corePatchDetected -> "DETECTED • PM UID1000 effect not yet verified"
+                        else -> "Not detected"
+                    })
+                    FeatureRow(Icons.Outlined.Badge, "Native PM UID1000", if (runtime.nativeUid1000Verified) "VERIFIED • android.uid.system/1000" else "Not verified")
+                    FeatureRow(Icons.Outlined.AdminPanelSettings, "Serv UID1000", if (runtime.systemServerBridgeAttached) "ATTACHED" else if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID)) "READY" else "Not verified")
+                    FeatureRow(Icons.Outlined.Link, "System Server Binder", if (runtime.systemServerBridgeActive) "VERIFIED • live UID1000 handshake" else "Not active")
+                    HorizontalDivider()
+                    FeatureRow(Icons.Outlined.Android, "Platform", "Android API ${runtime.androidApiLevel} • One UI ${runtime.oneUiVersion}")
+                    Text(
+                        "Health checks are observational. TokenX does not enable KnoxPatch hooks or alter Knox/attestation behavior.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
             SectionTitle("Backend Registry")
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
