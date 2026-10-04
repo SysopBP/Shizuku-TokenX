@@ -133,7 +133,7 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                 LabTile(
                     icon = Icons.Outlined.BugReport,
                     label = "Secure Chain Monitor",
-                    badge = "LIVE · SERV · FOTA",
+                    badge = "LIVE · TKN BRIDGE · FOTA",
                     onClick = { onOpenDetail(Detail.TOKENX) }
                 )
             }
