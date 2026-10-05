@@ -7,6 +7,7 @@ on:
       - tokenx-dev
       - tokenx-recovery
       - tokenx-uid1000-cleanup
+      - tokenx-409-ibinder-handoff
     paths:
       - 'manager/**'
       - 'xposed/**'
