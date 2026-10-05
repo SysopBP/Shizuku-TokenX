@@ -796,13 +796,13 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         sendBinderToManager(this);
     }
 
-    private static void sendBinderToManager(Binder binder) {
+    private static void sendBinderToManager(IBinder binder) {
         for (int userId : UserManagerApis.getUserIdsNoThrow()) {
             sendBinderToManager(binder, userId);
         }
     }
 
-    static void sendBinderToManager(Binder binder, int userId) {
+    static void sendBinderToManager(IBinder binder, int userId) {
         tokenxTrace("TOKENX_HANDOFF_TARGET user=" + userId + " provider=" + MANAGER_APPLICATION_ID + ".shizuku");
         ServerLog.mark("handing the binder to " + MANAGER_APPLICATION_ID + " in user " + userId);
         boolean success = sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
@@ -859,7 +859,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }, retryDelay);
     }
 
-    static boolean sendBinderToUserApp(Binder binder, String packageName, int userId) {
+    static boolean sendBinderToUserApp(IBinder binder, String packageName, int userId) {
         try {
             DeviceIdleControllerApis.addPowerSaveTempWhitelistApp(packageName, 30 * 1000, userId,
                     316/* PowerExemptionManager#REASON_SHELL */, "shell");
@@ -894,6 +894,10 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             }
 
             Bundle extra = new Bundle();
+            // TokenX 409: keep this transport IBinder-only. Never hand Parcel a
+            // concrete service/wrapper object from an embedded system_server backend.
+            tokenxTrace("TOKENX_IBINDER_HANDOFF class=" + binder.getClass().getName()
+                    + " alive=" + binder.isBinderAlive());
             extra.putParcelable("moe.shizuku.privileged.api.intent.extra.BINDER", new BinderContainer(binder));
 
             Bundle reply = IContentProviderUtils.callCompat(provider, null, name, "sendBinder", null, extra);
