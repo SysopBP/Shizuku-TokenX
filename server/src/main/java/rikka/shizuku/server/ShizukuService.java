@@ -837,7 +837,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
      * manager provider is starting can delay the framework itself.
      */
     private static void scheduleManagerBinderRetry(
-            Binder binder, int userId, long[] retryDelays, int index) {
+            IBinder binder, int userId, long[] retryDelays, int index) {
         if (index >= retryDelays.length) {
             ServerLog.mark("manager binder handoff retries exhausted; server remains alive");
             LOGGER.e("manager binder handoff retries exhausted in user %d", userId);
