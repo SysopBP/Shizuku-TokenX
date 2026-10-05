@@ -20,6 +20,7 @@ object TokenXSystemServerBridge {
     private const val TRANSACTION_GET_IDENTITY = 1
     private const val RETRY_INITIAL_MS = 1_000L
     private const val RETRY_MAX_MS = 10_000L
+    private const val BIND_TIMEOUT_MS = 5_000L
 
     data class BackendIdentity(val pid: Int, val uid: Int, val selinux: String?, val process: String?)
 
@@ -32,6 +33,13 @@ object TokenXSystemServerBridge {
     @Volatile private var retryDelayMs = RETRY_INITIAL_MS
     private var appContext: Context? = null
     private var binder: IBinder? = null
+
+    private val bindTimeoutRunnable = Runnable {
+        if (binding.compareAndSet(true, false)) {
+            Log.w(TAG, "BRIDGE_BIND_TIMEOUT component=$PACKAGE/$SERVICE; clearing stale bind and retrying")
+            scheduleRetry(immediate = true)
+        }
+    }
 
     private val retryRunnable = Runnable {
         if (!autoConnect) return@Runnable
@@ -50,6 +58,7 @@ object TokenXSystemServerBridge {
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            handler.removeCallbacks(bindTimeoutRunnable)
             binder = service
             connected = service.isBinderAlive
             binderDescriptor = runCatching { service.interfaceDescriptor }.getOrNull()
@@ -83,6 +92,7 @@ object TokenXSystemServerBridge {
     }
 
     private fun clearConnection(reason: String) {
+        handler.removeCallbacks(bindTimeoutRunnable)
         connected = false
         binderDescriptor = null
         backendIdentity = null
@@ -177,15 +187,45 @@ object TokenXSystemServerBridge {
         }
         if (!binding.compareAndSet(false, true)) return false
 
-        val intent = Intent().setComponent(ComponentName(PACKAGE, SERVICE))
+        val component = ComponentName(PACKAGE, SERVICE)
+        val intent = Intent().setComponent(component)
+
+        // Log package/service resolution before binding. This separates a missing or
+        // disabled IdentityService from a Binder callback/lifecycle failure.
+        val serviceInfo = runCatching {
+            context.packageManager.getServiceInfo(component, 0)
+        }.onFailure {
+            Log.e(TAG, "BRIDGE_SERVICE_LOOKUP_FAILED component=$component", it)
+        }.getOrNull()
+
+        if (serviceInfo == null) {
+            binding.set(false)
+            Log.e(TAG, "BRIDGE_SERVICE_NOT_FOUND component=$component")
+            return false
+        }
+
+        Log.i(
+            TAG,
+            "BRIDGE_SERVICE_FOUND component=$component enabled=${serviceInfo.enabled} " +
+                "exported=${serviceInfo.exported} permission=${serviceInfo.permission} " +
+                "process=${serviceInfo.processName}"
+        )
+
         val ok = runCatching {
             context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
         }.onFailure {
-            Log.e(TAG, "BRIDGE_BIND_FAILED", it)
+            Log.e(TAG, "BRIDGE_BIND_FAILED component=$component", it)
         }.getOrDefault(false)
 
-        if (!ok) binding.set(false)
-        Log.i(TAG, if (ok) "BRIDGE_BIND_REQUESTED" else "BRIDGE_BIND_REJECTED")
+        if (!ok) {
+            binding.set(false)
+            handler.removeCallbacks(bindTimeoutRunnable)
+            Log.e(TAG, "BRIDGE_BIND_REJECTED component=$component")
+        } else {
+            handler.removeCallbacks(bindTimeoutRunnable)
+            handler.postDelayed(bindTimeoutRunnable, BIND_TIMEOUT_MS)
+            Log.i(TAG, "BRIDGE_BIND_REQUESTED component=$component timeoutMs=$BIND_TIMEOUT_MS")
+        }
         return ok
     }
 }
