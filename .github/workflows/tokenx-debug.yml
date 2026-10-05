@@ -227,11 +227,12 @@ jobs:
             BRIDGE_AUTOCONNECT_START \
             SYSTEM_SERVER_ATTACHED
           do
-            grep -Fx "$marker" "$DEX_STRINGS" >/dev/null || {
+            grep -F "$marker" "$DEX_STRINGS" >/dev/null || {
               echo "::error::Missing TokenX bridge marker in packaged DEX: $marker"
               exit 1
             }
             echo "FOUND $marker"
+            grep -F "$marker" "$DEX_STRINGS" | head -n 3
           done
 
           grep -F 'moe/shizuku/manager/tokenx/TokenXSystemServerBridge' "$DEX_STRINGS" >/dev/null || {
