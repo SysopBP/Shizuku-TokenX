@@ -51,6 +51,7 @@ object TokenXSystemServerBridge {
             binding.set(false)
             runCatching { service.linkToDeath(deathRecipient, 0) }
             Log.i(TAG, "BRIDGE_CONNECTED component=$name clientUid=${Process.myUid()} clientPid=${Process.myPid()} descriptor=$binderDescriptor")
+            querySystemServerIdentity(service)
 
             // Functional proof: execute the existing read-only RPC through the returned Binder.
             queryIdentity(service)
