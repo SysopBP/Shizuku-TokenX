@@ -4,8 +4,12 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.Parcel
+import android.util.Log
+import java.util.concurrent.atomic.AtomicBoolean
 
 data class TokenXBridgeIdentity(
     val pid: Int,
@@ -43,20 +47,30 @@ object TokenXBridgeClient {
     private const val BRIDGE_SERVICE = "com.tokenx.bridgetest.IdentityService"
     private const val TRANSACTION_GET_IDENTITY = IBinder.FIRST_CALL_TRANSACTION
     private const val TRANSACTION_RUN_FUNCTIONAL_CHECKS = IBinder.FIRST_CALL_TRANSACTION + 1
+    private const val TAG = "TokenX/BridgeClient"
+    private const val BIND_TIMEOUT_MS = 5_000L
 
     @Volatile private var binder: IBinder? = null
     @Volatile private var identity: TokenXBridgeIdentity? = null
-    @Volatile private var binding = false
+    private val binding = AtomicBoolean(false)
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val bindTimeout = Runnable {
+        if (binding.compareAndSet(true, false)) {
+            Log.w(TAG, "BRIDGE_BIND_TIMEOUT stale_binding_cleared")
+        }
+    }
 
     private val deathRecipient = IBinder.DeathRecipient {
         binder = null
         identity = null
-        binding = false
+        binding.set(false)
     }
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            binding = false
+            handler.removeCallbacks(bindTimeout)
+            binding.set(false)
             binder = service
             if (service == null) {
                 identity = null
@@ -69,19 +83,19 @@ object TokenXBridgeClient {
         override fun onServiceDisconnected(name: ComponentName?) {
             binder = null
             identity = null
-            binding = false
+            binding.set(false)
         }
 
         override fun onBindingDied(name: ComponentName?) {
             binder = null
             identity = null
-            binding = false
+            binding.set(false)
         }
 
         override fun onNullBinding(name: ComponentName?) {
             binder = null
             identity = null
-            binding = false
+            binding.set(false)
         }
     }
 
@@ -91,13 +105,20 @@ object TokenXBridgeClient {
             identity = queryIdentity(current)
             return
         }
-        if (binding) return
-        binding = true
+        if (!binding.compareAndSet(false, true)) return
         val intent = Intent().setComponent(ComponentName(BRIDGE_PACKAGE, BRIDGE_SERVICE))
         val ok = runCatching {
             context.applicationContext.bindService(intent, connection, Context.BIND_AUTO_CREATE)
         }.getOrDefault(false)
-        if (!ok) binding = false
+        if (!ok) {
+            binding.set(false)
+            handler.removeCallbacks(bindTimeout)
+            Log.w(TAG, "BRIDGE_BIND_REJECTED stale_state_cleared")
+        } else {
+            handler.removeCallbacks(bindTimeout)
+            handler.postDelayed(bindTimeout, BIND_TIMEOUT_MS)
+            Log.i(TAG, "BRIDGE_BIND_REQUESTED timeoutMs=$BIND_TIMEOUT_MS")
+        }
     }
 
     fun identity(): TokenXBridgeIdentity? {
@@ -105,7 +126,7 @@ object TokenXBridgeClient {
         if (!current.isBinderAlive) {
             binder = null
             identity = null
-            binding = false
+            binding.set(false)
             return null
         }
         return queryIdentity(current)?.also { identity = it } ?: identity
