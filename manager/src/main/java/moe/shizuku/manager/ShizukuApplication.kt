@@ -9,6 +9,7 @@ import com.topjohnwu.superuser.Shell
 import moe.shizuku.manager.ktx.logd
 import moe.shizuku.manager.authorization.AuthorizationManager
 import moe.shizuku.manager.service.WatchdogService
+import moe.shizuku.manager.tokenx.TokenXSystemServerBridge
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import rikka.core.util.BuildUtils.atLeast30
@@ -71,6 +72,8 @@ class ShizukuApplication : Application() {
         application = this
         appContext = applicationContext
         init(this)
+        // Keep run 395's Shizuku UserService path and also attach to the proven system_server IdentityService.
+        TokenXSystemServerBridge.connect(this)
     }
 
 }
