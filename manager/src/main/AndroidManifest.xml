@@ -87,7 +87,7 @@
         tools:node="remove" />
 
     <queries>
-        <package android:name="moe.shizuku.privileged.api" />
+        <package android:name="moe.shizuku.privileged.api" />\n        <!-- Known-good system_server endpoint used by TokenXSystemServerBridge. -->\n        <package android:name="com.tokenx.bridgetest" />
         <!-- Passive TokenX FOTA bridge discovery only. No FOTA intents are transmitted. -->
         <package android:name="com.sdet.fotaagent" />
         <!-- TokenX only uses these for framework-presence discovery. An installed manager is not an active bridge. -->
