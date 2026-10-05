@@ -205,6 +205,42 @@ jobs:
           unzip -p "$FILE" 'classes*.dex' | strings | grep -F 'TokenXXposedEntry' >/dev/null
           echo "TokenX modern Xposed descriptors + entry class verified in manager APK"
 
+      - name: Verify TokenX bridge lifecycle code
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="$(find manager/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          test -n "$FILE"
+          echo "APK=$FILE"
+          echo "HEAD=$(git rev-parse HEAD)"
+          sha256sum "$FILE"
+
+          # APK entries are compressed, so inspect the extracted DEX stream rather
+          # than grepping the APK container itself.
+          DEX_STRINGS="$(mktemp)"
+          unzip -p "$FILE" 'classes*.dex' | strings > "$DEX_STRINGS"
+
+          for marker in \
+            MAIN_ACTIVITY_AUTOCONNECT_START \
+            MANAGER_PROVIDER_AUTOCONNECT_START \
+            MANAGER_PROVIDER_BINDER_RECEIVED \
+            BRIDGE_AUTOCONNECT_START \
+            SYSTEM_SERVER_ATTACHED
+          do
+            grep -Fx "$marker" "$DEX_STRINGS" >/dev/null || {
+              echo "::error::Missing TokenX bridge marker in packaged DEX: $marker"
+              exit 1
+            }
+            echo "FOUND $marker"
+          done
+
+          grep -F 'moe/shizuku/manager/tokenx/TokenXSystemServerBridge' "$DEX_STRINGS" >/dev/null || {
+            echo "::error::TokenXSystemServerBridge class missing from packaged DEX"
+            exit 1
+          }
+          echo "TokenX bridge lifecycle code verified in packaged APK"
+          rm -f "$DEX_STRINGS"
+
       - name: Collect APK
         id: apk
         shell: bash
