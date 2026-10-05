@@ -17,6 +17,7 @@ import rikka.shizuku.Shizuku
 import moe.shizuku.manager.tokenx.TokenXBootOwner
 import moe.shizuku.manager.tokenx.TokenXBootSession
 import moe.shizuku.manager.tokenx.TokenXBootState
+import moe.shizuku.manager.tokenx.TokenXShizukuUserServiceClient
 
 private val appContext = ShizukuApplication.appContext
 
@@ -29,10 +30,16 @@ object ShizukuStateMachine {
 
     init {
         Shizuku.addBinderReceivedListenerSticky(
-            Shizuku.OnBinderReceivedListener { set(State.RUNNING) }
+            Shizuku.OnBinderReceivedListener {
+                set(State.RUNNING)
+                TokenXShizukuUserServiceClient.ensureBound()
+            }
         )
         Shizuku.addBinderDeadListener(
-            Shizuku.OnBinderDeadListener { setDead() }
+            Shizuku.OnBinderDeadListener {
+                TokenXShizukuUserServiceClient.onShizukuBinderDead()
+                setDead()
+            }
         )
     }
 
@@ -159,7 +166,10 @@ object ShizukuStateMachine {
         set(state)
         // Also covers a server that was already running when this process started, or a
         // permission that was revoked behind our back: there is no transition to hook then.
-        if (state == State.RUNNING) grantWriteSecureSettingsIfNeeded()
+        if (state == State.RUNNING) {
+            grantWriteSecureSettingsIfNeeded()
+            TokenXShizukuUserServiceClient.ensureBound()
+        }
         return state
     }
 
