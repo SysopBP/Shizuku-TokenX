@@ -238,15 +238,21 @@ jobs:
             exit 1
           }
 
-          # Guard against accidentally restoring the retired application-side retry path.
-          for retired in MAIN_ACTIVITY_AUTOCONNECT_START BRIDGE_AUTOCONNECT_START; do
+          # Guard against accidentally restoring any retired application-side backend.
+          for retired in \
+            MAIN_ACTIVITY_AUTOCONNECT_START \
+            BRIDGE_AUTOCONNECT_START \
+            com.tokenx.bridgetest \
+            com.sdet.fotaagent \
+            moe/shizuku/manager/tokenx/TokenXSystemServerBridge
+          do
             if grep -F "$retired" "$DEX_STRINGS" >/dev/null; then
-              echo "::error::Retired IdentityService autoconnect marker still packaged: $retired"
+              echo "::error::Retired TokenX backend remnant still packaged: $retired"
               exit 1
             fi
           done
 
-          echo "TokenX LSPosed _TKN system_server backend verified in packaged APK"
+          echo "TokenX LSPosed _TKN system_server backend verified; retired backends absent"
           rm -f "$DEX_STRINGS"
 
       - name: Collect APK
