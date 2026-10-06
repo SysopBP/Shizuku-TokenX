@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
@@ -167,9 +170,13 @@ fun TokenXDashboard(
             label = "pulse-scale"
         )
         BasicAlertDialog(onDismissRequest = { if (!provisioning) showVaultDialog = false }) {
-            TokenXGlassCard {
+            TokenXGlassCard(Modifier.fillMaxWidth(0.94f)) {
                 Column(
-                    Modifier.padding(22.dp),
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 760.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(22.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -444,9 +451,24 @@ fun TokenXDashboard(
 
 @Composable
 private fun IntegrationDetailRow(label: String, value: String) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
-        Text(value, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            label,
+            Modifier.widthIn(min = 96.dp, max = 128.dp),
+            style = MaterialTheme.typography.labelMedium,
+            softWrap = true
+        )
+        Text(
+            value,
+            Modifier.weight(1f),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            softWrap = true
+        )
     }
 }
 
