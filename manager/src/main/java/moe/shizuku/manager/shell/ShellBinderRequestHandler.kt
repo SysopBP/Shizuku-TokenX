@@ -11,6 +11,10 @@ import rikka.shizuku.Shizuku
 
 object ShellBinderRequestHandler {
 
+    @Volatile private var systemRishConnected = false
+
+    fun isSystemRishConnected(): Boolean = systemRishConnected
+
     fun handleRequest(context: Context, intent: Intent): Boolean {
         if (intent.action != "rikka.shizuku.intent.action.REQUEST_BINDER") {
             return false
@@ -20,6 +24,7 @@ object ShellBinderRequestHandler {
         val requestedBackend = intent.getStringExtra("tokenx_backend")
         val shizukuBinder = when (requestedBackend) {
             "sserver", "system" -> TokenXXposedSystemServerClient.binder().also {
+                systemRishConnected = it?.isBinderAlive == true
                 if (it == null) LOGGER.w("TokenX System Server Binder was requested but is not published")
             }
             "root" -> ShizukuManagerProvider.rootBinder().also {
