@@ -56,10 +56,12 @@ object TokenXRuntime {
         val bridgeIdentity = TokenXBridgeClient.identity()
         val bridgeAttached = bridgeIdentity != null
         val bridgeActive = bridgeIdentity?.verifiedSystemServer == true
-        // v2 BridgeTest can additionally prove harmless framework reads inside system_server.
-        // Keep identity verification authoritative so older bridge payloads remain compatible.
-        val bridgeFunctional = if (bridgeActive) TokenXBridgeClient.functionalResult() else null
-        val bridgeCapabilities = bridgeFunctional?.passCount ?: 0
+        // BridgeTest is currently our identity reference only. Do not probe optional
+        // transaction 2 from the one-second runtime snapshot; older BridgeTest payloads
+        // reject it and Android logs Binder error -74. Functional RPCs will live on the
+        // dedicated Xposed backend instead of overloading the reference bridge.
+        val bridgeFunctional: TokenXBridgeFunctionalResult? = null
+        val bridgeCapabilities = 0
         val nativeUid1000 = isNativeUid1000Verified()
         // Preserve the build-173 Sserver/rish contract: the executable Server route is
         // authoritative when the live Shizuku-compatible Binder itself reports UID 1000.
