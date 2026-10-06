@@ -173,6 +173,19 @@ jobs:
           GITHUB_ACTOR: ${{ secrets.SESL_GITHUB_USERNAME }}
           GITHUB_TOKEN: ${{ secrets.SESL_GITHUB_TOKEN }}
         run: |
+          # Retired BridgeTest classes must never survive from Gradle's remote/local
+          # build cache after their source files are deleted.
+          ./gradlew clean
+
+          # Fail before compilation if a retired live-backend package is present in
+          # packaged app/Xposed source. Historical docs and this CI guard are excluded.
+          if grep -RInE 'com\.tokenx\.bridgetest|com\.sdet\.fotaagent|TokenXSystemServerBridge|BRIDGE_AUTOCONNECT_START|MAIN_ACTIVITY_AUTOCONNECT_START' \
+              manager/src/main xposed/src/main \
+              --exclude='tokenx-debug.yml' 2>/dev/null; then
+            echo "::error::Retired TokenX backend remnant found in packaged source"
+            exit 1
+          fi
+
           # Build the rish shell first. shell/build.gradle extracts its classes.dex
           # into manager assets as rish_shizuku.dex, guaranteeing rish + dex match.
           ./gradlew :shell:assembleDebug
