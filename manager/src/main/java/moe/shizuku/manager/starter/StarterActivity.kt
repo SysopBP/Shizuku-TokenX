@@ -310,9 +310,6 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
             " && \$STARTER"
     }
 
-    /** Set as soon as the payload's shell reports anything at all. */
-    @Volatile
-
     private fun log(line: String? = null, error: Throwable? = null) {
         line?.let { sb.appendLine(it) }
         error?.let { sb.appendLine().appendLine(Log.getStackTraceString(it)) }
