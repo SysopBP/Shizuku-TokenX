@@ -117,7 +117,7 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                 LabTile(
                     icon = Icons.Outlined.Route,
                     label = "TokenX Control Center",
-                    badge = "PULSE · VAULT · D2 · UID 1000",
+                    badge = "ROOT · D2 · SYSTEM RPC",
                     onClick = { onOpenDetail(Detail.TOKENX) }
                 )
             }
@@ -133,7 +133,7 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                 LabTile(
                     icon = Icons.Outlined.BugReport,
                     label = "Secure Chain Monitor",
-                    badge = "LIVE · TKN BRIDGE · FOTA",
+                    badge = "LIVE · D2 · SYSTEM RPC",
                     onClick = { onOpenDetail(Detail.TOKENX) }
                 )
             }
@@ -149,7 +149,7 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                 LabTile(
                     icon = Icons.Outlined.VerifiedUser,
                     label = "CorePatch Labs",
-                    badge = "PACKAGE MANAGER · EXPERIMENTAL",
+                    badge = "PACKAGE MANAGER",
                     onClick = { onOpenDetail(Detail.COREPATCH_LABS) }
                 )
             }
