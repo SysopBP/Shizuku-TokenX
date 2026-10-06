@@ -26,18 +26,20 @@ object TokenXShizukuUserServiceClient {
     private val binding = AtomicBoolean(false)
     private val generationPrepared = AtomicBoolean(false)
 
-    private val args: Shizuku.UserServiceArgs
-        get() = Shizuku.UserServiceArgs(
-            ComponentName(
-                ShizukuApplication.appContext.packageName,
-                TokenXShizukuUserService::class.java.name,
-            )
+    private fun serviceArgs(version: Int) = Shizuku.UserServiceArgs(
+        ComponentName(
+            ShizukuApplication.appContext.packageName,
+            TokenXShizukuUserService::class.java.name,
         )
-            .processNameSuffix("tokenx_service")
-            .tag(SERVICE_TAG)
-            .version(SERVICE_VERSION)
-            .daemon(false)
-            .debuggable(true)
+    )
+        .processNameSuffix("tokenx_service")
+        .tag(SERVICE_TAG)
+        .version(version)
+        .daemon(false)
+        .debuggable(true)
+
+    private val args: Shizuku.UserServiceArgs
+        get() = serviceArgs(SERVICE_VERSION)
 
     private val deathRecipient = IBinder.DeathRecipient {
         Log.w(TAG, "UserService binder died")
@@ -86,9 +88,14 @@ object TokenXShizukuUserServiceClient {
             // :tokenx_service instances left by a previous manager process before
             // creating the single service owned by this process.
             if (generationPrepared.compareAndSet(false, true)) {
-                runCatching { Shizuku.unbindUserService(args, null, true) }
-                    .onSuccess { Log.i(TAG, "stale UserService generation removed") }
-                    .onFailure { Log.w(TAG, "stale UserService cleanup failed; continuing", it) }
+                // 459 bumped the UserService version to 2, so cleanup using only the
+                // current args cannot reliably match a still-running v1 generation.
+                // Explicitly remove both known generations before creating v2.
+                for (version in 1..SERVICE_VERSION) {
+                    runCatching { Shizuku.unbindUserService(serviceArgs(version), null, true) }
+                        .onSuccess { Log.i(TAG, "stale UserService generation removed version=$version") }
+                        .onFailure { Log.w(TAG, "stale UserService cleanup failed version=$version; continuing", it) }
+                }
             }
             Shizuku.bindUserService(args, connection)
             Log.i(TAG, "bindUserService requested")
