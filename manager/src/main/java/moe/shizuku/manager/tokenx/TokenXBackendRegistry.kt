@@ -38,8 +38,8 @@ object TokenXBackendRegistryBuilder {
         backends = listOf(
             TokenXRegisteredBackend(TokenXBackend.ROOT, 0, rootReady, rootReady, if (rootReady) "KernelSU/root ready" else "Root unavailable"),
             TokenXRegisteredBackend(TokenXBackend.NATIVE_UID, 1000, nativeUidReady, nativeUidReady, if (nativeUidReady) "PackageManager android.uid.system verified" else "Native PM UID 1000 unavailable"),
-            TokenXRegisteredBackend(TokenXBackend.SYSTEM_UID, 1000, systemUidReady, systemUidReady, if (systemUidReady) "TKN Bridge + Shizuku UID 1000 ready" else "System UID backend unavailable"),
-            TokenXRegisteredBackend(TokenXBackend.SYSTEM_SERVER, 1000, systemServerReady, systemServerReady, if (systemServerReady) "LSPosed system_server RPC verified" else "LSPosed system_server RPC unavailable"),
+            TokenXRegisteredBackend(TokenXBackend.SYSTEM_UID, 1000, systemUidReady, systemUidReady, if (systemUidReady) "Shizuku UID 1000 ready" else "Shizuku UID 1000 unavailable"),
+            TokenXRegisteredBackend(TokenXBackend.SYSTEM_SERVER, 1000, systemServerReady, systemServerReady, if (systemServerReady) "Xposed → System Server RPC verified" else "Xposed → System Server RPC unavailable"),
             TokenXRegisteredBackend(TokenXBackend.SHELL, 2000, shellReady, shellReady, if (shellReady) "Shizuku shell ready" else "Shell backend unavailable"),
         ).associateBy { it.backend },
     )
