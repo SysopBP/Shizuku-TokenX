@@ -191,7 +191,6 @@ fun TokenXDashboard(
                     )
                     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         VaultChainRow("D2 Gate", stageLabel(SystemUidProvisioner.Stage.D2_GATE, liveStage, provisioning, "OPEN"), modeColor)
-                        VaultChainRow("BridgeTest", stageLabel(SystemUidProvisioner.Stage.BRIDGE_UID, liveStage, provisioning, "REFERENCE • UID 1000"), modeColor)
                         if (dialogMode == "bridge") VaultChainRow("System Bridge", if (provisioning) "HANDSHAKE" else if (provisionStatus?.startsWith("SUCCESS") == true) "VERIFIED" else "FAILED", modeColor)
                     }
                     HorizontalDivider()
@@ -317,13 +316,13 @@ fun TokenXDashboard(
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "D2 protection • BridgeTest reference • LSPosed backend",
+                "D2 protection • LSPosed _TKN system_server RPC",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusLine(Icons.Rounded.VerifiedUser, "BridgeTest", "Reference", Modifier.weight(1f))
-                StatusLine(Icons.Rounded.Extension, "LSPosed RPC", "System", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.VerifiedUser, "System Server", "UID 1000", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.Extension, "LSPosed RPC", "_TKN", Modifier.weight(1f))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatusLine(Icons.Rounded.Lock, "D2 Gate", "Dual gate", Modifier.weight(1f))
@@ -340,7 +339,7 @@ fun TokenXDashboard(
             }
             if (showVaultDetails) {
                 Text(
-                    "Read-only audit of the retained D2 boundary and BridgeTest identity reference. FOTA and Legacy DEX have been removed. Receiver Compatibility is TokenX-native and is no longer part of provisioning.",
+                    "Read-only audit of the D2 security boundary and current LSPosed _TKN System Server RPC. Receiver Compatibility is TokenX-native and remains outside the provisioning chain.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -373,7 +372,7 @@ fun TokenXDashboard(
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "TokenX uses the LSPosed _TKN Binder RPC inside the real system_server. BridgeTest is retained only as an identity reference.",
+                "TokenX uses the LSPosed _TKN Binder RPC inside the real system_server and verifies UID 1000, process identity and SELinux context directly.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -389,7 +388,7 @@ fun TokenXDashboard(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Icon(Icons.Rounded.VerifiedUser, contentDescription = null, Modifier.size(18.dp))
-                        Text("Verify System Reference", style = MaterialTheme.typography.labelLarge)
+                        Text("Verify System Server", style = MaterialTheme.typography.labelLarge)
                     }
                 }
             TextButton(
@@ -401,7 +400,7 @@ fun TokenXDashboard(
             }
             if (showBridgeDetails) {
                 Text(
-                    "BridgeTest remains a temporary UID 1000 identity reference. The live System Server backend is the LSPosed _TKN RPC; normal Shizuku remains the UID 0/root backend.",
+                    "The live System Server backend is the LSPosed _TKN RPC. Root/Shizuku remains the UID 0 backend and Shell remains the UID 2000 fallback.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
