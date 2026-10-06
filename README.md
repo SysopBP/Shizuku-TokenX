@@ -16,7 +16,7 @@
 </div>
 
 > [!IMPORTANT]
-> **Read the README before installing or updating Shizuku-TokenX.** System / UID 1000 requires the TokenX System Server Bridge and a supported KernelSU/systemless-mount environment. The manager APK by itself is not the System Server Bridge.
+> **Read the README before installing or updating Shizuku-TokenX.** System / UID 1000 requires the TokenX System Server Integration and a supported KernelSU/systemless-mount environment. The manager APK by itself is not the System Server Bridge.
 
 ## Shizuku-TokenX at a glance
 
@@ -65,7 +65,7 @@ TokenX is a fork in the Shizuku family. The original Shizuku server, API, shell,
 
 The manager coordinates the available privilege paths and reports the runtime state separately from the configured default.
 
-- **System** — UID 1000 path provided through the TokenX System Server Bridge.
+- **System** — UID 1000 path provided through the TokenX System Server Integration.
 - **Root** — UID 0 backend for rooted devices.
 - **Shell** — UID 2000 Shizuku/ADB path and fallback.
 - **Token Boot** — coordinates startup so multiple backends do not race to publish the same service.
@@ -74,20 +74,19 @@ The manager coordinates the available privilege paths and reports the runtime st
 
 A package running as UID 1000 is not, by itself, proof that code is executing inside the real `system_server` process. TokenX therefore verifies bridge/runtime state instead of inferring it only from package UID.
 
-## TokenX System Server Bridge
+## TokenX System Server Integration
 
-The optional KernelSU module and TKN Bridge provide the current System / UID 1000 path.
+The current System / UID 1000 framework path uses the TokenX LSPosed module and the private **_TKN Binder RPC** inside Android's real `system_server` process. TokenX verifies the returned identity directly: UID 1000, process `system_server`, and SELinux `u:r:system_server:s0`.
 
-The current System Server path uses **TKN Bridge** (`com.tokenx.bridgetest`) as the identity/health companion. TokenX binds to its exported `IdentityService` and accepts the bridge only when it reports UID 1000, `system_server` as its process identity, and the `u:r:system_server:s0` SELinux domain. The retired Serv/com.vikram.exp path is no longer a readiness signal.
+Root/Shizuku remains the UID 0 backend. Shell/ADB remains the UID 2000 fallback. Interactive rish execution stays outside `system_server`.
 
-Current bridge behavior includes:
+Current integration behavior includes:
 
-- UID 1000 provisioning and verification.
-- System-server bridge health reporting.
-- D2-safe startup gating.
-- Legacy Serv / `com.vikram.exp` migration cleanup only; it is not used for readiness.
-- Module-local boot, provisioning, migration, and verification diagnostics.
-- Safe recovery when the privileged backend is temporarily unavailable.
+- LSPosed _TKN RPC identity verification.
+- UID 1000 framework capability routing.
+- D2-safe startup gating when Kiosk D2 Guardian is installed.
+- Root/Shizuku lifecycle recovery and persisted app authorization.
+- Safe fallback when the framework RPC is temporarily unavailable.
 
 ### D2-safe startup
 
@@ -123,7 +122,7 @@ TokenX exposes the available launch paths instead of hiding them behind one gene
 
 | Method | Typical UID | Purpose |
 | --- | ---: | --- |
-| System UID | 1000 | TokenX System Server Bridge |
+| System UID | 1000 | TokenX System Server Integration |
 | Root | 0 | Rooted-device backend |
 | Wireless debugging | 2000 | Shizuku/ADB shell transport |
 | USB debugging | 2000 | Classic ADB shell transport |
@@ -132,7 +131,7 @@ The exact operations available still depend on Android's permission and SELinux 
 
 ## Systemless mounting
 
-The current **TokenX System Server Bridge** setup uses [Meta Magic Mount RS](https://github.com/Tools-cx-app/meta-magic_mount-rs) as its systemless mount layer with KernelSU.
+The current **TokenX System Server Integration** setup uses [Meta Magic Mount RS](https://github.com/Tools-cx-app/meta-magic_mount-rs) as its systemless mount layer with KernelSU.
 
 Meta Magic Mount RS is a separate project and is not bundled as TokenX source. Install and maintain the required metamodule according to its own documentation.
 
@@ -161,7 +160,7 @@ For upstream behavior and history, see [thedjchi/Shizuku](https://github.com/the
 
 Backend-specific requirements:
 
-- **System / UID 1000:** rooted device plus the TokenX System Server Bridge and its required systemless-mount environment.
+- **System / UID 1000:** rooted device plus the TokenX System Server Integration and its required systemless-mount environment.
 - **Root / UID 0:** a working root solution.
 - **Wireless debugging:** Android 11+ on supported devices.
 - **USB debugging:** ADB access.
@@ -183,14 +182,7 @@ Do not treat the manager APK alone as the System Server Bridge.
 
 ## Diagnostics
 
-The TokenX bridge keeps persistent diagnostic state under its KernelSU module directory. Current diagnostics distinguish:
-
-- boot/gate sequencing,
-- companion provisioning,
-- legacy migration,
-- post-start verification,
-- bridge attachment/health,
-- and client authorization recovery.
+TokenX diagnostics distinguish boot/gate sequencing, LSPosed _TKN RPC identity, Root/Shizuku lifecycle state, UID 1000 routing, and client authorization recovery.
 
 This separation is intentional: a package can be installed correctly while the runtime Binder or privileged bridge is not healthy.
 
@@ -238,7 +230,7 @@ TokenX stands on several projects and contributions:
 - **[RikkaW / RikkaApps](https://github.com/RikkaApps/Shizuku)** — original Shizuku server, API, shell, and foundation.
 - **[thedjchi](https://github.com/thedjchi/Shizuku)** — the Shizuku fork this project was originally based on and the features inherited from it.
 - **[@Vikramaditya015](https://github.com/Vikramaditya015)** — **System Server contribution** used in the development of TokenX's System Server work.
-- **[Meta Magic Mount RS](https://github.com/Tools-cx-app/meta-magic_mount-rs)** — systemless Magic Mount layer used by the current TokenX System Server Bridge setup.
+- **[Meta Magic Mount RS](https://github.com/Tools-cx-app/meta-magic_mount-rs)** — systemless Magic Mount layer used by the current TokenX System Server Integration setup.
 - Everyone who contributed to upstream Shizuku and its forks, plus the translators and testers who continue to help validate TokenX.
 
 ## License
