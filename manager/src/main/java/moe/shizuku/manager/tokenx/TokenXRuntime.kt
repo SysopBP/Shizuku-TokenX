@@ -95,10 +95,12 @@ object TokenXRuntime {
         val bridgeActive = xposedSystemServerActive
         val bridgeFunctional: TokenXBridgeFunctionalResult? = null
         val bridgeCapabilities = 0
-        // Native/system UID readiness is derived from the live Shizuku-compatible Binder.
-        // No mounted helper package is used as identity proof.
+        // Native PM UID1000 remains separate from the Xposed system_server route.
+        // SYSTEM_UID is ready only after a functional read-only RPC executes in real
+        // system_server and verifies UID 1000, SELinux and core framework services.
         val nativeUid1000 = running && uid == 1000
-        val sserverBinderReady = nativeUid1000
+        val systemProbe = if (xposedSystemServerActive) TokenXXposedSystemServerClient.systemProbe() else null
+        val sserverBinderReady = systemProbe?.verified == true
         val state = TokenXBackendState(
             serverRunning = running,
             serverUid = uid,
