@@ -3,7 +3,7 @@ package moe.shizuku.manager.tokenx
 /**
  * Generic result container retained for dashboard compatibility.
  *
- * The retired BridgeTest/IdentityService Binder client has been removed.
+ * Legacy helper-package Binder clients have been removed; live framework identity comes from the _TKN RPC.
  * Live system_server identity is provided exclusively by TokenXXposedSystemServerClient.
  */
 data class TokenXBridgeFunctionalResult(
