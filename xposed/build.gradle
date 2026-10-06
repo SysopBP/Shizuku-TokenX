@@ -8,9 +8,4 @@ dependencies {
     // Modern Xposed API. LSPosed supplies the implementation at runtime.
     compileOnly "io.github.libxposed:api:102.0.0"
     compileOnly libs.hidden.stub
-    implementation project(":server")
-    // ShizukuService extends the generic server Service base; implementation deps are not transitive.
-    implementation project(":server-shared")
-    // Direct dependency: TokenX bootstrap configures Rish before ShizukuService construction.
-    implementation project(":rish")
 }
