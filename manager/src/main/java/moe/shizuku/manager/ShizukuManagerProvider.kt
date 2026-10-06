@@ -43,6 +43,8 @@ class ShizukuManagerProvider : ShizukuProvider() {
             finally { data.recycle(); reply.recycle() }
         }
 
+        fun isBackendAlive(route: String): Boolean = backendBinder(route)?.isBinderAlive == true
+
         fun backendBinder(route: String): IBinder? = when (route) {
             ShizukuSettings.BACKEND_SYSTEM -> systemBackendBinder?.takeIf { it.isBinderAlive }
             else -> rootBackendBinder?.takeIf { it.isBinderAlive }
