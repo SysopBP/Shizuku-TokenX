@@ -205,7 +205,7 @@ jobs:
           unzip -p "$FILE" 'classes*.dex' | strings | grep -F 'TokenXXposedEntry' >/dev/null
           echo "TokenX modern Xposed descriptors + entry class verified in manager APK"
 
-      - name: Verify TokenX bridge lifecycle code
+      - name: Verify TokenX Xposed system_server backend
         shell: bash
         run: |
           set -euo pipefail
@@ -215,31 +215,38 @@ jobs:
           echo "HEAD=$(git rev-parse HEAD)"
           sha256sum "$FILE"
 
-          # APK entries are compressed, so inspect the extracted DEX stream rather
-          # than grepping the APK container itself.
+          # BridgeTest is diagnostic-only. The live backend is the private _TKN
+          # transaction installed by LSPosed in ActivityManagerService.
           DEX_STRINGS="$(mktemp)"
           unzip -p "$FILE" 'classes*.dex' | strings > "$DEX_STRINGS"
 
           for marker in \
-            MAIN_ACTIVITY_AUTOCONNECT_START \
-            MANAGER_PROVIDER_AUTOCONNECT_START \
-            MANAGER_PROVIDER_BINDER_RECEIVED \
-            BRIDGE_AUTOCONNECT_START \
-            SYSTEM_SERVER_ATTACHED
+            SYSTEM_SERVER_RPC_READY \
+            SYSTEM_SERVER_RPC_IDENTITY \
+            SYSTEM_SERVER_IDENTITY_OK \
+            XPOSED_SYSTEM_SERVER
           do
             grep -F "$marker" "$DEX_STRINGS" >/dev/null || {
-              echo "::error::Missing TokenX bridge marker in packaged DEX: $marker"
+              echo "::error::Missing TokenX Xposed backend marker in packaged DEX: $marker"
               exit 1
             }
             echo "FOUND $marker"
-            grep -F "$marker" "$DEX_STRINGS" | head -n 3
           done
 
-          grep -F 'moe/shizuku/manager/tokenx/TokenXSystemServerBridge' "$DEX_STRINGS" >/dev/null || {
-            echo "::error::TokenXSystemServerBridge class missing from packaged DEX"
+          grep -F 'moe/shizuku/manager/tokenx/TokenXXposedSystemServerClient' "$DEX_STRINGS" >/dev/null || {
+            echo "::error::TokenXXposedSystemServerClient missing from packaged DEX"
             exit 1
           }
-          echo "TokenX bridge lifecycle code verified in packaged APK"
+
+          # Guard against accidentally restoring the retired application-side retry path.
+          for retired in MAIN_ACTIVITY_AUTOCONNECT_START BRIDGE_AUTOCONNECT_START; do
+            if grep -F "$retired" "$DEX_STRINGS" >/dev/null; then
+              echo "::error::Retired IdentityService autoconnect marker still packaged: $retired"
+              exit 1
+            fi
+          done
+
+          echo "TokenX LSPosed _TKN system_server backend verified in packaged APK"
           rm -f "$DEX_STRINGS"
 
       - name: Collect APK
