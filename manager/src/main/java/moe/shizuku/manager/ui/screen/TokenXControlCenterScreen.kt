@@ -393,7 +393,6 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     FeatureRow(Icons.Outlined.Token, "System Integration", "LSPosed _TKN RPC • D2 diagnostics")
                     FeatureRow(Icons.Outlined.AdminPanelSettings, "Privilege backends", "Root UID 0 • LSPosed system_server UID 1000 • Shell fallback")
                     FeatureRow(Icons.Outlined.Extension, "Android 17 compatibility", "TokenX-native compatibility • no Samsung FOTA dependency")
-                    Text("System Server contribution: @Vikramaditya015", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
