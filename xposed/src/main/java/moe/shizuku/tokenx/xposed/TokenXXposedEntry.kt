@@ -9,6 +9,8 @@ import android.util.Log
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
+import rikka.shizuku.server.ShizukuService
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** TokenX modern LSPosed system_server RPC and OEM compatibility layer. */
 // Root Shizuku and the UID-1000 TokenX bridge intentionally keep independent lifecycles.
@@ -78,10 +80,29 @@ class TokenXXposedEntry : XposedModule() {
                 return
             }
             log(Log.INFO, TAG, "SYSTEM_SERVER_IDENTITY_OK backend=XPOSED_SYSTEM_SERVER pid=$pid uid=$uid selinux=$selinux process=$cmdline")
-            log(Log.INFO, TAG, "EMBEDDED_SHIZUKU_DISABLED root_shizuku_remains_fallback")
             log(Log.INFO, TAG, "RPC_INSTALL_CALL_BEGIN")
             installSystemServerBridge()
             log(Log.INFO, TAG, "RPC_INSTALL_CALL_RETURN")
+
+            // Restore the earlier UID-1000 provider handoff while keeping the root
+            // backend and protocol-4 RPC transport independent and available.
+            if (embeddedStartScheduled.compareAndSet(false, true)) {
+                Thread({
+                    log(Log.INFO, TAG, "EMBEDDED_SHIZUKU_START_ASYNC_BEGIN")
+                    runCatching { ShizukuService.startEmbeddedSystemServer() }
+                        .onSuccess {
+                            log(Log.INFO, TAG, "EMBEDDED_SHIZUKU_START_ASYNC_OK pid=${Process.myPid()} uid=${Process.myUid()}")
+                        }
+                        .onFailure {
+                            log(Log.ERROR, TAG, "EMBEDDED_SHIZUKU_START_ASYNC_FAIL_OPEN: ${it.javaClass.name}: ${it.message}")
+                        }
+                }, "TokenX-BinderPublish").apply {
+                    isDaemon = true
+                    start()
+                }
+            } else {
+                log(Log.WARN, TAG, "EMBEDDED_SHIZUKU_START_SKIP already_scheduled")
+            }
         } catch (t: Throwable) {
             Log.e(TAG, "SYSTEM_SERVER_CALLBACK_THROWABLE", t)
             runCatching {
@@ -249,5 +270,6 @@ class TokenXXposedEntry : XposedModule() {
         const val PROP_ONEUIX_LABS = "persist.tokenx.labs.oneuix"
         const val PROP_STATUS_BAR_LABS = "persist.tokenx.labs.statusbar"
         val RECEIVER_COMPAT_PACKAGES = setOf(RETAIL_MODE_PACKAGE)
+        val embeddedStartScheduled = AtomicBoolean(false)
     }
 }
