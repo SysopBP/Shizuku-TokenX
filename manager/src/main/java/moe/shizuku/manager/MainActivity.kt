@@ -13,8 +13,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import moe.shizuku.manager.adb.AdbPairingService
 import moe.shizuku.manager.home.showAccessibilityDialog
-import moe.shizuku.manager.tokenx.TokenXSystemServerBridge
-import android.util.Log
 import moe.shizuku.manager.receiver.ShizukuReceiverStarter
 import moe.shizuku.manager.ui.ShizukuApp
 
@@ -39,11 +37,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Activity startup is the path proven by the 398 manual test. Invoke the
-        // system_server bridge here as well as from Application so a normal/cold launch
-        // cannot miss attachment because of provider/Application initialization order.
-        Log.i("TokenX/Bridge", "MAIN_ACTIVITY_AUTOCONNECT_START pid=${android.os.Process.myPid()}")
-        TokenXSystemServerBridge.startAutoConnect(applicationContext)
         enableEdgeToEdge()
         handleIntent(intent)
         requestNotificationPermission()
