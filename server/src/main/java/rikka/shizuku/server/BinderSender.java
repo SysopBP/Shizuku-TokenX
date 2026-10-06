@@ -6,9 +6,13 @@ import static android.app.ActivityManagerHidden.UID_OBSERVER_GONE;
 import static android.app.ActivityManagerHidden.UID_OBSERVER_IDLE;
 
 import android.app.ActivityManagerHidden;
+import android.content.IContentProvider;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.IBinder;
+import android.os.Process;
 import android.os.RemoteException;
 import android.text.TextUtils;
 
@@ -21,6 +25,7 @@ import kotlin.collections.ArraysKt;
 import rikka.hidden.compat.ActivityManagerApis;
 import rikka.hidden.compat.PackageManagerApis;
 import rikka.shizuku.server.util.Android17Compat;
+import rikka.shizuku.server.api.IContentProviderUtils;
 import rikka.hidden.compat.adapter.ProcessObserverAdapter;
 import rikka.hidden.compat.adapter.UidObserverAdapter;
 import rikka.shizuku.server.util.Logger;
@@ -33,6 +38,50 @@ public class BinderSender {
     private static final String PERMISSION = "moe.shizuku.manager.permission.API_V23";
 
     private static ShizukuService sShizukuService;
+
+    private static final String ROUTE_ROOT = "root";
+    private static final String ROUTE_SYSTEM = "system";
+    private static final String METHOD_GET_BACKEND_ROUTE = "getBackendRoute";
+
+    /**
+     * Ask the manager which live backend owns this client. Root is deliberately fail-safe:
+     * a missing manager/provider or malformed reply must never let the system backend steal
+     * every client during boot.
+     */
+    private static boolean shouldServePackage(String packageName, int userId) {
+        final boolean thisIsSystem = Process.myUid() == Process.SYSTEM_UID;
+        final boolean thisIsRoot = Process.myUid() == 0;
+        if (!thisIsSystem && !thisIsRoot) return true;
+
+        String authority = ShizukuService.MANAGER_APPLICATION_ID + ".shizuku";
+        IContentProvider provider = null;
+        IBinder token = null;
+        try {
+            provider = ActivityManagerApis.getContentProviderExternal(authority, userId, token, authority);
+            if (provider == null || !provider.asBinder().pingBinder()) {
+                return thisIsRoot;
+            }
+            Bundle request = new Bundle();
+            request.putString("packageName", packageName);
+            Bundle reply = IContentProviderUtils.callCompat(
+                    provider, null, authority, METHOD_GET_BACKEND_ROUTE, null, request);
+            String route = reply != null ? reply.getString("route", ROUTE_ROOT) : ROUTE_ROOT;
+            boolean serve = thisIsSystem ? ROUTE_SYSTEM.equals(route) : !ROUTE_SYSTEM.equals(route);
+            LOGGER.i("TokenX route package=%s route=%s serverUid=%d serve=%s",
+                    packageName, route, Process.myUid(), Boolean.toString(serve));
+            return serve;
+        } catch (Throwable tr) {
+            LOGGER.w(tr, "TokenX route lookup failed for %s; root fail-safe applies", packageName);
+            return thisIsRoot;
+        } finally {
+            if (provider != null) {
+                try {
+                    ActivityManagerApis.removeContentProviderExternal(authority, token);
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+    }
 
     private static class ProcessObserver extends ProcessObserverAdapter {
 
@@ -164,6 +213,10 @@ public class BinderSender {
                     return;
                 }
             } else if (ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
+                if (!shouldServePackage(packageName, userId)) {
+                    LOGGER.i("TokenX route skipped binder for %s on uid %d backend", packageName, Process.myUid());
+                    continue;
+                }
                 ShizukuService.sendBinderToUserApp(sShizukuService, packageName, userId);
                 return;
             }
