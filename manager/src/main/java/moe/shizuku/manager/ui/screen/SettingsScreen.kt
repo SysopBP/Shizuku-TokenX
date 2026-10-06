@@ -102,9 +102,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** The agent a system uid start goes through, checked for when it is not running yet. */
-private const val FOTA_AGENT_PACKAGE = "com.sdet.fotaagent"
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
@@ -149,17 +146,10 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
      * Nothing here prompts for root the way checking for a root shell would, and the row
      * stays visible while the setting is on, so it can always be turned off again.
      */
-    val canPersistAdbPort = remember {
-        val running = ShizukuSettings.getRunningStartMethod()
-        val agent = runCatching {
-            context.packageManager.getPackageInfo(FOTA_AGENT_PACKAGE, 0)
-        }.isSuccess
-
+    val canPersistAdbPort =
         startMethod == ShizukuSettings.StartMethod.ROOT ||
-            running == ShizukuSettings.StartMethod.ROOT ||
-            running == ShizukuSettings.StartMethod.SYSTEM ||
-            agent
-    }
+            ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.ROOT ||
+            ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.SYSTEM
 
     /**
      * Applies the setting and keeps the switch honest: if the writes were refused (no
