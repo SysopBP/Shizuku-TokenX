@@ -14,10 +14,9 @@ import java.io.InputStreamReader
  */
 object SystemUidProvisioner {
 
-    const val LEGACY_PACKAGE = "com.vikram.exp"
     const val STAGED_SHIZUKU = "/data/local/tmp/libshizuku.so"
 
-    enum class Stage { D2_GATE, BRIDGE_UID, SYSTEM_BRIDGE }
+    enum class Stage { D2_GATE, SYSTEM_BRIDGE }
     enum class StageState { WAITING, CHECKING, VERIFIED, WARNING, FAILED }
     data class Progress(val stage: Stage, val state: StageState, val detail: String)
 
