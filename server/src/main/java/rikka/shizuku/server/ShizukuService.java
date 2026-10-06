@@ -909,6 +909,54 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                 return false;
             }
         } catch (Throwable tr) {
+            /*
+             * Android 17 can reject the manager provider lookup when the provider is
+             * protected by INTERACT_ACROSS_USERS_FULL. The standalone root backend is
+             * UID 0, but Binder/provider permission checks can still observe the caller
+             * identity inherited from the manager start transaction. Clear it for the
+             * framework lookup/handoff and retry once under the backend identity.
+             *
+             * This is deliberately limited to the manager handoff. Client app routing
+             * and the UID-1000/Xposed RPC path are left untouched.
+             */
+            if (MANAGER_APPLICATION_ID.equals(packageName)) {
+                final long identity = Binder.clearCallingIdentity();
+                IContentProvider retryProvider = null;
+                try {
+                    tokenxTrace("TOKENX_HANDOFF_IDENTITY_RETRY user=" + userId
+                            + " serverUid=" + Process.myUid());
+                    retryProvider = ActivityManagerApis.getContentProviderExternal(name, userId, null, name);
+                    if (retryProvider != null && retryProvider.asBinder().pingBinder()) {
+                        Bundle retryExtra = new Bundle();
+                        retryExtra.putParcelable(
+                                "moe.shizuku.privileged.api.intent.extra.BINDER",
+                                new BinderContainer(binder));
+                        Bundle retryReply = IContentProviderUtils.callCompat(
+                                retryProvider, null, name, "sendBinder", null, retryExtra);
+                        if (retryReply != null) {
+                            tokenxTrace("TOKENX_HANDOFF_IDENTITY_RETRY_OK user=" + userId
+                                    + " serverUid=" + Process.myUid());
+                            LOGGER.i("manager binder identity retry succeeded in user %d", userId);
+                            return true;
+                        }
+                    }
+                    tokenxTrace("TOKENX_HANDOFF_IDENTITY_RETRY_NO_ACK user=" + userId
+                            + " serverUid=" + Process.myUid());
+                } catch (Throwable retryError) {
+                    tokenxTrace("TOKENX_HANDOFF_IDENTITY_RETRY_FAILED user=" + userId
+                            + " serverUid=" + Process.myUid() + " error="
+                            + retryError.getClass().getName());
+                    LOGGER.e(retryError, "manager binder identity retry failed in user %d", userId);
+                } finally {
+                    if (retryProvider != null) {
+                        try {
+                            ActivityManagerApis.removeContentProviderExternal(name, null);
+                        } catch (Throwable ignored) {
+                        }
+                    }
+                    Binder.restoreCallingIdentity(identity);
+                }
+            }
             LOGGER.e(tr, "failed to send binder to user app %s in user %d", packageName, userId);
             return false;
         } finally {
