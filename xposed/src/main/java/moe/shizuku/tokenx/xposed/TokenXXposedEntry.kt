@@ -165,6 +165,19 @@ class TokenXXposedEntry : XposedModule() {
                                 log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_GET_BINDER callingUid=$callingUid ownerUid=$rendezvousOwnerUid present=${current != null} allowed=${callingUid == rendezvousOwnerUid}")
                                 consumed = true
                             }
+                            ACTION_SYSTEM_PROBE -> {
+                                // Functional UID-1000 proof. Deliberately read-only: no shell,
+                                // fork, setuid or arbitrary command execution in system_server.
+                                val services = listOf("activity", "package", "power", "window")
+                                val available = services.filter { android.os.ServiceManager.checkService(it) != null }
+                                reply?.writeNoException()
+                                reply?.writeInt(Process.myUid())
+                                reply?.writeInt(Process.myPid())
+                                reply?.writeString(readSelf("/proc/self/attr/current"))
+                                reply?.writeString(available.joinToString(","))
+                                log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_FUNCTIONAL uid=${Process.myUid()} pid=${Process.myPid()} services=${available.joinToString(",")}")
+                                consumed = true
+                            }
                             else -> log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_REJECT reason=unknown_action action=$action")
                         }
                     } catch (t: Throwable) {
@@ -229,6 +242,7 @@ class TokenXXposedEntry : XposedModule() {
         const val ACTION_GET_IDENTITY = 1
         const val ACTION_SET_BINDER = 2
         const val ACTION_GET_BINDER = 3
+        const val ACTION_SYSTEM_PROBE = 4
         const val RETAIL_MODE_PACKAGE = "com.samsung.sea.rm"
         const val SYSTEM_UI_PACKAGE = "com.android.systemui"
         const val PROP_ONEUIX_LABS = "persist.tokenx.labs.oneuix"
