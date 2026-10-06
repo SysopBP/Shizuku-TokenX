@@ -31,9 +31,11 @@ class ShizukuManagerProvider : ShizukuProvider() {
 
         @Volatile private var rootBackendBinder: IBinder? = null
         @Volatile private var systemBackendBinder: IBinder? = null
+        @Volatile private var shellBackendBinder: IBinder? = null
 
         fun rootBinder(): IBinder? = rootBackendBinder?.takeIf { it.isBinderAlive }
         fun systemBinder(): IBinder? = systemBackendBinder?.takeIf { it.isBinderAlive }
+        fun shellBinder(): IBinder? = shellBackendBinder?.takeIf { it.isBinderAlive }
     }
 
     override fun onCreate(): Boolean {
@@ -71,6 +73,10 @@ class ShizukuManagerProvider : ShizukuProvider() {
                 0 -> {
                     rootBackendBinder = incoming
                     LOGGER.i("TokenX stored ROOT Binder independently (uid=0)")
+                }
+                Process.SHELL_UID -> {
+                    shellBackendBinder = incoming
+                    LOGGER.i("TokenX stored SHELL Binder independently (uid=2000)")
                 }
                 Process.SYSTEM_UID -> {
                     systemBackendBinder = incoming
