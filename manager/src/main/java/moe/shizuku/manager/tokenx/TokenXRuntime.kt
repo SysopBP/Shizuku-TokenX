@@ -62,6 +62,12 @@ object TokenXRuntime {
         // dedicated Xposed backend instead of overloading the reference bridge.
         val bridgeFunctional: TokenXBridgeFunctionalResult? = null
         val bridgeCapabilities = 0
+
+        // Dedicated LSPosed backend. This is independent of Shizuku and BridgeTest:
+        // a private transaction on the existing ActivityManager Binder must answer
+        // from the real system_server identity before it is considered available.
+        val xposedIdentity = TokenXXposedSystemServerClient.identity()
+        val xposedSystemServerActive = xposedIdentity?.verifiedSystemServer == true
         val nativeUid1000 = isNativeUid1000Verified()
         // Preserve the build-173 Sserver/rish contract: the executable Server route is
         // authoritative when the live Shizuku-compatible Binder itself reports UID 1000.
@@ -73,7 +79,7 @@ object TokenXRuntime {
             serverUid = uid,
             rootAvailable = root || uid == 0,
             nativeUid1000Available = nativeUid1000,
-            systemServerBridgeAvailable = bridgeActive,
+            systemServerBridgeAvailable = xposedSystemServerActive,
             shellAvailable = uid == 2000,
         )
 
@@ -92,7 +98,7 @@ object TokenXRuntime {
             rootReady = state.rootAvailable,
             nativeUidReady = nativeUid1000,
             systemUidReady = sserverBinderReady,
-            systemServerReady = bridgeActive,
+            systemServerReady = xposedSystemServerActive,
             shellReady = running && uid == 2000,
         )
 
@@ -108,7 +114,7 @@ object TokenXRuntime {
             corePatchDetected = corePatchDetected,
             androidApiLevel = android.os.Build.VERSION.SDK_INT,
             oneUiVersion = oneUiVersion,
-            xposedBridgeActive = xposedDetected && bridgeActive,
+            xposedBridgeActive = xposedSystemServerActive,
             routes = TokenXCapability.entries.associateWith { TokenXRouter.route(it, state, preferredBackend) },
         )
     }
