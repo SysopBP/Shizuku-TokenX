@@ -9,7 +9,6 @@ import com.topjohnwu.superuser.Shell
 import moe.shizuku.manager.ktx.logd
 import moe.shizuku.manager.authorization.AuthorizationManager
 import moe.shizuku.manager.service.WatchdogService
-import moe.shizuku.manager.tokenx.TokenXSystemServerBridge
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import rikka.core.util.BuildUtils.atLeast30
@@ -64,10 +63,6 @@ class ShizukuApplication : Application() {
         Shizuku.addBinderReceivedListener {
             runCatching { AuthorizationManager.restoreDesiredGrantsWithRetry() }
                 .onFailure { Log.w("TokenX", "Unable to restore app grants", it) }
-
-            // Shizuku becoming ready is a strong signal that boot has progressed.
-            // Wake the independent system_server IdentityService attachment immediately.
-            TokenXSystemServerBridge.poke()
         }
     }
 
@@ -76,10 +71,6 @@ class ShizukuApplication : Application() {
         application = this
         appContext = applicationContext
         init(this)
-        // Keep run 395's Shizuku UserService path and continuously attach to the proven
-        // system_server IdentityService. This covers the boot race where the app process
-        // starts before D2 opens / BridgeTest becomes bindable.
-        TokenXSystemServerBridge.startAutoConnect(this)
     }
 
 }
