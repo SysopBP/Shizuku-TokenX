@@ -181,7 +181,7 @@ fun TokenXDashboard(
                     Text(
                         if (provisioning) dialogTitle else dialogTitle.replace(" • Live", " • Complete"),
                         fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         color = modeColor
                     )
                     Text(
@@ -223,19 +223,19 @@ fun TokenXDashboard(
 
     TokenXGlassCard(modifier) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.Token, contentDescription = null)
                 Column(Modifier.padding(start = 12.dp).weight(1f)) {
                     Text(
-                        "TKN Boot Privilege Engine",
+                        "Privilege Engine",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        if (running) "Privilege engine active" else "Privilege engine stopped",
+                        if (running) "Root + System Server ready" else "Privilege engine offline",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -272,12 +272,12 @@ fun TokenXDashboard(
             }
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusLine(Icons.Rounded.Token, "Token Boot", "Session coordination", Modifier.weight(1f))
-                StatusLine(Icons.Rounded.Security, "Watchdog", "Existing engine", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.Token, "Boot", "Session ready", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.Security, "Watchdog", "Active", Modifier.weight(1f))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusLine(Icons.Rounded.AdminPanelSettings, "LSPosed", "Bridge discovery", Modifier.weight(1f))
-                StatusLine(Icons.Rounded.Terminal, "TokenX Router", "Multi-backend", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.AdminPanelSettings, "LSPosed", if (bridgeVerified) "RPC verified" else "Detected", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.Terminal, "Router", "Multi-backend", Modifier.weight(1f))
             }
 
             HorizontalDivider(Modifier.padding(vertical = 2.dp))
@@ -316,19 +316,19 @@ fun TokenXDashboard(
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "D2 protection • LSPosed _TKN system_server RPC",
+                "D2 protection • Xposed → System Server RPC",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatusLine(Icons.Rounded.VerifiedUser, "System Server", "UID 1000", Modifier.weight(1f))
-                StatusLine(Icons.Rounded.Extension, "LSPosed RPC", "_TKN", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.Extension, "Xposed RPC", if (bridgeVerified) "Verified" else "Standby", Modifier.weight(1f))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusLine(Icons.Rounded.Lock, "D2 Gate", "Dual gate", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.Lock, "D2 Gate", "Protected", Modifier.weight(1f))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusLine(Icons.Rounded.Security, "Compatibility", "TokenX native", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.Security, "Compatibility", "Native", Modifier.weight(1f))
             }
             TextButton(
                 onClick = { showVaultDetails = !showVaultDetails },
@@ -339,7 +339,7 @@ fun TokenXDashboard(
             }
             if (showVaultDetails) {
                 Text(
-                    "Read-only audit of the D2 security boundary and current LSPosed _TKN System Server RPC. Receiver Compatibility is TokenX-native and remains outside the provisioning chain.",
+                    "Read-only check of the D2 boundary, Xposed System Server RPC, and TokenX-native compatibility.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -365,49 +365,19 @@ fun TokenXDashboard(
                 }
             }
 
-            HorizontalDivider(Modifier.padding(vertical = 2.dp))
-            Text(
-                "System Server RPC",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                "TokenX uses the LSPosed _TKN Binder RPC inside the real system_server and verifies UID 1000, process identity and SELinux context directly.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            TokenXGlassButton(
-                    onClick = { runProvision("System Bridge Verify • Live") { SystemUidProvisioner.verify() } },
-                    enabled = rootAvailable && !provisioning,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 44.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Icon(Icons.Rounded.VerifiedUser, contentDescription = null, Modifier.size(18.dp))
-                        Text("Verify System Server", style = MaterialTheme.typography.labelLarge)
-                    }
-                }
-            TextButton(
-                onClick = { showBridgeDetails = !showBridgeDetails },
-                modifier = Modifier.align(Alignment.Start)
-            ) {
-                Icon(Icons.Rounded.Info, contentDescription = null, Modifier.size(16.dp))
-                Text(if (showBridgeDetails) " Hide details" else " Details")
-            }
-            if (showBridgeDetails) {
+            if (showVaultDetails) {
                 Text(
-                    "The live System Server backend is the LSPosed _TKN RPC. Root/Shizuku remains the UID 0 backend and Shell remains the UID 2000 fallback.",
+                    if (bridgeVerified)
+                        "System Server verified: UID 1000 • system_server • SELinux context confirmed."
+                    else
+                        "System Server verification is available from Check System Integration.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             if (!rootAvailable) {
                 Text(
-                    "Root is required for provisioning and vault verification.",
+                    "Root is required for integration checks.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
