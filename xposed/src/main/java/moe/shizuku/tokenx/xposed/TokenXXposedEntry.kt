@@ -97,6 +97,7 @@ class TokenXXposedEntry : XposedModule() {
     }
 
     private fun installSystemServerBridge() {
+        log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_INSTALL_BEGIN pid=${Process.myPid()} uid=${Process.myUid()} transaction=0x${TOKENX_BRIDGE_TRANSACTION.toString(16)}")
         runCatching {
             val ams = Class.forName("com.android.server.am.ActivityManagerService")
             val onTransact = ams.getDeclaredMethod(
@@ -113,11 +114,20 @@ class TokenXXposedEntry : XposedModule() {
                     if (code != TOKENX_BRIDGE_TRANSACTION) return@intercept chain.proceed()
 
                     val data = chain.args.getOrNull(1) as? Parcel
-                        ?: return@intercept chain.proceed()
                     val reply = chain.args.getOrNull(2) as? Parcel
-                    data.enforceInterface(ACTIVITY_MANAGER_DESCRIPTOR)
+                    val flags = chain.args.getOrNull(3) as? Int ?: -1
+                    log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_INTERCEPT code=$code flags=$flags callingUid=${android.os.Binder.getCallingUid()} callingPid=${android.os.Binder.getCallingPid()} dataNull=${data == null} replyNull=${reply == null}")
+                    if (data == null) {
+                        log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_REJECT reason=null_data")
+                        return@intercept false
+                    }
 
-                    when (data.readInt()) {
+                    try {
+                        data.enforceInterface(ACTIVITY_MANAGER_DESCRIPTOR)
+                        val action = data.readInt()
+                        log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_ACTION action=$action dataAvail=${data.dataAvail()}")
+
+                        when (action) {
                         ACTION_GET_IDENTITY -> {
                             reply?.writeNoException()
                             reply?.writeInt(Process.myPid())
@@ -127,9 +137,17 @@ class TokenXXposedEntry : XposedModule() {
                             log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_IDENTITY callingUid=${android.os.Binder.getCallingUid()} callingPid=${android.os.Binder.getCallingPid()}")
                             true
                         }
-                        else -> false
+                            else -> {
+                                log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_REJECT reason=unknown_action action=$action")
+                                false
+                            }
+                        }
+                    } catch (t: Throwable) {
+                        log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_HANDLE_FAILED: ${t.javaClass.name}: ${t.message}")
+                        throw t
                     }
                 }
+            log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_HOOK_INSTALLED method=${onTransact.declaringClass.name}.${onTransact.name}")
             log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_READY transport=activity_binder protocol=2 transaction=0x${TOKENX_BRIDGE_TRANSACTION.toString(16)}")
         }.onFailure {
             log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_INSTALL_FAILED: ${it.javaClass.simpleName}: ${it.message}")
