@@ -1,6 +1,8 @@
 package moe.shizuku.manager
 
 import android.os.Bundle
+import android.os.IBinder
+import android.os.Process
 import androidx.core.os.bundleOf
 import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.flow.first
@@ -26,12 +28,33 @@ class ShizukuManagerProvider : ShizukuProvider() {
         private const val METHOD_GET_BACKEND_ROUTE = "getBackendRoute"
         private const val EXTRA_PACKAGE = "packageName"
         private const val EXTRA_ROUTE = "route"
+
+        @Volatile private var rootBackendBinder: IBinder? = null
+        @Volatile private var systemBackendBinder: IBinder? = null
+
+        fun rootBinder(): IBinder? = rootBackendBinder?.takeIf { it.isBinderAlive }
+        fun systemBinder(): IBinder? = systemBackendBinder?.takeIf { it.isBinderAlive }
     }
 
     override fun onCreate(): Boolean {
         disableAutomaticSuiInitialization()
         return super.onCreate()
     }
+
+    private fun probeServerUid(binder: IBinder): Int = runCatching {
+        val descriptor = binder.interfaceDescriptor
+        val data = android.os.Parcel.obtain()
+        val reply = android.os.Parcel.obtain()
+        try {
+            data.writeInterfaceToken(descriptor)
+            if (!binder.transact(rikka.shizuku.ShizukuApiConstants.BINDER_TRANSACTION_getUid, data, reply, 0)) return@runCatching -1
+            reply.readException()
+            reply.readInt()
+        } finally {
+            data.recycle()
+            reply.recycle()
+        }
+    }.getOrDefault(-1)
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         if (extras == null) return null
@@ -40,10 +63,30 @@ class ShizukuManagerProvider : ShizukuProvider() {
             val packageName = extras.getString(EXTRA_PACKAGE) ?: return null
             Bundle().apply { putString(EXTRA_ROUTE, ShizukuSettings.getBackendRoute(packageName)) }
         } else if (method == METHOD_SEND_BINDER) {
-            // Keep ShizukuProvider as the single owner of the binder handshake.
-            // The UID-1000 backend publishes through this provider method; delegating
-            // here avoids a second/competing manager-side binder implementation.
-            LOGGER.i("Receiving Shizuku binder handoff through manager provider")
+            // TokenX can keep ROOT and SYSTEM alive concurrently. Classify the
+            // incoming Shizuku Binder before deciding whether it should replace
+            // Shizuku's global compatibility Binder.
+            extras.classLoader = BinderContainer::class.java.classLoader
+            val incoming = extras.getParcelable<BinderContainer>(EXTRA_BINDER)?.binder
+            val incomingUid = incoming?.let { probeServerUid(it) } ?: -1
+
+            when (incomingUid) {
+                0 -> {
+                    rootBackendBinder = incoming
+                    LOGGER.i("TokenX stored ROOT Binder independently (uid=0)")
+                }
+                Process.SYSTEM_UID -> {
+                    systemBackendBinder = incoming
+                    LOGGER.i("TokenX stored SYSTEM Binder independently (uid=1000)")
+                    // Do not let the asynchronous UID-1000 provider handoff replace
+                    // an already-live root Shizuku Binder. SYSTEM remains available
+                    // through TokenX's dedicated reference/router.
+                    if (rootBinder() != null && Shizuku.pingBinder()) {
+                        return Bundle()
+                    }
+                }
+            }
+
             super.call(method, arg, extras).also {
                 ShizukuStateMachine.update()
             }
