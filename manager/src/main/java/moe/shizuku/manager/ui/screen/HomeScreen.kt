@@ -81,6 +81,7 @@ import moe.shizuku.manager.Helps
 import moe.shizuku.manager.Manifest
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.ShizukuManagerProvider
 import moe.shizuku.manager.home.showAccessibilityDialog
 import moe.shizuku.manager.receiver.ShizukuReceiverStarter
 import moe.shizuku.manager.start.StartFailureKind
@@ -127,6 +128,7 @@ fun HomeScreen(bottomPadding: Dp) {
     var duplicateApp by remember { mutableStateOf(false) }
     var updateAvailable by remember { mutableStateOf(false) }
     var rooted by remember { mutableStateOf(false) }
+    var systemBackendActive by remember { mutableStateOf(false) }
     var startMethod by remember { mutableStateOf(ShizukuSettings.getStartMethod()) }
     var developerOptionsOn by remember { mutableStateOf(context.isDeveloperOptionsEnabled()) }
     var selinuxRes by remember { mutableStateOf<Int?>(null) }
@@ -197,6 +199,7 @@ fun HomeScreen(bottomPadding: Dp) {
             uid = if (running) runCatching { Shizuku.getUid() }.getOrDefault(-1) else -1
             // Shell.getShell() can block and triggers the root request.
             rooted = runCatching { EnvironmentUtils.isRooted() }.getOrDefault(false)
+            systemBackendActive = ShizukuManagerProvider.isBackendAlive(ShizukuSettings.BACKEND_SYSTEM)
             val (selinux, seccomp) = readDeviceStatus()
             selinuxRes = selinux
             seccompRes = seccomp
@@ -609,8 +612,13 @@ fun HomeScreen(bottomPadding: Dp) {
                     ExpressiveCard(
                         icon = Icons.Rounded.AdminPanelSettings,
                         title = stringResource(R.string.home_system_title),
-                        body = stringResource(R.string.home_system_summary),
-                        enabled = !running,
+                        body = if (systemBackendActive) {
+                            "Framework • UID 1000 • rish connected"
+                        } else {
+                            stringResource(R.string.home_system_summary)
+                        },
+                        status = if (systemBackendActive) "ACTIVE" else null,
+                        enabled = !running || systemBackendActive,
                         onClick = {
                             ShizukuReceiverStarter.start(
                                 context,
