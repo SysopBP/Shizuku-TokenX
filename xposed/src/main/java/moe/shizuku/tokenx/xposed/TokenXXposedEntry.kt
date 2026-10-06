@@ -130,7 +130,7 @@ class TokenXXposedEntry : XposedModule() {
                         else -> false
                     }
                 }
-            log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_READY transport=activity_binder protocol=1")
+            log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_READY transport=activity_binder protocol=2 transaction=0x${TOKENX_BRIDGE_TRANSACTION.toString(16)}")
         }.onFailure {
             log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_INSTALL_FAILED: ${it.javaClass.simpleName}: ${it.message}")
         }
@@ -193,7 +193,7 @@ class TokenXXposedEntry : XposedModule() {
 
     private companion object {
         const val TAG = "TokenX/Xposed"
-        const val TOKENX_BRIDGE_TRANSACTION = 0x5f544b4e // "_TKN"
+        const val TOKENX_BRIDGE_TRANSACTION = 0x00f54b4e // private TokenX code; must stay within Binder LAST_CALL_TRANSACTION (0x00ffffff)
         const val ACTIVITY_MANAGER_DESCRIPTOR = "android.app.IActivityManager"
         const val ACTION_GET_IDENTITY = 1
         const val RETAIL_MODE_PACKAGE = "com.samsung.sea.rm"
