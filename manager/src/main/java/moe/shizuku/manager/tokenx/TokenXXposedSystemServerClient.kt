@@ -30,6 +30,18 @@ data class TokenXXposedBridgeSelfTest(
         get() = identityVerified && publishSucceeded && roundTripSucceeded
 }
 
+data class TokenXSystemProbe(
+    val uid: Int,
+    val pid: Int,
+    val selinux: String,
+    val services: Set<String>,
+) {
+    val verified: Boolean
+        get() = uid == Process.SYSTEM_UID && pid > 0 &&
+            selinux.startsWith("u:r:system_server:s0") &&
+            services.containsAll(setOf("activity", "package", "power", "window"))
+}
+
 object TokenXXposedSystemServerClient {
     private const val TRANSACTION =
         ('_'.code shl 24) or ('T'.code shl 16) or ('K'.code shl 8) or 'N'.code
@@ -37,6 +49,7 @@ object TokenXXposedSystemServerClient {
     private const val ACTION_GET_IDENTITY = 1
     private const val ACTION_SET_BINDER = 2
     private const val ACTION_GET_BINDER = 3
+    private const val ACTION_SYSTEM_PROBE = 4
 
     /**
      * End-to-end, non-destructive proof of the modern LSPosed system_server route.
@@ -111,6 +124,27 @@ object TokenXXposedSystemServerClient {
             if (!activity.transact(TRANSACTION, data, reply, 0)) return null
             reply.readException()
             reply.readStrongBinder()
+        } finally {
+            data.recycle()
+            reply.recycle()
+        }
+    }.getOrNull()
+
+    fun systemProbe(): TokenXSystemProbe? = runCatching {
+        val activity = ServiceManager.getService("activity") ?: return null
+        val data = Parcel.obtain()
+        val reply = Parcel.obtain()
+        try {
+            data.writeInterfaceToken(DESCRIPTOR)
+            data.writeInt(ACTION_SYSTEM_PROBE)
+            if (!activity.transact(TRANSACTION, data, reply, 0)) return null
+            reply.readException()
+            TokenXSystemProbe(
+                uid = reply.readInt(),
+                pid = reply.readInt(),
+                selinux = reply.readString().orEmpty(),
+                services = reply.readString().orEmpty().split(',').filter { it.isNotBlank() }.toSet(),
+            )
         } finally {
             data.recycle()
             reply.recycle()
