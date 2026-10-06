@@ -27,6 +27,13 @@ class TokenXShizukuUserService : Binder() {
         }
     }
 
+    /** Called by Shizuku when unbindUserService(..., remove=true) removes this generation. */
+    @Suppress("unused")
+    fun destroy() {
+        // Shizuku owns the remote process lifecycle. Providing destroy() lets the
+        // server terminate this UserService instead of leaving an orphan generation.
+    }
+
     private fun readSelinuxContext(): String = runCatching {
         java.io.File("/proc/self/attr/current").readText().trim()
     }.getOrDefault("unknown")
