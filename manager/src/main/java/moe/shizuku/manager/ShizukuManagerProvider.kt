@@ -42,17 +42,14 @@ class ShizukuManagerProvider : ShizukuProvider() {
     }
 
     private fun probeServerUid(binder: IBinder): Int = runCatching {
-        val descriptor = binder.interfaceDescriptor
-        val data = android.os.Parcel.obtain()
-        val reply = android.os.Parcel.obtain()
-        try {
-            data.writeInterfaceToken(descriptor)
-            if (!binder.transact(rikka.shizuku.ShizukuApiConstants.BINDER_TRANSACTION_getUid, data, reply, 0)) return@runCatching -1
-            reply.readException()
-            reply.readInt()
-        } finally {
-            data.recycle()
-            reply.recycle()
+        // Shizuku's public client API already performs the server UID query.
+        // Only use it when this is the currently installed compatibility Binder;
+        // otherwise leave the incoming backend unclassified rather than relying
+        // on a private transaction constant that is not part of this build.
+        if (Shizuku.getBinder() === binder || Shizuku.getBinder() == binder) {
+            Shizuku.getUid()
+        } else {
+            -1
         }
     }.getOrDefault(-1)
 
