@@ -178,11 +178,11 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     FeatureRow(Icons.Outlined.Extension, "LSPosed framework", if (runtime.xposedFrameworkDetected) "DETECTED" else "Not detected")
                     FeatureRow(Icons.Outlined.Security, "CorePatch", when {
-                        runtime.corePatchDetected && runtime.nativeUid1000Verified -> "DETECTED • shared UID bypass behavior verified"
-                        runtime.corePatchDetected -> "DETECTED • PM UID1000 effect not yet verified"
+                        runtime.corePatchDetected && runtime.nativeUid1000Verified -> "DETECTED • Native PM UID 1000 verified"
+                        runtime.corePatchDetected -> "DETECTED • RPC UID 1000 verified separately from PM admission"
                         else -> "Not detected"
                     })
-                    FeatureRow(Icons.Outlined.Badge, "Native PM UID1000", if (runtime.nativeUid1000Verified) "VERIFIED • android.uid.system/1000" else "Not verified")
+                    FeatureRow(Icons.Outlined.Badge, "Native PM UID1000", if (runtime.nativeUid1000Verified) "VERIFIED • android.uid.system/1000" else "SEPARATE CAPABILITY • PM admission not verified")
                     FeatureRow(Icons.Outlined.AdminPanelSettings, "System Server identity", if (runtime.systemServerBridgeAttached) "ATTACHED • _TKN RPC" else "Not attached")
                     FeatureRow(Icons.Outlined.Link, "System Server RPC", if (runtime.xposedBridgeActive) "VERIFIED • _TKN • UID 1000" else "Not active")
                     HorizontalDivider()
