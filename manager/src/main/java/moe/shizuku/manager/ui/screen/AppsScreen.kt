@@ -73,6 +73,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
+import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.authorization.AuthorizationManager
 import moe.shizuku.manager.receiver.ShizukuReceiverStarter
 import moe.shizuku.manager.ui.component.AppFilterChip
@@ -507,6 +508,9 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
                     runCatching { AuthorizationManager.granted(pi.packageName, uid) }.getOrDefault(false)
                 }
                 val isSelected = pi.packageName in selected
+                val backendRoute = remember(pi.packageName, version) {
+                    ShizukuSettings.getBackendRoute(pi.packageName)
+                }
 
                 SegmentedCard(
                     // A selected row tints its card, so a multi-select pass reads at a
@@ -562,7 +566,27 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
                             // The same chips every app list carries, worked out in one place:
                             // what kind of app it is, and what is worth knowing about it.
                             AppStatusChips(pi, hidden = pi.packageName in launcherless)
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            if (!selectionMode && granted) {
+                                TextButton(
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                    onClick = {
+                                        val next = if (backendRoute == ShizukuSettings.BACKEND_SYSTEM) {
+                                            ShizukuSettings.BACKEND_ROOT
+                                        } else {
+                                            ShizukuSettings.BACKEND_SYSTEM
+                                        }
+                                        ShizukuSettings.setBackendRoute(pi.packageName, next)
+                                        version++
+                                    }
+                                ) {
+                                    Text(
+                                        if (backendRoute == ShizukuSettings.BACKEND_SYSTEM) "System" else "Root",
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(4.dp))
                             if (selectionMode) {
                                 Checkbox(checked = isSelected, onCheckedChange = null)
                             } else {
