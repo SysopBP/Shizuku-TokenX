@@ -6,9 +6,6 @@ import android.util.Log
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
-import rikka.shizuku.server.ShizukuService
-import rikka.shizuku.server.util.Android17Compat
-import java.util.concurrent.atomic.AtomicBoolean
 
 /** TokenX modern LSPosed UID 1000 bridge and Receiver Compatibility layer. */
 class TokenXXposedEntry : XposedModule() {
@@ -68,56 +65,38 @@ class TokenXXposedEntry : XposedModule() {
     }
 
     override fun onSystemServerStarting(param: XposedModuleInterface.SystemServerStartingParam) {
-        log(Log.INFO, TAG, "BINDER_HOOK_ENTERED: onSystemServerStarting uid=${Process.myUid()} pid=${Process.myPid()}")
-        if (Process.myUid() != Process.SYSTEM_UID) {
-            log(Log.WARN, TAG, "refusing bridge outside UID 1000 (uid=${Process.myUid()})")
+        val uid = Process.myUid()
+        val pid = Process.myPid()
+        val selinux = readSelf("/proc/self/attr/current")
+        val cmdline = readSelf("/proc/self/cmdline").replace("\u0000", "").trim()
+
+        if (uid != Process.SYSTEM_UID || cmdline != "system_server" ||
+            !selinux.startsWith("u:r:system_server:s0")
+        ) {
+            log(
+                Log.WARN,
+                TAG,
+                "SYSTEM_SERVER_IDENTITY_REJECTED pid=$pid uid=$uid selinux=$selinux process=$cmdline"
+            )
             return
         }
-        runCatching {
-            // The embedded system_server backend is pure Binder/Java and must not depend on
-            // librish.so. Rish remains configured by the standalone root/shell server path.
-            log(Log.INFO, TAG, "EMBEDDED_NATIVE_BYPASS: system_server backend does not require librish.so")
 
-            // Never perform the embedded Binder/provider handoff inline on LSPosed's
-            // system_server startup callback. Samsung A17 can stall this path while package/
-            // provider services are still coming up, which pins system_server and the boot logo.
-            if (!embeddedStartScheduled.compareAndSet(false, true)) {
-                log(Log.WARN, TAG, "PUBLISH_SKIP: embedded backend start already scheduled")
-                return@runCatching
-            }
-
-            Thread({
-                log(Log.INFO, TAG, "PUBLISH_BEGIN: async embedded backend startup")
-                log(Log.INFO, TAG, "BINDER_CREATE_BEGIN: dispatching embedded ShizukuService startup")
-                runCatching {
-                    ShizukuService.startEmbeddedSystemServer()
-                }.onSuccess {
-                    log(Log.INFO, TAG, "BINDER_CREATE_RETURNED: embedded startup completed without exception")
-                    log(
-                        Log.INFO,
-                        TAG,
-                        "PUBLISH_OK: BOOT_TOKEN CONFIRMED: embedded Shizuku backend started in system_server UID ${Process.myUid()} PID ${Process.myPid()} via provider binder handoff"
-                    )
-                }.onFailure {
-                    log(Log.ERROR, TAG, "BINDER_CREATE_FAILED: ${it.javaClass.simpleName}: ${it.message}")
-                    // Fail open: never crash/terminate system_server because TokenX could not
-                    // publish its Binder during early boot. Root/shell can recover after boot.
-                    log(
-                        Log.ERROR,
-                        TAG,
-                        "PUBLISH_FAIL_OPEN: embedded backend unavailable; leaving system_server boot path alive: ${it.javaClass.simpleName}: ${it.message}\n${Log.getStackTraceString(it)}"
-                    )
-                }
-            }, "TokenX-BinderPublish").apply {
-                isDaemon = true
-                start()
-            }
-
-            log(Log.INFO, TAG, "PUBLISH_ASYNC: system_server startup callback released")
-        }.onFailure {
-            log(Log.ERROR, TAG, "embedded system_server preparation failed open: ${it.javaClass.simpleName}: ${it.message}\n${Log.getStackTraceString(it)}")
-        }
+        // Phase 1 is deliberately identity-only. Previous builds attempted to start an
+        // embedded ShizukuService from this callback; on Samsung A17 that competed with the
+        // existing root Shizuku server/provider handoff and could leave Starter waiting for
+        // a replacement Binder. Keep Shizuku/root independent and prove the LSPosed
+        // system_server execution context before adding an allow-listed RPC surface.
+        log(
+            Log.INFO,
+            TAG,
+            "SYSTEM_SERVER_IDENTITY_OK backend=XPOSED_SYSTEM_SERVER pid=$pid uid=$uid selinux=$selinux process=$cmdline"
+        )
+        log(Log.INFO, TAG, "EMBEDDED_SHIZUKU_DISABLED root_shizuku_remains_fallback")
     }
+
+    private fun readSelf(path: String): String = runCatching {
+        java.io.File(path).readText().trim()
+    }.getOrDefault("unknown")
 
     private fun systemPropertyEnabled(key: String): Boolean = runCatching {
         val clazz = Class.forName("android.os.SystemProperties")
@@ -178,6 +157,5 @@ class TokenXXposedEntry : XposedModule() {
         const val PROP_ONEUIX_LABS = "persist.tokenx.labs.oneuix"
         const val PROP_STATUS_BAR_LABS = "persist.tokenx.labs.statusbar"
         val RECEIVER_COMPAT_PACKAGES = setOf(FOTA_PACKAGE, RETAIL_MODE_PACKAGE)
-        val embeddedStartScheduled = AtomicBoolean(false)
     }
 }
