@@ -12,6 +12,8 @@ import io.github.libxposed.api.XposedModuleInterface
 
 /** TokenX modern LSPosed system_server RPC and OEM compatibility layer. */
 class TokenXXposedEntry : XposedModule() {
+    @Volatile private var rendezvousBinder: IBinder? = null
+    @Volatile private var rendezvousOwnerUid: Int = -1
     override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
         if (!param.isSystemServer) return
         log(Log.INFO, TAG, "BOOT_TOKEN CLAIMED: XPOSED/SYSTEM_SERVER UID ${Process.myUid()}")
@@ -111,6 +113,37 @@ class TokenXXposedEntry : XposedModule() {
                                 log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_IDENTITY callingUid=${Binder.getCallingUid()} callingPid=${Binder.getCallingPid()}")
                                 consumed = true
                             }
+                            ACTION_SET_BINDER -> {
+                                val callingUid = Binder.getCallingUid()
+                                val candidate = data.readStrongBinder()
+                                if (candidate == null || !candidate.pingBinder()) {
+                                    reply?.writeException(IllegalArgumentException("dead or null rendezvous binder"))
+                                } else {
+                                    rendezvousBinder = candidate
+                                    rendezvousOwnerUid = callingUid
+                                    candidate.linkToDeath({
+                                        if (rendezvousBinder === candidate) {
+                                            rendezvousBinder = null
+                                            rendezvousOwnerUid = -1
+                                            log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_BINDER_DIED")
+                                        }
+                                    }, 0)
+                                    reply?.writeNoException()
+                                    log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_SET_BINDER ownerUid=$callingUid class=${candidate.javaClass.name}")
+                                }
+                                consumed = true
+                            }
+                            ACTION_GET_BINDER -> {
+                                val callingUid = Binder.getCallingUid()
+                                val current = rendezvousBinder?.takeIf { it.isBinderAlive }
+                                reply?.writeNoException()
+                                // First iteration intentionally limits retrieval to the UID
+                                // that published the binder. Permission routing can be
+                                // widened later without exposing a root binder globally.
+                                reply?.writeStrongBinder(if (callingUid == rendezvousOwnerUid) current else null)
+                                log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_GET_BINDER callingUid=$callingUid ownerUid=$rendezvousOwnerUid present=${current != null} allowed=${callingUid == rendezvousOwnerUid}")
+                                consumed = true
+                            }
                             else -> log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_REJECT reason=unknown_action action=$action")
                         }
                     } catch (t: Throwable) {
@@ -128,7 +161,7 @@ class TokenXXposedEntry : XposedModule() {
                     }
 
                     if (consumed) {
-                        log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_REPLY_OK action=$ACTION_GET_IDENTITY replyPresent=${reply != null}")
+                        log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_REPLY_OK replyPresent=${reply != null}")
                         true
                     } else {
                         chain.proceed()
@@ -173,6 +206,8 @@ class TokenXXposedEntry : XposedModule() {
             ('_'.code shl 24) or ('T'.code shl 16) or ('K'.code shl 8) or 'N'.code
         const val ACTIVITY_MANAGER_DESCRIPTOR = "android.app.IActivityManager"
         const val ACTION_GET_IDENTITY = 1
+        const val ACTION_SET_BINDER = 2
+        const val ACTION_GET_BINDER = 3
         const val RETAIL_MODE_PACKAGE = "com.samsung.sea.rm"
         const val SYSTEM_UI_PACKAGE = "com.android.systemui"
         const val PROP_ONEUIX_LABS = "persist.tokenx.labs.oneuix"
