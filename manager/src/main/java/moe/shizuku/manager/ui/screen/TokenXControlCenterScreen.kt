@@ -183,7 +183,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                         else -> "Not detected"
                     })
                     FeatureRow(Icons.Outlined.Badge, "Native PM UID1000", if (runtime.nativeUid1000Verified) "VERIFIED • android.uid.system/1000" else "Not verified")
-                    FeatureRow(Icons.Outlined.AdminPanelSettings, "BridgeTest reference", if (runtime.systemServerBridgeAttached) "ATTACHED • identity reference" else "Not attached")
+                    FeatureRow(Icons.Outlined.AdminPanelSettings, "System Server identity", if (runtime.systemServerBridgeAttached) "ATTACHED • _TKN RPC" else "Not attached")
                     FeatureRow(Icons.Outlined.Link, "System Server RPC", if (runtime.xposedBridgeActive) "VERIFIED • _TKN • UID 1000" else "Not active")
                     HorizontalDivider()
                     FeatureRow(Icons.Outlined.Android, "Platform", "Android API ${runtime.androidApiLevel} • One UI ${runtime.oneUiVersion}")
@@ -288,7 +288,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     FeatureRow(Icons.Outlined.Extension, "LSPosed", if (runtime.xposedBridgeActive) "SYSTEM SERVER RPC • VERIFIED" else if (runtime.xposedFrameworkDetected) "Detected • _TKN RPC waiting" else "Not detected")
                     FeatureRow(Icons.Outlined.Link, "System Server RPC", if (runtime.xposedBridgeActive) "VERIFIED • _TKN Binder transport • UID 1000" else "Not verified")
-                    FeatureRow(Icons.Outlined.AdminPanelSettings, "BridgeTest", if (runtime.systemServerBridgeAttached) "REFERENCE • identity attached" else "Reference unavailable")
+                    FeatureRow(Icons.Outlined.AdminPanelSettings, "System Server", if (runtime.systemServerBridgeAttached) "ATTACHED • identity verified" else "Unavailable")
                     FeatureRow(Icons.Outlined.Security, "D2 Gate", "Protected boot boundary retained")
                     FeatureRow(Icons.Outlined.Shield, "Compatibility", "TokenX native • no Samsung FOTA dependency")
                 }
@@ -390,7 +390,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     FeatureRow(Icons.Outlined.Security, "D2 Gate", "Protected boot boundary retained for TokenX startup")
-                    FeatureRow(Icons.Outlined.Token, "System Integration", "LSPosed RPC • BridgeTest reference • D2 diagnostics")
+                    FeatureRow(Icons.Outlined.Token, "System Integration", "LSPosed _TKN RPC • D2 diagnostics")
                     FeatureRow(Icons.Outlined.AdminPanelSettings, "Privilege backends", "Root UID 0 • LSPosed system_server UID 1000 • Shell fallback")
                     FeatureRow(Icons.Outlined.Extension, "Android 17 compatibility", "TokenX-native compatibility • no Samsung FOTA dependency")
                     Text("System Server contribution: @Vikramaditya015", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
