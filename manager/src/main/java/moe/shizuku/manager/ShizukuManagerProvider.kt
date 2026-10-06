@@ -31,6 +31,7 @@ class ShizukuManagerProvider : ShizukuProvider() {
 
         @Volatile private var rootBackendBinder: IBinder? = null
         @Volatile private var systemBackendBinder: IBinder? = null
+        @Volatile private var shellBackendBinder: IBinder? = null
 
         private fun remoteUid(binder: IBinder): Int {
             val data = Parcel.obtain()
@@ -47,6 +48,7 @@ class ShizukuManagerProvider : ShizukuProvider() {
 
         fun backendBinder(route: String): IBinder? = when (route) {
             ShizukuSettings.BACKEND_SYSTEM -> systemBackendBinder?.takeIf { it.isBinderAlive }
+            ShizukuSettings.BACKEND_SHELL -> shellBackendBinder?.takeIf { it.isBinderAlive }
             else -> rootBackendBinder?.takeIf { it.isBinderAlive }
         }
     }
@@ -69,6 +71,7 @@ class ShizukuManagerProvider : ShizukuProvider() {
                 when (val uid = remoteUid(incoming)) {
                     0 -> rootBackendBinder = incoming
                     1000 -> systemBackendBinder = incoming
+                    2000 -> shellBackendBinder = incoming
                     else -> LOGGER.w("Ignoring TokenX backend binder with unexpected UID %d", uid)
                 }
             }
