@@ -1,8 +1,11 @@
 package moe.shizuku.tokenx.xposed
 
 import android.content.Context
-import android.os.Process
+import android.os.Binder
+import android.os.IBinder
 import android.os.Parcel
+import android.os.Process
+import android.os.ServiceManager
 import android.util.Log
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
@@ -10,6 +13,8 @@ import io.github.libxposed.api.XposedModuleInterface
 
 /** TokenX modern LSPosed system_server RPC and OEM compatibility layer. */
 class TokenXXposedEntry : XposedModule() {
+    private var systemServerBridge: Binder? = null
+
     override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
         if (!param.isSystemServer) return
         log(Log.INFO, TAG, "BOOT_TOKEN CLAIMED: XPOSED/SYSTEM_SERVER UID ${Process.myUid()}")
@@ -18,12 +23,8 @@ class TokenXXposedEntry : XposedModule() {
     override fun onPackageLoaded(param: XposedModuleInterface.PackageLoadedParam) {
         if (!param.isFirstPackage) return
 
-        if (param.packageName == SYSTEM_UI_PACKAGE) {
-            installStatusBarLabs(param)
-        }
-
+        if (param.packageName == SYSTEM_UI_PACKAGE) installStatusBarLabs(param)
         if (param.packageName !in RECEIVER_COMPAT_PACKAGES) return
-
         val receiverCompatPackage = param.packageName
 
         runCatching {
@@ -33,31 +34,22 @@ class TokenXXposedEntry : XposedModule() {
                     method.parameterTypes.isNotEmpty() &&
                     method.parameterTypes.last() == Int::class.javaPrimitiveType
             }
-
             if (methods.isEmpty()) {
                 log(Log.WARN, TAG, "TOKENX_RECEIVER_COMPAT_SKIP: no compatible ContextImpl.registerReceiverInternal overload")
                 return@runCatching
             }
-
             methods.forEach { method ->
-                hook(method)
-                    .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
-                    .intercept { chain ->
-                        val args = chain.args.toTypedArray()
-                        val flagsIndex = args.lastIndex
-                        val oldFlags = args[flagsIndex] as? Int ?: return@intercept chain.proceed()
-                        val hasExportFlag = oldFlags and (Context.RECEIVER_EXPORTED or Context.RECEIVER_NOT_EXPORTED) != 0
-                        if (!hasExportFlag) {
-                            // Receiver Compatibility: preserve legacy OEM receiver semantics only when
-                            // the app omitted both modern export flags. Existing explicit flags
-                            // are never rewritten. This compatibility hook is scoped to retained OEM targets.
-                            args[flagsIndex] = oldFlags or Context.RECEIVER_EXPORTED
-                            log(Log.INFO, TAG, "TOKENX_RECEIVER_COMPAT_APPLIED: package=$receiverCompatPackage flags=$oldFlags -> ${args[flagsIndex]}")
-                            chain.proceed(args)
-                        } else {
-                            chain.proceed()
-                        }
-                    }
+                hook(method).setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE).intercept { chain ->
+                    val args = chain.args.toTypedArray()
+                    val flagsIndex = args.lastIndex
+                    val oldFlags = args[flagsIndex] as? Int ?: return@intercept chain.proceed()
+                    val hasExportFlag = oldFlags and (Context.RECEIVER_EXPORTED or Context.RECEIVER_NOT_EXPORTED) != 0
+                    if (!hasExportFlag) {
+                        args[flagsIndex] = oldFlags or Context.RECEIVER_EXPORTED
+                        log(Log.INFO, TAG, "TOKENX_RECEIVER_COMPAT_APPLIED: package=$receiverCompatPackage flags=$oldFlags -> ${args[flagsIndex]}")
+                        chain.proceed(args)
+                    } else chain.proceed()
+                }
             }
             log(Log.INFO, TAG, "TOKENX_RECEIVER_COMPAT_READY: package=$receiverCompatPackage hooked ${methods.size} receiver overload(s)")
         }.onFailure {
@@ -71,72 +63,36 @@ class TokenXXposedEntry : XposedModule() {
         val selinux = readSelf("/proc/self/attr/current")
         val cmdline = readSelf("/proc/self/cmdline").replace("\u0000", "").trim()
 
-        if (uid != Process.SYSTEM_UID || cmdline != "system_server" ||
-            !selinux.startsWith("u:r:system_server:s0")
-        ) {
-            log(
-                Log.WARN,
-                TAG,
-                "SYSTEM_SERVER_IDENTITY_REJECTED pid=$pid uid=$uid selinux=$selinux process=$cmdline"
-            )
+        if (uid != Process.SYSTEM_UID || cmdline != "system_server" || !selinux.startsWith("u:r:system_server:s0")) {
+            log(Log.WARN, TAG, "SYSTEM_SERVER_IDENTITY_REJECTED pid=$pid uid=$uid selinux=$selinux process=$cmdline")
             return
         }
 
-        // Phase 1 is deliberately identity-only. Previous builds attempted to start an
-        // embedded ShizukuService from this callback; on Samsung A17 that competed with the
-        // existing root Shizuku server/provider handoff and could leave Starter waiting for
-        // a replacement Binder. Keep Shizuku/root independent and prove the LSPosed
-        // system_server execution context before adding an allow-listed RPC surface.
-        log(
-            Log.INFO,
-            TAG,
-            "SYSTEM_SERVER_IDENTITY_OK backend=XPOSED_SYSTEM_SERVER pid=$pid uid=$uid selinux=$selinux process=$cmdline"
-        )
+        log(Log.INFO, TAG, "SYSTEM_SERVER_IDENTITY_OK backend=XPOSED_SYSTEM_SERVER pid=$pid uid=$uid selinux=$selinux process=$cmdline")
         log(Log.INFO, TAG, "EMBEDDED_SHIZUKU_DISABLED root_shizuku_remains_fallback")
         installSystemServerBridge()
     }
 
     private fun installSystemServerBridge() {
-        log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_INSTALL_BEGIN pid=${Process.myPid()} uid=${Process.myUid()} transaction=0x${TOKENX_BRIDGE_TRANSACTION.toString(16)}")
+        log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_INSTALL_BEGIN pid=${Process.myPid()} uid=${Process.myUid()} service=$TOKENX_SERVICE_NAME")
         runCatching {
-            val ams = Class.forName("com.android.server.am.ActivityManagerService")
-            val onTransact = ams.getDeclaredMethod(
-                "onTransact",
-                Int::class.javaPrimitiveType,
-                Parcel::class.java,
-                Parcel::class.java,
-                Int::class.javaPrimitiveType
-            )
-            hook(onTransact)
-                .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
-                .intercept { chain ->
-                    val code = chain.args.getOrNull(0) as? Int
-                    if (code != TOKENX_BRIDGE_TRANSACTION) return@intercept chain.proceed()
+            val bridge = object : Binder() {
+                override fun onTransact(code: Int, data: Parcel, reply: Parcel?, flags: Int): Boolean {
+                    if (code != TOKENX_BRIDGE_TRANSACTION) return super.onTransact(code, data, reply, flags)
 
-                    val data = chain.args.getOrNull(1) as? Parcel
-                    val reply = chain.args.getOrNull(2) as? Parcel
-                    val flags = chain.args.getOrNull(3) as? Int ?: -1
-                    log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_INTERCEPT code=$code flags=$flags callingUid=${android.os.Binder.getCallingUid()} callingPid=${android.os.Binder.getCallingPid()} dataNull=${data == null} replyNull=${reply == null}")
-                    if (data == null) {
-                        log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_REJECT reason=null_data")
-                        return@intercept false
-                    }
-
-                    try {
-                        data.enforceInterface(ACTIVITY_MANAGER_DESCRIPTOR)
-                        val action = data.readInt()
-                        log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_ACTION action=$action dataAvail=${data.dataAvail()}")
-
-                        when (action) {
-                        ACTION_GET_IDENTITY -> {
-                            reply?.writeNoException()
-                            reply?.writeInt(Process.myPid())
-                            reply?.writeInt(Process.myUid())
-                            reply?.writeString(readSelf("/proc/self/attr/current"))
-                            reply?.writeString(readSelf("/proc/self/cmdline").replace("\u0000", "").trim())
-                            log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_IDENTITY callingUid=${android.os.Binder.getCallingUid()} callingPid=${android.os.Binder.getCallingPid()}")
-                            true
-                        }
+                    log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_INTERCEPT code=$code flags=$flags callingUid=${Binder.getCallingUid()} callingPid=${Binder.getCallingPid()}")
+                    return try {
+                        data.enforceInterface(TOKENX_BRIDGE_DESCRIPTOR)
+                        when (val action = data.readInt()) {
+                            ACTION_GET_IDENTITY -> {
+                                reply?.writeNoException()
+                                reply?.writeInt(Process.myPid())
+                                reply?.writeInt(Process.myUid())
+                                reply?.writeString(readSelf("/proc/self/attr/current"))
+                                reply?.writeString(readSelf("/proc/self/cmdline").replace("\u0000", "").trim())
+                                log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_IDENTITY callingUid=${Binder.getCallingUid()} callingPid=${Binder.getCallingPid()}")
+                                true
+                            }
                             else -> {
                                 log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_REJECT reason=unknown_action action=$action")
                                 false
@@ -147,10 +103,15 @@ class TokenXXposedEntry : XposedModule() {
                         throw t
                     }
                 }
-            log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_HOOK_INSTALLED method=${onTransact.declaringClass.name}.${onTransact.name}")
-            log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_READY transport=activity_binder protocol=2 transaction=0x${TOKENX_BRIDGE_TRANSACTION.toString(16)}")
+            }
+            bridge.attachInterface(null, TOKENX_BRIDGE_DESCRIPTOR)
+            systemServerBridge = bridge
+            ServiceManager.addService(TOKENX_SERVICE_NAME, bridge)
+            val registered: IBinder? = ServiceManager.checkService(TOKENX_SERVICE_NAME)
+            check(registered != null) { "ServiceManager registration returned null" }
+            log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_READY transport=dedicated_binder service=$TOKENX_SERVICE_NAME protocol=3 transaction=$TOKENX_BRIDGE_TRANSACTION")
         }.onFailure {
-            log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_INSTALL_FAILED: ${it.javaClass.simpleName}: ${it.message}")
+            log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_INSTALL_FAILED: ${it.javaClass.name}: ${it.message}")
         }
     }
 
@@ -165,54 +126,29 @@ class TokenXXposedEntry : XposedModule() {
     }.getOrDefault(false)
 
     private fun installStatusBarLabs(param: XposedModuleInterface.PackageLoadedParam) {
-        if (!systemPropertyEnabled(PROP_ONEUIX_LABS) ||
-            !systemPropertyEnabled(PROP_STATUS_BAR_LABS)
-        ) {
+        if (!systemPropertyEnabled(PROP_ONEUIX_LABS) || !systemPropertyEnabled(PROP_STATUS_BAR_LABS)) {
             log(Log.INFO, TAG, "ONEUIX_LABS_STATUSBAR_OFF")
             return
         }
-
-        // First OneUIX Labs hook: restore Samsung's Bluetooth status-bar icon by
-        // bypassing SystemUI icon simplification for Bluetooth slots only.
-        // Inspired by SoClear/OneUIX StatusBar.restoreBluetoothStatusBarIcon()
-        // (AGPL-3.0). Kept fail-open for One UI version drift.
         runCatching {
-            val controller = Class.forName(
-                "com.android.systemui.statusbar.phone.ui.StatusBarIconControllerImpl",
-                false,
-                param.defaultClassLoader
-            )
-            val iconManager = Class.forName(
-                "com.android.systemui.statusbar.phone.ui.IconManager",
-                false,
-                param.defaultClassLoader
-            )
-            val method = controller.getDeclaredMethod(
-                "hideBySimplification",
-                iconManager,
-                String::class.java
-            )
-            hook(method)
-                .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
-                .intercept { chain ->
-                    val slot = chain.args.getOrNull(1) as? String
-                    if (slot == "bluetooth" || slot == "bluetooth_connected") false
-                    else chain.proceed()
-                }
+            val controller = Class.forName("com.android.systemui.statusbar.phone.ui.StatusBarIconControllerImpl", false, param.defaultClassLoader)
+            val iconManager = Class.forName("com.android.systemui.statusbar.phone.ui.IconManager", false, param.defaultClassLoader)
+            val method = controller.getDeclaredMethod("hideBySimplification", iconManager, String::class.java)
+            hook(method).setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE).intercept { chain ->
+                val slot = chain.args.getOrNull(1) as? String
+                if (slot == "bluetooth" || slot == "bluetooth_connected") false else chain.proceed()
+            }
             log(Log.INFO, TAG, "ONEUIX_LABS_STATUSBAR_READY: bluetooth icon simplification hook installed")
         }.onFailure {
-            log(
-                Log.WARN,
-                TAG,
-                "ONEUIX_LABS_STATUSBAR_FAIL_OPEN: ${it.javaClass.simpleName}: ${it.message}"
-            )
+            log(Log.WARN, TAG, "ONEUIX_LABS_STATUSBAR_FAIL_OPEN: ${it.javaClass.simpleName}: ${it.message}")
         }
     }
 
     private companion object {
         const val TAG = "TokenX/Xposed"
-        const val TOKENX_BRIDGE_TRANSACTION = 0x00f54b4e // private TokenX code; must stay within Binder LAST_CALL_TRANSACTION (0x00ffffff)
-        const val ACTIVITY_MANAGER_DESCRIPTOR = "android.app.IActivityManager"
+        const val TOKENX_SERVICE_NAME = "tokenx.system_server"
+        const val TOKENX_BRIDGE_DESCRIPTOR = "moe.shizuku.tokenx.ISystemServerBridge"
+        const val TOKENX_BRIDGE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION
         const val ACTION_GET_IDENTITY = 1
         const val RETAIL_MODE_PACKAGE = "com.samsung.sea.rm"
         const val SYSTEM_UI_PACKAGE = "com.android.systemui"
