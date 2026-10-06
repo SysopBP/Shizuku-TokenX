@@ -3,10 +3,11 @@ BASEDIR=$(dirname "$0")
 DEX="$BASEDIR"/rish_shizuku.dex
 
 # TokenX rish backend selector.
-#   ./rish                 -> normal Shizuku
+#   ./rish                 -> normal/saved Shizuku route
 #   ./rish --system [CMD]  -> TokenX System Server bridge (uid 1000)
 #   ./rish --sserver [CMD] -> legacy alias for --system
-#   ./rish --root CMD      -> KernelSU/su (uid 0)
+#   ./rish --root [CMD]    -> TokenX/Shizuku Root backend (uid 0)
+#   ./rish --shell [CMD]   -> Shizuku Shell backend (uid 2000)
 #
 # Sserver is deliberately command mode rather than an interactive PTY: Android's persistent
 # system_server must never host an arbitrary interactive shell. The command is handed to the
@@ -14,8 +15,7 @@ DEX="$BASEDIR"/rish_shizuku.dex
 case "$1" in
   --root)
     shift
-    [ "$#" -gt 0 ] || { echo "Usage: ./rish --root <command>" >&2; exit 2; }
-    exec su -c "$*"
+    export TOKENX_RISH_BACKEND=root
     ;;
   --system|--sserver)
     shift
@@ -23,8 +23,9 @@ case "$1" in
     # The exported rish dex contains the TokenX Sserver client entry point.
     export TOKENX_RISH_BACKEND=sserver
     ;;
-  --shizuku)
+  --shell|--shizuku)
     shift
+    export TOKENX_RISH_BACKEND=shell
     ;;
 esac
 
