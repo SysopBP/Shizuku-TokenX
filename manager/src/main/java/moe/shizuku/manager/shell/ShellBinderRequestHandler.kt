@@ -22,6 +22,7 @@ object ShellBinderRequestHandler {
         val route = when (requested) {
             "system", "sserver" -> ShizukuSettings.BACKEND_SYSTEM
             "root" -> ShizukuSettings.BACKEND_ROOT
+            "shell" -> ShizukuSettings.BACKEND_SHELL
             else -> callingPackage?.let { ShizukuSettings.getBackendRoute(it) } ?: ShizukuSettings.BACKEND_ROOT
         }
 
