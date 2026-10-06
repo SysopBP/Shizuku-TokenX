@@ -26,7 +26,7 @@ data class TokenXXposedIdentity(
  * came from the real system_server execution context.
  */
 object TokenXXposedSystemServerClient {
-    private const val TRANSACTION = 0x5f544b4e // "_TKN"
+    private const val TRANSACTION = 0x00f54b4e // private TokenX code; must stay within Binder LAST_CALL_TRANSACTION (0x00ffffff)
     private const val DESCRIPTOR = "android.app.IActivityManager"
     private const val ACTION_GET_IDENTITY = 1
 
