@@ -227,8 +227,8 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     FeatureRow(Icons.Outlined.Route, "Selected backend", runtime.backendRegistry.selected.name.replace('_', ' '))
                     FeatureRow(Icons.Outlined.Badge, "Identity", selected?.let { "UID ${it.uid} • ${if (it.verified) "verified" else "discovered"}" } ?: "Unavailable")
                     FeatureRow(Icons.Outlined.Link, "System Server RPC", if (runtime.xposedBridgeActive) "VERIFIED • LSPosed _TKN identity" else "Not active")
-                    FeatureRow(Icons.Outlined.Security, "Native / PM UID 1000", if (runtime.nativeUid1000Verified) "VERIFIED • com.tokenx.bridgetest • android.uid.system" else "Unavailable")
-                    FeatureRow(Icons.Outlined.Security, "BridgeTest reference", if (runtime.systemServerBridgeAttached) "READY • reference only" else "Unavailable")
+                    FeatureRow(Icons.Outlined.Security, "System UID Binder", if (runtime.nativeUid1000Verified) "VERIFIED • live binder UID 1000" else "Unavailable")
+                    FeatureRow(Icons.Outlined.Security, "System Server Identity", if (runtime.systemServerBridgeActive) "VERIFIED • LSPosed _TKN" else "Unavailable")
                     FeatureRow(Icons.Outlined.Terminal, "Root", if (runtime.backendRegistry.isReady(TokenXBackend.ROOT)) "READY • UID 0" else "Unavailable")
                 }
             }
