@@ -50,24 +50,16 @@ object TokenXRuntime {
         val corePatchDetected = isInstalled(context.packageManager, "org.lsposed.corepatch")
         val oneUiVersion = readOneUiVersion()
 
-        // The standalone headless bridge is authoritative for SYSTEM_SERVER.
-        // Package presence and the legacy backend association are not accepted as proof.
-        TokenXBridgeClient.ensureBound(context)
-        val bridgeIdentity = TokenXBridgeClient.identity()
-        val bridgeAttached = bridgeIdentity != null
-        val bridgeActive = bridgeIdentity?.verifiedSystemServer == true
-        // BridgeTest is currently our identity reference only. Do not probe optional
-        // transaction 2 from the one-second runtime snapshot; older BridgeTest payloads
-        // reject it and Android logs Binder error -74. Functional RPCs will live on the
-        // dedicated Xposed backend instead of overloading the reference bridge.
-        val bridgeFunctional: TokenXBridgeFunctionalResult? = null
-        val bridgeCapabilities = 0
-
-        // Dedicated LSPosed backend. This is independent of Shizuku and BridgeTest:
-        // a private transaction on the existing ActivityManager Binder must answer
-        // from the real system_server identity before it is considered available.
+        // LSPosed is the live SYSTEM_SERVER backend. BridgeTest remains diagnostic-only:
+        // runtime must never bind its IdentityService or retry it as an application backend.
+        // The private _TKN transaction rides ActivityManager's existing Binder and is
+        // accepted only when the reply proves the real system_server PID/UID/SELinux/cmdline.
         val xposedIdentity = TokenXXposedSystemServerClient.identity()
         val xposedSystemServerActive = xposedIdentity?.verifiedSystemServer == true
+        val bridgeAttached = xposedIdentity != null
+        val bridgeActive = xposedSystemServerActive
+        val bridgeFunctional: TokenXBridgeFunctionalResult? = null
+        val bridgeCapabilities = 0
         val nativeUid1000 = isNativeUid1000Verified()
         // Preserve the build-173 Sserver/rish contract: the executable Server route is
         // authoritative when the live Shizuku-compatible Binder itself reports UID 1000.
