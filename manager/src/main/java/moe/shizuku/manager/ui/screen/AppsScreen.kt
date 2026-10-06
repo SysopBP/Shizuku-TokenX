@@ -127,6 +127,7 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
     var version by remember { mutableIntStateOf(0) }
     var sortMenu by remember { mutableStateOf(false) }
     var filter by remember { mutableStateOf(AppFilter.ALL) }
+    var backendFilter by remember { mutableStateOf<String?>(null) }
     // The kind of app, from the same set of filters the app-ops and Labs lists use.
     var kind by remember { mutableStateOf(ManageFilter.ALL) }
     var pendingBatch by remember { mutableStateOf<Boolean?>(null) }
@@ -232,7 +233,7 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
     }
 
     val shown = remember(
-        all, query, sortOrder, filter, kind,
+        all, query, sortOrder, filter, kind, backendFilter,
         userPackages, systemPackages, disabledPackages, launcherless, grantedNames
     ) {
         val q = query.trim()
@@ -248,10 +249,13 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
             AppFilter.GRANTED -> byKind.filter { it.packageName in grantedNames }
             AppFilter.REVOKED -> byKind.filter { it.packageName !in grantedNames }
         }
+        val byBackend = backendFilter?.let { route ->
+            byFilter.filter { it.packageName in grantedNames && ShizukuSettings.getBackendRoute(it.packageName) == route }
+        } ?: byFilter
         val filtered = if (q.isBlank()) {
-            byFilter
+            byBackend
         } else {
-            byFilter.filter {
+            byBackend.filter {
                 val label = runCatching { it.applicationInfo?.loadLabel(pm)?.toString() ?: "" }.getOrDefault("")
                 label.contains(q, ignoreCase = true) || it.packageName.contains(q, ignoreCase = true)
             }
@@ -460,6 +464,40 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
             )
         }
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val rootCount = grantedNames.count {
+                ShizukuSettings.getBackendRoute(it) == ShizukuSettings.BACKEND_ROOT
+            }
+            val systemCount = grantedNames.count {
+                ShizukuSettings.getBackendRoute(it) == ShizukuSettings.BACKEND_SYSTEM
+            }
+            AppFilterChip(
+                modifier = Modifier.weight(1f),
+                label = "Root",
+                count = rootCount,
+                selected = backendFilter == ShizukuSettings.BACKEND_ROOT,
+                onClick = {
+                    backendFilter = if (backendFilter == ShizukuSettings.BACKEND_ROOT) null
+                    else ShizukuSettings.BACKEND_ROOT
+                }
+            )
+            AppFilterChip(
+                modifier = Modifier.weight(1f),
+                label = "System UID",
+                count = systemCount,
+                selected = backendFilter == ShizukuSettings.BACKEND_SYSTEM,
+                onClick = {
+                    backendFilter = if (backendFilter == ShizukuSettings.BACKEND_SYSTEM) null
+                    else ShizukuSettings.BACKEND_SYSTEM
+                }
+            )
+        }
+
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
@@ -649,7 +687,7 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
 
                     // A filter can legitimately hold nothing (Hidden often does), which is
                     // not the same as there being no apps at all.
-                    filter != AppFilter.ALL || kind != ManageFilter.ALL -> Text(
+                    filter != AppFilter.ALL || kind != ManageFilter.ALL || backendFilter != null -> Text(
                         text = stringResource(R.string.apps_filter_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
