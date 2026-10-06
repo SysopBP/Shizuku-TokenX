@@ -61,7 +61,8 @@ public class ShizukuShellLoader {
         Intent intent = new Intent("rikka.shizuku.intent.action.REQUEST_BINDER")
                 .setPackage(managerApplicationId)
                 .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
-                .putExtra("data", data);
+                .putExtra("data", data)
+                .putExtra("tokenx_backend", System.getenv("TOKENX_RISH_BACKEND"));
 
         IBinder amBinder = ServiceManager.getService("activity");
         IActivityManager am;
