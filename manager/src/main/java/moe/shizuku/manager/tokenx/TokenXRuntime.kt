@@ -36,6 +36,39 @@ data class TokenXRuntimeState(
 
 object TokenXRuntime {
     const val REFRESH_INTERVAL_MS = 1000L
+    private const val XPOSED_RPC_VERIFY_INTERVAL_MS = 15_000L
+
+    @Volatile private var lastXposedRpcVerifyAt = 0L
+    @Volatile private var cachedXposedIdentity: TokenXXposedIdentity? = null
+    @Volatile private var cachedXposedBridgeActive = false
+
+    /**
+     * The UI refreshes once per second, but a full _TKN verification is a three-transaction
+     * Binder round trip. Cache that proof for a short window so opening the manager does not
+     * continuously hammer ActivityManager/system_server. A dead Shizuku binder invalidates
+     * the active result immediately; otherwise verification is refreshed every 15 seconds.
+     */
+    @Synchronized
+    private fun verifyXposedRoute(running: Boolean): Pair<TokenXXposedIdentity?, Boolean> {
+        val now = android.os.SystemClock.elapsedRealtime()
+        val due = now - lastXposedRpcVerifyAt >= XPOSED_RPC_VERIFY_INTERVAL_MS
+        if (!due) {
+            return cachedXposedIdentity to (running && cachedXposedBridgeActive)
+        }
+
+        val identity = TokenXXposedSystemServerClient.identity()
+        val identityVerified = identity?.verifiedSystemServer == true
+        val liveShizukuBinder = if (running) runCatching { Shizuku.getBinder() }.getOrNull() else null
+        val published = identityVerified &&
+            liveShizukuBinder?.let { TokenXXposedSystemServerClient.publishBinder(it) } == true
+        val returned = if (published) TokenXXposedSystemServerClient.binder() else null
+        val active = identityVerified && returned?.isBinderAlive == true && returned.pingBinder()
+
+        cachedXposedIdentity = identity
+        cachedXposedBridgeActive = active
+        lastXposedRpcVerifyAt = now
+        return identity to active
+    }
     private val knownXposedManagers = listOf(
         "org.lsposed.manager",
         "org.meowcat.edxposed.manager",
@@ -54,16 +87,10 @@ object TokenXRuntime {
         // runtime must never bind its IdentityService or retry it as an application backend.
         // The private _TKN transaction rides ActivityManager's existing Binder and is
         // accepted only when the reply proves the real system_server PID/UID/SELinux/cmdline.
-        val xposedIdentity = TokenXXposedSystemServerClient.identity()
-        // Publish the already-live Shizuku backend Binder into the system_server
-        // rendezvous, then retrieve it through the private _TKN transaction.
-        // This mirrors Sui's cheap Binder handoff while leaving normal Shizuku
-        // initialization and fallback untouched.
-        val liveShizukuBinder = if (running) runCatching { Shizuku.getBinder() }.getOrNull() else null
-        val rendezvousPublished = liveShizukuBinder?.let { TokenXXposedSystemServerClient.publishBinder(it) } == true
-        val rendezvousBinder = if (rendezvousPublished) TokenXXposedSystemServerClient.binder() else null
-        val rendezvousReady = rendezvousBinder?.isBinderAlive == true
-        val xposedSystemServerActive = xposedIdentity?.verifiedSystemServer == true && rendezvousReady
+        // Full Xposed RPC verification is deliberately decoupled from the 1-second UI
+        // refresh. Repeating GET_IDENTITY + SET_BINDER + GET_BINDER every refresh created
+        // unnecessary Binder traffic even after the route was already proven healthy.
+        val (xposedIdentity, xposedSystemServerActive) = verifyXposedRoute(running)
         val bridgeAttached = xposedIdentity != null
         val bridgeActive = xposedSystemServerActive
         val bridgeFunctional: TokenXBridgeFunctionalResult? = null
