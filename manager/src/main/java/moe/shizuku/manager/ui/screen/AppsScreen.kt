@@ -566,17 +566,21 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
                                 TextButton(
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                                     onClick = {
-                                        val next = if (backendRoute == ShizukuSettings.BACKEND_SYSTEM) {
-                                            ShizukuSettings.BACKEND_ROOT
-                                        } else {
-                                            ShizukuSettings.BACKEND_SYSTEM
+                                        val next = when (backendRoute) {
+                                            ShizukuSettings.BACKEND_ROOT -> ShizukuSettings.BACKEND_SYSTEM
+                                            ShizukuSettings.BACKEND_SYSTEM -> ShizukuSettings.BACKEND_SHELL
+                                            else -> ShizukuSettings.BACKEND_ROOT
                                         }
                                         ShizukuSettings.setBackendRoute(pi.packageName, next)
                                         version++
                                     }
                                 ) {
                                     Text(
-                                        if (backendRoute == ShizukuSettings.BACKEND_SYSTEM) "System" else "Root",
+                                        when (backendRoute) {
+                                            ShizukuSettings.BACKEND_SYSTEM -> "System"
+                                            ShizukuSettings.BACKEND_SHELL -> "Shell"
+                                            else -> "Root"
+                                        },
                                         maxLines = 1
                                     )
                                 }
