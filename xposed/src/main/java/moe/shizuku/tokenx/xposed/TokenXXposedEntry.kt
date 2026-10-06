@@ -11,6 +11,7 @@ import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
 
 /** TokenX modern LSPosed system_server RPC and OEM compatibility layer. */
+// Root Shizuku and the UID-1000 TokenX bridge intentionally keep independent lifecycles.
 class TokenXXposedEntry : XposedModule() {
     init {
         // Earliest lifecycle marker: proves LSPosed instantiated the module class.
