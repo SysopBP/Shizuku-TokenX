@@ -55,7 +55,15 @@ object TokenXRuntime {
         // The private _TKN transaction rides ActivityManager's existing Binder and is
         // accepted only when the reply proves the real system_server PID/UID/SELinux/cmdline.
         val xposedIdentity = TokenXXposedSystemServerClient.identity()
-        val xposedSystemServerActive = xposedIdentity?.verifiedSystemServer == true
+        // Publish the already-live Shizuku backend Binder into the system_server
+        // rendezvous, then retrieve it through the private _TKN transaction.
+        // This mirrors Sui's cheap Binder handoff while leaving normal Shizuku
+        // initialization and fallback untouched.
+        val liveShizukuBinder = if (running) runCatching { Shizuku.getBinder() }.getOrNull() else null
+        val rendezvousPublished = liveShizukuBinder?.let { TokenXXposedSystemServerClient.publishBinder(it) } == true
+        val rendezvousBinder = if (rendezvousPublished) TokenXXposedSystemServerClient.binder() else null
+        val rendezvousReady = rendezvousBinder?.isBinderAlive == true
+        val xposedSystemServerActive = xposedIdentity?.verifiedSystemServer == true && rendezvousReady
         val bridgeAttached = xposedIdentity != null
         val bridgeActive = xposedSystemServerActive
         val bridgeFunctional: TokenXBridgeFunctionalResult? = null
