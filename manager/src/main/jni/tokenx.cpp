@@ -3,11 +3,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <array>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
-#include <string>
 
 namespace {
 constexpr const char* kVersion = "0.1";
@@ -31,10 +29,10 @@ void print_status() {
     std::printf("rish_fallback=enabled\n");
 }
 
-bool make_token(std::array<unsigned char, kTokenBytes>& out) {
+bool make_token(unsigned char* out, size_t size) {
     size_t done = 0;
-    while (done < out.size()) {
-        const ssize_t n = getrandom(out.data() + done, out.size() - done, 0);
+    while (done < size) {
+        const ssize_t n = getrandom(out + done, size - done, 0);
         if (n > 0) {
             done += static_cast<size_t>(n);
             continue;
@@ -46,15 +44,15 @@ bool make_token(std::array<unsigned char, kTokenBytes>& out) {
 }
 
 void print_token() {
-    std::array<unsigned char, kTokenBytes> token{};
-    if (!make_token(token)) {
+    unsigned char token[kTokenBytes] = {};
+    if (!make_token(token, sizeof(token))) {
         std::fprintf(stderr, "tokenx: getrandom failed: %s\n", std::strerror(errno));
         _exit(70);
     }
     // Development bootstrap only. Manager-side capability exchange will replace
     // printable tokens before privileged operations are enabled.
     std::printf("tx1.");
-    for (unsigned char b : token) std::printf("%02x", b);
+    for (size_t i = 0; i < sizeof(token); ++i) std::printf("%02x", token[i]);
     std::printf("\n");
 }
 
@@ -92,30 +90,30 @@ int main(int argc, char** argv) {
         usage();
         return 64;
     }
-    const std::string cmd(argv[1]);
-    if (cmd == "status") {
+    const char* cmd = argv[1];
+    if (std::strcmp(cmd, "status") == 0) {
         print_status();
         return 0;
     }
-    if (cmd == "token") {
+    if (std::strcmp(cmd, "token") == 0) {
         print_token();
         return 0;
     }
-    if (cmd == "root") return backend_probe("root", 0);
-    if (cmd == "system") return backend_probe("system", 1000);
-    if (cmd == "shell") return backend_probe("shell", 2000);
-    if (cmd == "sessions") {
+    if (std::strcmp(cmd, "root") == 0) return backend_probe("root", 0);
+    if (std::strcmp(cmd, "system") == 0) return backend_probe("system", 1000);
+    if (std::strcmp(cmd, "shell") == 0) return backend_probe("shell", 2000);
+    if (std::strcmp(cmd, "sessions") == 0) {
         std::puts("native_sessions=0 transport=binder-pending rish_fallback=enabled");
         return 0;
     }
-    if (cmd == "doctor") {
+    if (std::strcmp(cmd, "doctor") == 0) {
         print_status();
         std::puts("entropy=getrandom");
         std::puts("capability_tokens=bootstrap-only");
         std::puts("privileged_dispatch=disabled-until-manager-auth");
         return 0;
     }
-    if (cmd == "version") {
+    if (std::strcmp(cmd, "version") == 0) {
         std::printf("tokenx-control %s\n", kVersion);
         return 0;
     }
