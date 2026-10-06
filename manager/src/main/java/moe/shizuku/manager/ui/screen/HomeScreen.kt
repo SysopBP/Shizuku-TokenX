@@ -98,6 +98,7 @@ import moe.shizuku.manager.home.showAccessibilityDialog
 import moe.shizuku.manager.receiver.ShizukuReceiverStarter
 import moe.shizuku.manager.shell.ShellBackend
 import moe.shizuku.manager.shell.ShellSession
+import moe.shizuku.manager.shell.ShellBinderRequestHandler
 import moe.shizuku.manager.start.StartFailureKind
 import moe.shizuku.manager.start.StartStatus
 import moe.shizuku.manager.start.StartStatusReporter
@@ -149,6 +150,7 @@ fun HomeScreen(bottomPadding: Dp) {
     var updateAvailable by remember { mutableStateOf(false) }
     var rooted by remember { mutableStateOf(false) }
     var startMethod by remember { mutableStateOf(ShizukuSettings.getStartMethod()) }
+    var systemRishActive by remember { mutableStateOf(ShellBinderRequestHandler.isSystemRishConnected()) }
     var developerOptionsOn by remember { mutableStateOf(context.isDeveloperOptionsEnabled()) }
     var selinuxRes by remember { mutableStateOf<Int?>(null) }
     var seccompRes by remember { mutableStateOf<Int?>(null) }
@@ -259,6 +261,7 @@ fun HomeScreen(bottomPadding: Dp) {
 
         batteryIgnored = SettingsHelper.isIgnoringBatteryOptimizations(context)
         developerOptionsOn = context.isDeveloperOptionsEnabled()
+        systemRishActive = ShellBinderRequestHandler.isSystemRishConnected()
         // Root can be gone since the method was chosen; the card would otherwise keep
         // promising a start the device can no longer run.
         startMethod = StartMethodGuard.resolve()
@@ -332,6 +335,13 @@ fun HomeScreen(bottomPadding: Dp) {
         if (updateAvailable) {
             runCatching { UpdateHelper.updateLastPromptedVersion() }
         }    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            systemRishActive = ShellBinderRequestHandler.isSystemRishConnected()
+            delay(500)
+        }
+    }
 
     // Binder replacement during an engine switch may not produce a second state-machine
     // transition in the manager process. Poll the live Binder while a switch is pending;
@@ -733,9 +743,13 @@ fun HomeScreen(bottomPadding: Dp) {
                         StartMethodRow(
                             icon = Icons.Rounded.AdminPanelSettings,
                             title = stringResource(R.string.home_system_title),
-                            summary = if (running && uid == 1000) "Active now • UID 1000" else "Framework • UID 1000",
+                            summary = when {
+                                running && uid == 1000 -> "Active now • UID 1000"
+                                systemRishActive -> "rish connected • UID 1000"
+                                else -> "Framework • UID 1000"
+                            },
                             enabled = !(running && uid == 1000),
-                            active = running && uid == 1000,
+                            active = (running && uid == 1000) || systemRishActive,
                             onClick = {
                                 ShizukuReceiverStarter.switchMode(
                                     context,
