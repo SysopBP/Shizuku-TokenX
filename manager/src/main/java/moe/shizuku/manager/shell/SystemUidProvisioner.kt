@@ -16,10 +16,9 @@ object SystemUidProvisioner {
 
     const val LIVE_PACKAGE = "com.tokenx.bridgetest"
     const val LEGACY_PACKAGE = "com.vikram.exp"
-    const val FOTA_PACKAGE = "com.sdet.fotaagent"
     const val STAGED_SHIZUKU = "/data/local/tmp/libshizuku.so"
 
-    enum class Stage { D2_GATE, BRIDGE_UID, FOTA_UID, FOTA_DOMAIN, DEX_FALLBACK, RX_COMPAT, SYSTEM_BRIDGE }
+    enum class Stage { D2_GATE, BRIDGE_UID, SYSTEM_BRIDGE }
     enum class StageState { WAITING, CHECKING, VERIFIED, WARNING, FAILED }
     data class Progress(val stage: Stage, val state: StageState, val detail: String)
 
@@ -85,9 +84,9 @@ object SystemUidProvisioner {
     }
 
     /**
-     * Non-destructive provisioning audit for the privileged payloads. This deliberately
-     * does not launch FOTA, reboot, enter recovery, factory-reset, or invoke update_engine.
-     * The KernelSU module remains the installer; the manager reports exactly what survived.
+     * Non-destructive integration audit. FOTA and the legacy DEX backend were
+     * retired from TokenX; this verifies only the retained D2 boundary and the
+     * temporary BridgeTest identity reference.
      */
     fun verifyProvisionedPayloads(onProgress: (Progress) -> Unit = {}): Result {
         fun check(stage: Stage, label: String, script: String): Result {
@@ -96,23 +95,21 @@ object SystemUidProvisioner {
             onProgress(Progress(stage, if (result.success) StageState.VERIFIED else StageState.FAILED, result.output.trim().ifBlank { label }))
             return result
         }
-        val transcript = StringBuilder("=== TokenX provisioned payloads ===\n")
+        val transcript = StringBuilder("=== TokenX system integration ===\n")
         val checks = listOf(
-            Triple(Stage.D2_GATE, "Checking D2 dual-gate module", "test -d /data/adb/modules/tokenx_system_server && echo D2_GATE=module-present"),
-            Triple(Stage.BRIDGE_UID, "Checking TKN Bridge UID 1000", "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000'"),
-            Triple(Stage.FOTA_UID, "Checking FOTA UID 1000", "cmd package list packages -U | grep -F 'package:$FOTA_PACKAGE uid:1000'"),
-            Triple(Stage.FOTA_DOMAIN, "Checking FOTA system identity", "dumpsys package $FOTA_PACKAGE 2>/dev/null | grep -m1 -E 'sharedUser=.*android.uid.system/1000'"),
-            Triple(Stage.DEX_FALLBACK, "Checking provisioning DEX fallback", "DEX=$(find /data/adb/modules/tokenx_system_server -type f -name '*.dex' 2>/dev/null | head -n 1); test -n \"${'$'}DEX\" && test -r \"${'$'}DEX\" && echo DEX_FALLBACK=present && echo DEX_PATH=\"${'$'}DEX\" && echo DEX_STATE=standby"),
-            Triple(Stage.RX_COMPAT, "Checking TokenX Receiver Compatibility", "echo TOKENX_RECEIVER_COMPAT=integrated; echo TOKENX_RECEIVER_SCOPE=$FOTA_PACKAGE")
+            Triple(Stage.D2_GATE, "Checking D2 protected module", "test -d /data/adb/modules/tokenx_system_server && echo D2_GATE=module-present"),
+            Triple(Stage.BRIDGE_UID, "Checking BridgeTest identity reference", "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000'")
         )
         for ((stage, label, script) in checks) {
             val result = check(stage, label, script)
             transcript.append(result.output)
             if (!result.success) return Result(false, result.exitCode, transcript.toString(), result.command)
         }
-        transcript.append("NOTE=Legacy DEX fallback is optional/retired; STANDBY does not fail the Vault and TokenX does not execute it\n")
-        transcript.append("NOTE=Receiver Compatibility is integrated into TokenX Xposed; no external Receiver Flag Fix APK is required\n")
-        return Result(true, 0, transcript.toString(), "TokenX staged provisioning audit")
+        transcript.append("FOTA=removed\n")
+        transcript.append("LEGACY_DEX=removed\n")
+        transcript.append("RECEIVER_COMPAT=TokenX-native; outside provisioning chain\n")
+        transcript.append("SYSTEM_SERVER_BACKEND=LSPosed _TKN RPC; verified by TokenX runtime\n")
+        return Result(true, 0, transcript.toString(), "TokenX system integration audit")
     }
 
     fun verify(): Result {
