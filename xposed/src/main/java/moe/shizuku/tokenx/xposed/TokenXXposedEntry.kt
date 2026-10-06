@@ -169,7 +169,7 @@ class TokenXXposedEntry : XposedModule() {
                                 // Functional UID-1000 proof. Deliberately read-only: no shell,
                                 // fork, setuid or arbitrary command execution in system_server.
                                 val services = listOf("activity", "package", "power", "window")
-                                val available = services.filter { android.os.ServiceManager.checkService(it) != null }
+                                val available = services.filter { android.os.ServiceManager.getService(it) != null }
                                 reply?.writeNoException()
                                 reply?.writeInt(Process.myUid())
                                 reply?.writeInt(Process.myPid())
