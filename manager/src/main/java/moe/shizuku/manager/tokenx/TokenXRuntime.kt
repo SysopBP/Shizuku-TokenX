@@ -146,14 +146,26 @@ object TokenXRuntime {
 
 
     private fun readOneUiVersion(): String = runCatching {
-        val direct = Shell.cmd("getprop ro.build.version.oneui").exec().out.firstOrNull()?.trim().orEmpty()
-        if (direct.isNotBlank()) return direct
-        val sep = Shell.cmd("getprop ro.build.version.sep").exec().out.firstOrNull()?.trim()?.toIntOrNull()
-        if (sep != null && sep >= 90000) {
-            val encoded = sep - 90000
-            return "${encoded / 10000}.${(encoded % 10000) / 100}"
+        fun formatSamsungVersion(raw: String): String? {
+            if (raw.isBlank()) return null
+            val numeric = raw.toIntOrNull() ?: return raw
+            // Samsung exposes One UI either as a friendly value or as its SEP-style
+            // encoded integer (for example 90000 for One UI 9). Never print the raw
+            // encoded property in the UI.
+            if (numeric >= 90000) {
+                val encoded = numeric - 90000
+                val major = 9 + (encoded / 10000)
+                val minor = (encoded % 10000) / 100
+                return if (minor == 0) major.toString() else "$major.$minor"
+            }
+            return raw
         }
-        "Unknown"
+
+        val direct = Shell.cmd("getprop ro.build.version.oneui").exec().out.firstOrNull()?.trim().orEmpty()
+        formatSamsungVersion(direct)?.let { return it }
+
+        val sep = Shell.cmd("getprop ro.build.version.sep").exec().out.firstOrNull()?.trim().orEmpty()
+        formatSamsungVersion(sep) ?: "Unknown"
     }.getOrDefault("Unknown")
 
     private fun isInstalled(pm: PackageManager, packageName: String): Boolean =
