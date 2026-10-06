@@ -121,13 +121,14 @@ class TokenXXposedEntry : XposedModule() {
                             consumed = true
                         }
                     } finally {
-                        data.setDataPosition(0)
-                        reply?.setDataPosition(0)
+                        // These Parcel wrappers point at native Parcel objects owned by
+                        // Binder.execTransact. Do not recycle or rewind them here: doing so
+                        // can invalidate framework-owned native state before execTransact
+                        // finishes returning the reply to the caller.
                     }
 
                     if (consumed) {
-                        data.recycle()
-                        reply?.recycle()
+                        log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_REPLY_OK action=$ACTION_GET_IDENTITY replyPresent=${reply != null}")
                         true
                     } else {
                         chain.proceed()
