@@ -9,4 +9,5 @@ dependencies {
     compileOnly "io.github.libxposed:api:102.0.0"
     compileOnly libs.hidden.stub
     compileOnly project(":server")
+    compileOnly project(":server-shared")
 }
