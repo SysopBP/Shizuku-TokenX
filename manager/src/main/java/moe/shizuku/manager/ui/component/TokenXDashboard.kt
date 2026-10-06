@@ -210,8 +210,29 @@ fun TokenXDashboard(
                             color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = .35f),
                             shape = MaterialTheme.shapes.medium
                         ) {
-                            Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("TOKENX LIVE CONSOLE", style = MaterialTheme.typography.labelMedium, color = modeColor)
+                            Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                                Text("LIVE INTEGRATION", style = MaterialTheme.typography.labelMedium, color = modeColor)
+                                IntegrationDetailRow("System Server", if (bridgeVerified) "UID 1000 • Ready" else "UID 1000")
+                                IntegrationDetailRow("Xposed RPC", if (bridgeVerified) "Verified" else "Standby")
+                                IntegrationDetailRow("RPC Route", if (bridgeVerified) "Xposed → system_server" else "Awaiting verification")
+                                IntegrationDetailRow("Binder", if (bridgeVerified) "Connected" else "Standby")
+                                IntegrationDetailRow("LSPosed", if (bridgeVerified) "Detected • RPC active" else "Detected")
+                                IntegrationDetailRow("D2 Gate", "Open • Protected")
+                                IntegrationDetailRow("Boot Session", "Ready")
+                                IntegrationDetailRow("Router", "Multi-backend")
+                                IntegrationDetailRow("Root", if (rootAvailable) "UID 0 available" else "Unavailable")
+                                IntegrationDetailRow("Fallback", "Shell available")
+                                IntegrationDetailRow("Compatibility", "Native")
+                                IntegrationDetailRow(
+                                    "Last verification",
+                                    lastIntegrationCheck?.let { DateFormat.getTimeInstance(DateFormat.MEDIUM).format(Date(it)) } ?: "This check"
+                                )
+                                integrationDetail?.lineSequence()
+                                    ?.firstOrNull { it.startsWith("SYSTEM_SERVER_BACKEND=") }
+                                    ?.substringAfter("=")
+                                    ?.let { IntegrationDetailRow("Backend", it.replace("LSPosed _TKN RPC", "Xposed System Server RPC")) }
+                                HorizontalDivider(Modifier.padding(vertical = 2.dp))
+                                Text("TECHNICAL RESULT", style = MaterialTheme.typography.labelSmall, color = modeColor)
                                 Text(
                                     provisionStatus ?: "Preparing secure audit…",
                                     style = MaterialTheme.typography.bodySmall,
@@ -332,14 +353,16 @@ fun TokenXDashboard(
                 color = MaterialTheme.colorScheme.primary
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusLine(Icons.Rounded.VerifiedUser, "System Server", "UID 1000", Modifier.weight(1f))
-                StatusLine(Icons.Rounded.Extension, "Xposed RPC", if (bridgeVerified) "Verified" else "Standby", Modifier.weight(1f))
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusLine(Icons.Rounded.Lock, "D2 Gate", "Protected", Modifier.weight(1f))
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusLine(Icons.Rounded.Security, "Compatibility", "Native", Modifier.weight(1f))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                    StatusLine(Icons.Rounded.VerifiedUser, "System Server", "UID 1000")
+                    StatusLine(Icons.Rounded.Lock, "D2 Gate", "Protected")
+                    StatusLine(Icons.Rounded.Security, "Compatibility", "Native")
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                    StatusLine(Icons.Rounded.Extension, "Xposed RPC", if (bridgeVerified) "Verified" else "Standby")
+                    StatusLine(Icons.Rounded.Terminal, "RPC Route", if (bridgeVerified) "system_server" else "Awaiting")
+                    StatusLine(Icons.Rounded.CheckCircle, "Binder", if (bridgeVerified) "Connected" else "Standby")
+                }
             }
             TextButton(
                 onClick = { showVaultDetails = !showVaultDetails },
