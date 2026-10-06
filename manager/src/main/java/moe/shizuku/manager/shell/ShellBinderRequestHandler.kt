@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.IBinder
 import android.os.Parcel
 import moe.shizuku.manager.utils.Logger.LOGGER
+import moe.shizuku.manager.ShizukuManagerProvider
 import moe.shizuku.manager.tokenx.TokenXXposedSystemServerClient
 import rikka.shizuku.Shizuku
 
@@ -17,12 +18,17 @@ object ShellBinderRequestHandler {
 
         val binder = intent.getBundleExtra("data")?.getBinder("binder") ?: return false
         val requestedBackend = intent.getStringExtra("tokenx_backend")
-        val shizukuBinder = if (requestedBackend == "sserver") {
-            TokenXXposedSystemServerClient.binder().also {
+        val shizukuBinder = when (requestedBackend) {
+            "sserver", "system" -> TokenXXposedSystemServerClient.binder().also {
                 if (it == null) LOGGER.w("TokenX System Server Binder was requested but is not published")
             }
-        } else {
-            Shizuku.getBinder().also {
+            "root" -> ShizukuManagerProvider.rootBinder().also {
+                if (it == null) LOGGER.w("TokenX Root Binder was requested but is not published")
+            }
+            "shell" -> ShizukuManagerProvider.shellBinder().also {
+                if (it == null) LOGGER.w("TokenX Shell Binder was requested but is not published")
+            }
+            else -> Shizuku.getBinder().also {
                 if (it == null) LOGGER.w("Binder not received or Shizuku service not running")
             }
         }
