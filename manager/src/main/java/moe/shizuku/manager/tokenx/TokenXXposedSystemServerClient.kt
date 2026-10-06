@@ -18,6 +18,18 @@ data class TokenXXposedIdentity(
             selinux.startsWith("u:r:system_server:s0")
 }
 
+
+data class TokenXXposedBridgeSelfTest(
+    val identity: TokenXXposedIdentity?,
+    val identityVerified: Boolean,
+    val publishSucceeded: Boolean,
+    val roundTripSucceeded: Boolean,
+    val detail: String,
+) {
+    val verified: Boolean
+        get() = identityVerified && publishSucceeded && roundTripSucceeded
+}
+
 object TokenXXposedSystemServerClient {
     private const val TRANSACTION =
         ('_'.code shl 24) or ('T'.code shl 16) or ('K'.code shl 8) or 'N'.code
@@ -25,6 +37,52 @@ object TokenXXposedSystemServerClient {
     private const val ACTION_GET_IDENTITY = 1
     private const val ACTION_SET_BINDER = 2
     private const val ACTION_GET_BINDER = 3
+
+    /**
+     * End-to-end, non-destructive proof of the modern LSPosed system_server route.
+     * It verifies real system_server identity, publishes a temporary local Binder,
+     * reads it back through the _TKN rendezvous, and confirms the returned Binder is alive.
+     * Root/Shizuku fallback remains untouched if any stage fails.
+     */
+    fun selfTest(): TokenXXposedBridgeSelfTest {
+        val identity = identity()
+        val identityVerified = identity?.verifiedSystemServer == true
+        if (!identityVerified) {
+            return TokenXXposedBridgeSelfTest(
+                identity = identity,
+                identityVerified = false,
+                publishSucceeded = false,
+                roundTripSucceeded = false,
+                detail = "GET_IDENTITY did not verify real system_server",
+            )
+        }
+
+        val probe = android.os.Binder()
+        val publishSucceeded = publishBinder(probe)
+        if (!publishSucceeded) {
+            return TokenXXposedBridgeSelfTest(
+                identity = identity,
+                identityVerified = true,
+                publishSucceeded = false,
+                roundTripSucceeded = false,
+                detail = "SET_BINDER failed; root fallback remains available",
+            )
+        }
+
+        val returned = binder()
+        val roundTripSucceeded = returned != null && returned.isBinderAlive && returned.pingBinder()
+        return TokenXXposedBridgeSelfTest(
+            identity = identity,
+            identityVerified = true,
+            publishSucceeded = true,
+            roundTripSucceeded = roundTripSucceeded,
+            detail = if (roundTripSucceeded) {
+                "_TKN GET_IDENTITY + SET_BINDER + GET_BINDER verified"
+            } else {
+                "GET_BINDER did not return a live Binder; root fallback remains available"
+            },
+        )
+    }
 
     fun publishBinder(value: IBinder): Boolean = runCatching {
         val activity = ServiceManager.getService("activity") ?: return false
