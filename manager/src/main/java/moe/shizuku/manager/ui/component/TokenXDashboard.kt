@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material.icons.rounded.Token
 import androidx.compose.material.icons.rounded.SystemSecurityUpdateGood
