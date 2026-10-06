@@ -19,26 +19,25 @@ data class TokenXXposedIdentity(
 }
 
 /**
- * TokenX system_server rendezvous over a dedicated Binder service.
+ * Sui-style TokenX rendezvous through Android's existing activity Binder.
  *
- * LSPosed creates and registers the Binder from inside system_server. The
- * manager resolves only that service and verifies the returned process identity.
- * Root Shizuku remains independent and is not replaced by this transport.
+ * LSPosed intercepts the private TokenX transaction at Binder.execTransact in
+ * system_server, before ActivityManagerService.onTransact sees the request.
  */
 object TokenXXposedSystemServerClient {
-    private const val SERVICE_NAME = "tokenx.system_server"
-    private const val TRANSACTION = IBinder.FIRST_CALL_TRANSACTION
-    private const val DESCRIPTOR = "moe.shizuku.tokenx.ISystemServerBridge"
+    private const val TRANSACTION =
+        ('_'.code shl 24) or ('T'.code shl 16) or ('K'.code shl 8) or 'N'.code
+    private const val DESCRIPTOR = "android.app.IActivityManager"
     private const val ACTION_GET_IDENTITY = 1
 
     fun identity(): TokenXXposedIdentity? = runCatching {
-        val bridge: IBinder = ServiceManager.checkService(SERVICE_NAME) ?: return null
+        val activity: IBinder = ServiceManager.getService("activity") ?: return null
         val data = Parcel.obtain()
         val reply = Parcel.obtain()
         try {
             data.writeInterfaceToken(DESCRIPTOR)
             data.writeInt(ACTION_GET_IDENTITY)
-            if (!bridge.transact(TRANSACTION, data, reply, 0)) return null
+            if (!activity.transact(TRANSACTION, data, reply, 0)) return null
             reply.readException()
             TokenXXposedIdentity(
                 pid = reply.readInt(),
