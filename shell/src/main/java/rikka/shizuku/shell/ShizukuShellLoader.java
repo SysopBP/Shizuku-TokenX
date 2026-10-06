@@ -61,7 +61,9 @@ public class ShizukuShellLoader {
         Intent intent = new Intent("rikka.shizuku.intent.action.REQUEST_BINDER")
                 .setPackage(managerApplicationId)
                 .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
-                .putExtra("data", data);
+                .putExtra("data", data)
+                .putExtra("tokenx_backend", System.getenv("TOKENX_RISH_BACKEND"))
+                .putExtra("tokenx_calling_package", callingPackage);
 
         IBinder amBinder = ServiceManager.getService("activity");
         IActivityManager am;
@@ -119,7 +121,7 @@ public class ShizukuShellLoader {
 
     private static void onBinderReceived(IBinder binder, String sourceDir) {
         String requested = System.getenv("TOKENX_RISH_BACKEND");
-        if ("sserver".equals(requested)) {
+        if ("sserver".equals(requested) || "system".equals(requested)) {
             int uid = remoteUid(binder);
             if (uid != 1000) {
                 abort("Sserver Binder is not active (received Shizuku UID " + uid + "). Start Sserver in TokenX first.");
