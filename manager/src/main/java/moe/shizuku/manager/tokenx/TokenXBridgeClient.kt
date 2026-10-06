@@ -52,6 +52,8 @@ object TokenXBridgeClient {
 
     @Volatile private var binder: IBinder? = null
     @Volatile private var identity: TokenXBridgeIdentity? = null
+    // null = not probed on this Binder, true = v2 supported, false = v1 identity-only backend.
+    @Volatile private var functionalProbeSupported: Boolean? = null
     private val binding = AtomicBoolean(false)
     private val handler = Handler(Looper.getMainLooper())
 
@@ -64,6 +66,7 @@ object TokenXBridgeClient {
     private val deathRecipient = IBinder.DeathRecipient {
         binder = null
         identity = null
+        functionalProbeSupported = null
         binding.set(false)
     }
 
@@ -72,6 +75,7 @@ object TokenXBridgeClient {
             handler.removeCallbacks(bindTimeout)
             binding.set(false)
             binder = service
+            functionalProbeSupported = null
             if (service == null) {
                 identity = null
                 return
@@ -83,6 +87,7 @@ object TokenXBridgeClient {
         override fun onServiceDisconnected(name: ComponentName?) {
             binder = null
             identity = null
+            functionalProbeSupported = null
             binding.set(false)
         }
 
@@ -140,26 +145,44 @@ object TokenXBridgeClient {
     fun functionalResult(): TokenXBridgeFunctionalResult? {
         val remote = binder ?: return null
         if (!remote.isBinderAlive) return null
-        return runCatching {
+
+        // BridgeTest v1 implements identity transaction 1 only. Runtime snapshots run every
+        // second, so blindly probing transaction 2 causes a continuous UNKNOWN_TRANSACTION
+        // stream in system_server (observed by ActivityManager as Binder error -74).
+        // Probe once per Binder connection; if rejected, remember that this is a v1 bridge.
+        if (functionalProbeSupported == false) return null
+
+        return try {
             val data = Parcel.obtain()
             val reply = Parcel.obtain()
             try {
-                if (!remote.transact(TRANSACTION_RUN_FUNCTIONAL_CHECKS, data, reply, 0)) return null
+                if (!remote.transact(TRANSACTION_RUN_FUNCTIONAL_CHECKS, data, reply, 0)) {
+                    functionalProbeSupported = false
+                    Log.i(TAG, "BRIDGE_PROTOCOL_V1 identity_only; functional transaction unsupported")
+                    return null
+                }
                 reply.readException()
-                val pid = reply.readInt()
-                val uid = reply.readInt()
-                val selinux = reply.readString().orEmpty()
-                val checks = reply.readString().orEmpty()
-                    .lineSequence()
-                    .map { it.trim() }
-                    .filter { it.isNotEmpty() }
-                    .toList()
-                TokenXBridgeFunctionalResult(pid, uid, selinux, checks)
+                val result = TokenXBridgeFunctionalResult(
+                    pid = reply.readInt(),
+                    uid = reply.readInt(),
+                    selinux = reply.readString().orEmpty(),
+                    checks = reply.readString().orEmpty()
+                        .lineSequence()
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
+                        .toList(),
+                )
+                functionalProbeSupported = true
+                result
             } finally {
                 data.recycle()
                 reply.recycle()
             }
-        }.getOrNull()
+        } catch (t: Throwable) {
+            functionalProbeSupported = false
+            Log.i(TAG, "BRIDGE_PROTOCOL_V1 identity_only; functional probe rejected: ${t.javaClass.simpleName}")
+            null
+        }
     }
 
     private fun queryIdentity(remote: IBinder): TokenXBridgeIdentity? = runCatching {
