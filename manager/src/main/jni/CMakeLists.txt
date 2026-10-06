@@ -25,6 +25,17 @@ add_executable(libshizuku.so
 
 target_link_libraries(libshizuku.so log cxx::cxx)
 
+# TokenX native control plane. Keep the .so suffix so AGP packages the executable
+# in lib/<abi>; the manager can extract/copy it as "tokenx" when the authenticated
+# Binder control channel is enabled.
+add_executable(libtokenx.so tokenx.cpp)
+target_link_libraries(libtokenx.so log)
+
+if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_custom_command(TARGET libtokenx.so POST_BUILD
+            COMMAND ${CMAKE_STRIP} --remove-section=.comment "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libtokenx.so")
+endif ()
+
 if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_custom_command(TARGET libshizuku.so POST_BUILD
             COMMAND ${CMAKE_STRIP} --remove-section=.comment "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libshizuku.so")
