@@ -120,13 +120,26 @@ public class ShizukuShellLoader {
 
     private static void onBinderReceived(IBinder binder, String sourceDir) {
         String requested = System.getenv("TOKENX_RISH_BACKEND");
-        if ("sserver".equals(requested)) {
+        int expectedUid = -1;
+        String backendName = null;
+        if ("sserver".equals(requested) || "system".equals(requested)) {
+            expectedUid = 1000;
+            backendName = "System";
+        } else if ("root".equals(requested)) {
+            expectedUid = 0;
+            backendName = "Root";
+        } else if ("shell".equals(requested)) {
+            expectedUid = 2000;
+            backendName = "Shell";
+        }
+        if (expectedUid >= 0) {
             int uid = remoteUid(binder);
-            if (uid != 1000) {
-                abort("Sserver Binder is not active (received Shizuku UID " + uid + "). Start Sserver in TokenX first.");
+            if (uid != expectedUid) {
+                abort("TokenX " + backendName + " Binder is not active (expected UID " +
+                        expectedUid + ", received UID " + uid + ").");
                 return;
             }
-            System.out.println("TokenX Sserver Binder verified: UID 1000");
+            System.out.println("TokenX " + backendName + " Binder verified: UID " + uid);
         }
         var base = sourceDir.substring(0, sourceDir.lastIndexOf('/'));
         String librarySearchPath = base + "/lib/" + VMRuntimeHidden.getRuntime().vmInstructionSet();
