@@ -1,6 +1,8 @@
 package moe.shizuku.manager
 
 import android.os.Bundle
+import android.os.IBinder
+import android.os.Parcel
 import androidx.core.os.bundleOf
 import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.flow.first
@@ -26,6 +28,25 @@ class ShizukuManagerProvider : ShizukuProvider() {
         private const val METHOD_GET_BACKEND_ROUTE = "getBackendRoute"
         private const val EXTRA_PACKAGE = "packageName"
         private const val EXTRA_ROUTE = "route"
+
+        @Volatile private var rootBackendBinder: IBinder? = null
+        @Volatile private var systemBackendBinder: IBinder? = null
+
+        private fun remoteUid(binder: IBinder): Int {
+            val data = Parcel.obtain()
+            val reply = Parcel.obtain()
+            return try {
+                data.writeInterfaceToken("moe.shizuku.server.IShizukuService")
+                if (!binder.transact(IBinder.FIRST_CALL_TRANSACTION + 1, data, reply, 0)) -1
+                else { reply.readException(); reply.readInt() }
+            } catch (_: Throwable) { -1 }
+            finally { data.recycle(); reply.recycle() }
+        }
+
+        fun backendBinder(route: String): IBinder? = when (route) {
+            ShizukuSettings.BACKEND_SYSTEM -> systemBackendBinder?.takeIf { it.isBinderAlive }
+            else -> rootBackendBinder?.takeIf { it.isBinderAlive }
+        }
     }
 
     override fun onCreate(): Boolean {
@@ -40,6 +61,15 @@ class ShizukuManagerProvider : ShizukuProvider() {
             val packageName = extras.getString(EXTRA_PACKAGE) ?: return null
             Bundle().apply { putString(EXTRA_ROUTE, ShizukuSettings.getBackendRoute(packageName)) }
         } else if (method == METHOD_SEND_BINDER) {
+            extras.classLoader = BinderContainer::class.java.classLoader
+            val incoming = extras.getParcelable<BinderContainer>(EXTRA_BINDER)?.binder
+            if (incoming != null) {
+                when (val uid = remoteUid(incoming)) {
+                    0 -> rootBackendBinder = incoming
+                    1000 -> systemBackendBinder = incoming
+                    else -> LOGGER.w("Ignoring TokenX backend binder with unexpected UID %d", uid)
+                }
+            }
             LOGGER.i("Receiving Shizuku binder handoff through manager provider")
             super.call(method, arg, extras).also {
                 ShizukuStateMachine.update()
