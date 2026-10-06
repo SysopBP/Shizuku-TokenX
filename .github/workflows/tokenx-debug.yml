@@ -173,7 +173,7 @@ jobs:
           GITHUB_ACTOR: ${{ secrets.SESL_GITHUB_USERNAME }}
           GITHUB_TOKEN: ${{ secrets.SESL_GITHUB_TOKEN }}
         run: |
-          # Retired BridgeTest classes must never survive from Gradle's remote/local
+          # Retired helper-backend classes must never survive from Gradle's remote/local
           # build cache after their source files are deleted.
           ./gradlew clean
 
@@ -228,8 +228,8 @@ jobs:
           echo "HEAD=$(git rev-parse HEAD)"
           sha256sum "$FILE"
 
-          # BridgeTest is diagnostic-only. The live backend is the private _TKN
-          # transaction installed by LSPosed in ActivityManagerService.
+          # Retired helper packages are forbidden. The live backend is the private _TKN
+          # rendezvous intercepted by the TokenX LSPosed hook at Binder.execTransact.
           DEX_STRINGS="$(mktemp)"
           unzip -p "$FILE" 'classes*.dex' | strings > "$DEX_STRINGS"
 
