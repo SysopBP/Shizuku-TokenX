@@ -84,8 +84,7 @@ class TokenXXposedEntry : XposedModule() {
         } catch (t: Throwable) {
             Log.e(TAG, "SYSTEM_SERVER_CALLBACK_THROWABLE", t)
             runCatching {
-                log(Log.ERROR, TAG, "SYSTEM_SERVER_CALLBACK_THROWABLE: ${t.javaClass.name}: ${t.message}")
-                log(t)
+                log(Log.ERROR, TAG, "SYSTEM_SERVER_CALLBACK_THROWABLE: ${t.javaClass.name}: ${t.message}\n${Log.getStackTraceString(t)}")
             }
         }
     }
