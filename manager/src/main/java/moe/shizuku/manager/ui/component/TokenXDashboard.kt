@@ -70,7 +70,7 @@ fun TokenXDashboard(
     var provisionStatus by remember { mutableStateOf<String?>(null) }
     var provisioning by remember { mutableStateOf(false) }
     var showVaultDialog by remember { mutableStateOf(false) }
-    var dialogTitle by remember { mutableStateOf("Provisioning Vault • Live") }
+    var dialogTitle by remember { mutableStateOf("System Integration • Live") }
     var dialogMode by remember { mutableStateOf("vault") }
     var showTechnicalConsole by remember { mutableStateOf(false) }
     var showVaultDetails by remember { mutableStateOf(false) }
@@ -111,7 +111,7 @@ fun TokenXDashboard(
         }
     }
 
-    fun runProvision(title: String = "Provisioning Vault • Live", action: () -> SystemUidProvisioner.Result) {
+    fun runProvision(title: String = "System Integration • Live", action: () -> SystemUidProvisioner.Result) {
         if (provisioning) return
         provisioning = true
         dialogTitle = title
@@ -190,10 +190,7 @@ fun TokenXDashboard(
                     )
                     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         VaultChainRow("D2 Gate", stageLabel(SystemUidProvisioner.Stage.D2_GATE, liveStage, provisioning, "OPEN"), modeColor)
-                        VaultChainRow("TKN Bridge", stageLabel(SystemUidProvisioner.Stage.BRIDGE_UID, liveStage, provisioning, "UID 1000"), modeColor)
-                        VaultChainRow("FOTA", stageLabel(SystemUidProvisioner.Stage.FOTA_UID, liveStage, provisioning, "UID 1000"), modeColor)
-                        VaultChainRow("Legacy DEX", stageLabel(SystemUidProvisioner.Stage.DEX_FALLBACK, liveStage, provisioning, "RETIRED / STANDBY"), modeColor)
-                        VaultChainRow("Receiver Compatibility", stageLabel(SystemUidProvisioner.Stage.RX_COMPAT, liveStage, provisioning, "INTEGRATED"), modeColor)
+                        VaultChainRow("BridgeTest", stageLabel(SystemUidProvisioner.Stage.BRIDGE_UID, liveStage, provisioning, "REFERENCE • UID 1000"), modeColor)
                         if (dialogMode == "bridge") VaultChainRow("System Bridge", if (provisioning) "HANDSHAKE" else if (provisionStatus?.startsWith("SUCCESS") == true) "VERIFIED" else "FAILED", modeColor)
                     }
                     HorizontalDivider()
@@ -314,24 +311,24 @@ fun TokenXDashboard(
 
             HorizontalDivider(Modifier.padding(vertical = 2.dp))
             Text(
-                "Provisioning Vault",
+                "System Integration",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "D2-protected privileged payload inspector",
+                "D2 protection • BridgeTest reference • LSPosed backend",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusLine(Icons.Rounded.VerifiedUser, "TKN Bridge", "UID 1000", Modifier.weight(1f))
-                StatusLine(Icons.Rounded.SystemSecurityUpdateGood, "FOTA", "UID 1000", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.VerifiedUser, "BridgeTest", "Reference", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.Extension, "LSPosed RPC", "System", Modifier.weight(1f))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatusLine(Icons.Rounded.Lock, "D2 Gate", "Dual gate", Modifier.weight(1f))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusLine(Icons.Rounded.Security, "Receiver Compatibility", "Xposed", Modifier.weight(1f))
+                StatusLine(Icons.Rounded.Security, "Compatibility", "TokenX native", Modifier.weight(1f))
             }
             TextButton(
                 onClick = { showVaultDetails = !showVaultDetails },
@@ -342,13 +339,13 @@ fun TokenXDashboard(
             }
             if (showVaultDetails) {
                 Text(
-                    "Read-only audit of TKN Bridge, FOTA, shared-system identity, FOTA SELinux state, and Receiver Compatibility. Legacy DEX is optional/retired and does not affect Vault success. The audit does not execute DEX payloads, launch FOTA, or invoke update_engine.",
+                    "Read-only audit of the retained D2 boundary and BridgeTest identity reference. FOTA and Legacy DEX have been removed. Receiver Compatibility is TokenX-native and is no longer part of provisioning.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             TokenXGlassButton(
-                onClick = { runProvision("Provisioning Vault • Live") {
+                onClick = { runProvision("System Integration • Live") {
                     SystemUidProvisioner.verifyProvisionedPayloads { progress ->
                         liveStage = progress
                         provisionStatus = "${progress.stage.name} • ${progress.state.name}\n${progress.detail}"
@@ -364,18 +361,18 @@ fun TokenXDashboard(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Icon(Icons.Rounded.Search, contentDescription = null, Modifier.size(18.dp))
-                    Text(if (provisioning) "Scanning Vault…" else "Scan Provisioning Vault", style = MaterialTheme.typography.labelLarge)
+                    Text(if (provisioning) "Checking Integration…" else "Check System Integration", style = MaterialTheme.typography.labelLarge)
                 }
             }
 
             HorizontalDivider(Modifier.padding(vertical = 2.dp))
             Text(
-                "System Server Bridge",
+                "System Server RPC",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "TokenX uses TKN Bridge (UID 1000) for verified System Server identity and supported system-level operations.",
+                "TokenX uses the LSPosed _TKN Binder RPC inside the real system_server. BridgeTest is retained only as an identity reference.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -391,7 +388,7 @@ fun TokenXDashboard(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Icon(Icons.Rounded.VerifiedUser, contentDescription = null, Modifier.size(18.dp))
-                        Text("Verify System Bridge", style = MaterialTheme.typography.labelLarge)
+                        Text("Verify System Reference", style = MaterialTheme.typography.labelLarge)
                     }
                 }
             TextButton(
@@ -403,7 +400,7 @@ fun TokenXDashboard(
             }
             if (showBridgeDetails) {
                 Text(
-                    "TKN Bridge remains UID 1000 and provides the verified TokenX System Server Bridge for supported framework operations. Interactive rish sessions remain isolated from system_server for stability and safety. Use Verify System Bridge to confirm the live bridge before relying on system-level operations.",
+                    "BridgeTest remains a temporary UID 1000 identity reference. The live System Server backend is the LSPosed _TKN RPC; normal Shizuku remains the UID 0/root backend.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
