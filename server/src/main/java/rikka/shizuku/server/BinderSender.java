@@ -41,6 +41,7 @@ public class BinderSender {
 
     private static final String ROUTE_ROOT = "root";
     private static final String ROUTE_SYSTEM = "system";
+    private static final String ROUTE_SHELL = "shell";
     private static final String METHOD_GET_BACKEND_ROUTE = "getBackendRoute";
 
     /**
@@ -51,7 +52,8 @@ public class BinderSender {
     private static boolean shouldServePackage(String packageName, int userId) {
         final boolean thisIsSystem = Process.myUid() == Process.SYSTEM_UID;
         final boolean thisIsRoot = Process.myUid() == 0;
-        if (!thisIsSystem && !thisIsRoot) return true;
+        final boolean thisIsShell = Process.myUid() == Process.SHELL_UID;
+        if (!thisIsSystem && !thisIsRoot && !thisIsShell) return true;
 
         String authority = ShizukuService.MANAGER_APPLICATION_ID + ".shizuku";
         IContentProvider provider = null;
@@ -66,7 +68,9 @@ public class BinderSender {
             Bundle reply = IContentProviderUtils.callCompat(
                     provider, null, authority, METHOD_GET_BACKEND_ROUTE, null, request);
             String route = reply != null ? reply.getString("route", ROUTE_ROOT) : ROUTE_ROOT;
-            boolean serve = thisIsSystem ? ROUTE_SYSTEM.equals(route) : !ROUTE_SYSTEM.equals(route);
+            boolean serve = thisIsSystem ? ROUTE_SYSTEM.equals(route)
+                    : thisIsShell ? ROUTE_SHELL.equals(route)
+                    : ROUTE_ROOT.equals(route);
             LOGGER.i("TokenX route package=%s route=%s serverUid=%d serve=%s",
                     packageName, route, Process.myUid(), Boolean.toString(serve));
             return serve;
