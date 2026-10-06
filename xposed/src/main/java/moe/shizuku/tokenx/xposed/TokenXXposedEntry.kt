@@ -12,9 +12,18 @@ import io.github.libxposed.api.XposedModuleInterface
 
 /** TokenX modern LSPosed system_server RPC and OEM compatibility layer. */
 class TokenXXposedEntry : XposedModule() {
+    init {
+        // Earliest lifecycle marker: proves LSPosed instantiated the module class.
+        Log.i(TAG, "ENTRY_CONSTRUCTOR pid=${Process.myPid()} uid=${Process.myUid()}")
+        runCatching { log(Log.INFO, TAG, "ENTRY_CONSTRUCTOR pid=${Process.myPid()} uid=${Process.myUid()}") }
+            .onFailure { Log.e(TAG, "ENTRY_CONSTRUCTOR_XPOSED_LOG_FAILED", it) }
+    }
+
     @Volatile private var rendezvousBinder: IBinder? = null
     @Volatile private var rendezvousOwnerUid: Int = -1
     override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
+        Log.i(TAG, "MODULE_LOADED isSystemServer=${param.isSystemServer} pid=${Process.myPid()} uid=${Process.myUid()}")
+        log(Log.INFO, TAG, "MODULE_LOADED isSystemServer=${param.isSystemServer} pid=${Process.myPid()} uid=${Process.myUid()}")
         if (!param.isSystemServer) return
         log(Log.INFO, TAG, "BOOT_TOKEN CLAIMED: XPOSED/SYSTEM_SERVER UID ${Process.myUid()}")
     }
@@ -55,17 +64,30 @@ class TokenXXposedEntry : XposedModule() {
     }
 
     override fun onSystemServerStarting(param: XposedModuleInterface.SystemServerStartingParam) {
-        val uid = Process.myUid()
-        val pid = Process.myPid()
-        val selinux = readSelf("/proc/self/attr/current")
-        val cmdline = readSelf("/proc/self/cmdline").replace("\u0000", "").trim()
-        if (uid != Process.SYSTEM_UID || cmdline != "system_server" || !selinux.startsWith("u:r:system_server:s0")) {
-            log(Log.WARN, TAG, "SYSTEM_SERVER_IDENTITY_REJECTED pid=$pid uid=$uid selinux=$selinux process=$cmdline")
-            return
+        Log.i(TAG, "SYSTEM_SERVER_CALLBACK_ENTER pid=${Process.myPid()} uid=${Process.myUid()}")
+        log(Log.INFO, TAG, "SYSTEM_SERVER_CALLBACK_ENTER pid=${Process.myPid()} uid=${Process.myUid()}")
+        try {
+            val uid = Process.myUid()
+            val pid = Process.myPid()
+            val selinux = readSelf("/proc/self/attr/current")
+            val cmdline = readSelf("/proc/self/cmdline").replace("\u0000", "").trim()
+            log(Log.INFO, TAG, "SYSTEM_SERVER_HOOK pid=$pid uid=$uid selinux=$selinux process=$cmdline")
+            if (uid != Process.SYSTEM_UID || cmdline != "system_server" || !selinux.startsWith("u:r:system_server:s0")) {
+                log(Log.WARN, TAG, "SYSTEM_SERVER_IDENTITY_REJECTED pid=$pid uid=$uid selinux=$selinux process=$cmdline")
+                return
+            }
+            log(Log.INFO, TAG, "SYSTEM_SERVER_IDENTITY_OK backend=XPOSED_SYSTEM_SERVER pid=$pid uid=$uid selinux=$selinux process=$cmdline")
+            log(Log.INFO, TAG, "EMBEDDED_SHIZUKU_DISABLED root_shizuku_remains_fallback")
+            log(Log.INFO, TAG, "RPC_INSTALL_CALL_BEGIN")
+            installSystemServerBridge()
+            log(Log.INFO, TAG, "RPC_INSTALL_CALL_RETURN")
+        } catch (t: Throwable) {
+            Log.e(TAG, "SYSTEM_SERVER_CALLBACK_THROWABLE", t)
+            runCatching {
+                log(Log.ERROR, TAG, "SYSTEM_SERVER_CALLBACK_THROWABLE: ${t.javaClass.name}: ${t.message}")
+                log(t)
+            }
         }
-        log(Log.INFO, TAG, "SYSTEM_SERVER_IDENTITY_OK backend=XPOSED_SYSTEM_SERVER pid=$pid uid=$uid selinux=$selinux process=$cmdline")
-        log(Log.INFO, TAG, "EMBEDDED_SHIZUKU_DISABLED root_shizuku_remains_fallback")
-        installSystemServerBridge()
     }
 
     private fun installSystemServerBridge() {
