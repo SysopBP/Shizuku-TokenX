@@ -19,8 +19,6 @@ import moe.shizuku.manager.tokenx.TokenXBootState
 import moe.shizuku.manager.tokenx.TokenXRuntime
 import moe.shizuku.manager.tokenx.TokenXRuntimeState
 import moe.shizuku.manager.tokenx.TokenXCapability
-import moe.shizuku.manager.tokenx.TokenXFotaBridge
-import moe.shizuku.manager.tokenx.TokenXFotaBridgeState
 import moe.shizuku.manager.tokenx.TokenXBackend
 import moe.shizuku.manager.tokenx.TokenXRouteState
 import kotlinx.coroutines.delay
@@ -43,12 +41,10 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
     val prefs = ShizukuSettings.getPreferences()
     var runtime by remember { mutableStateOf(TokenXRuntime.snapshot(context)) }
     var boot by remember { mutableStateOf(TokenXBootSession.current()) }
-    var fotaBridge by remember { mutableStateOf(TokenXFotaBridge.snapshot(context)) }
     LaunchedEffect(Unit) {
         while (true) {
             runtime = TokenXRuntime.snapshot(context)
             boot = TokenXBootSession.current()
-            fotaBridge = TokenXFotaBridge.snapshot(context)
             delay(TokenXRuntime.REFRESH_INTERVAL_MS)
         }
     }
@@ -164,12 +160,12 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     }
                     BackendRow(
                         Icons.Outlined.Security,
-                        "TKN Bridge / System Server",
+                        "System Server RPC",
                         "UID 1000",
                         when {
-                            runtime.systemServerBridgeActive -> "ACTIVE • live system_server transaction verified"
-                            runtime.systemServerBridgeAttached -> "ATTACHED • system_server association verified; awaiting live transaction"
-                            else -> "AVAILABLE check pending • no verified system_server attachment"
+                            runtime.xposedBridgeActive -> "VERIFIED • LSPosed _TKN RPC"
+                            runtime.xposedFrameworkDetected -> "STANDBY • LSPosed detected; RPC waiting"
+                            else -> "OFFLINE • LSPosed not detected"
                         }
                     )
                     BackendRow(Icons.Outlined.Terminal, "Shell", "UID 2000", if (runtime.backendState.shellAvailable) "ACTIVE • compatibility fallback" else "Standby")
@@ -187,8 +183,8 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                         else -> "Not detected"
                     })
                     FeatureRow(Icons.Outlined.Badge, "Native PM UID1000", if (runtime.nativeUid1000Verified) "VERIFIED • android.uid.system/1000" else "Not verified")
-                    FeatureRow(Icons.Outlined.AdminPanelSettings, "TKN Bridge UID1000", if (runtime.systemServerBridgeAttached) "ATTACHED" else if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID)) "READY" else "Not verified")
-                    FeatureRow(Icons.Outlined.Link, "System Server Binder", if (runtime.systemServerBridgeActive) "VERIFIED • live UID1000 handshake" else "Not active")
+                    FeatureRow(Icons.Outlined.AdminPanelSettings, "BridgeTest reference", if (runtime.systemServerBridgeAttached) "ATTACHED • identity reference" else "Not attached")
+                    FeatureRow(Icons.Outlined.Link, "System Server RPC", if (runtime.xposedBridgeActive) "VERIFIED • _TKN • UID 1000" else "Not active")
                     HorizontalDivider()
                     FeatureRow(Icons.Outlined.Android, "Platform", "Android API ${runtime.androidApiLevel} • One UI ${runtime.oneUiVersion}")
                     Text(
@@ -230,9 +226,9 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     val selected = runtime.backendRegistry.entry(runtime.backendRegistry.selected)
                     FeatureRow(Icons.Outlined.Route, "Selected backend", runtime.backendRegistry.selected.name.replace('_', ' '))
                     FeatureRow(Icons.Outlined.Badge, "Identity", selected?.let { "UID ${it.uid} • ${if (it.verified) "verified" else "discovered"}" } ?: "Unavailable")
-                    FeatureRow(Icons.Outlined.Link, "System Server Binder", if (runtime.systemServerBridgeActive) "VERIFIED • capability mask 0x${runtime.systemServerCapabilities.toString(16)}" else "Not active")
+                    FeatureRow(Icons.Outlined.Link, "System Server RPC", if (runtime.xposedBridgeActive) "VERIFIED • LSPosed _TKN identity" else "Not active")
                     FeatureRow(Icons.Outlined.Security, "Native / PM UID 1000", if (runtime.nativeUid1000Verified) "VERIFIED • com.tokenx.bridgetest • android.uid.system" else "Unavailable")
-                    FeatureRow(Icons.Outlined.Security, "TKN Bridge / System UID", if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID)) "READY • UID 1000" else "Unavailable")
+                    FeatureRow(Icons.Outlined.Security, "BridgeTest reference", if (runtime.systemServerBridgeAttached) "READY • reference only" else "Unavailable")
                     FeatureRow(Icons.Outlined.Terminal, "Root", if (runtime.backendRegistry.isReady(TokenXBackend.ROOT)) "READY • UID 0" else "Unavailable")
                 }
             }
@@ -251,7 +247,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                             ) { Text(mode) }
                         }
                     }
-                    PreviewSwitch("Prefer Root when capable", "Root-first policy; UID-1000 work can route through TKN Bridge.", rootFirst) {
+                    PreviewSwitch("Prefer Root when capable", "Root-first policy; supported framework work can route through the LSPosed System Server RPC.", rootFirst) {
                         rootFirst = it; prefs.edit().putBoolean("tokenx_root_first", it).apply()
                     }
                     CapabilityLine("Filesystem", runtime.routes.getValue(TokenXCapability.FILESYSTEM).backend.name)
@@ -287,38 +283,14 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                 }
             }
 
-            SectionTitle("FOTA Bridge")
+            SectionTitle("System Integration")
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    FeatureRow(
-                        Icons.Outlined.SystemUpdate,
-                        "Samsung FOTA",
-                        fotaBridge.detail
-                    )
-                    FeatureRow(
-                        Icons.Outlined.Badge,
-                        "Package identity",
-                        if (fotaBridge.installed) "com.sdet.fotaagent • UID ${fotaBridge.uid ?: -1}" else "Not detected"
-                    )
-                    FeatureRow(
-                        Icons.Outlined.Sensors,
-                        "Receiver discovery",
-                        if (fotaBridge.receiverNames.isNotEmpty())
-                            "${fotaBridge.receiverNames.size} declared • ${fotaBridge.exportedReceiverNames.size} exported"
-                        else "No receivers visible"
-                    )
-                    FeatureRow(
-                        Icons.Outlined.Shield,
-                        "Transmit gate",
-                        "LOCKED • passive inspection only"
-                    )
-                    if (fotaBridge.state == TokenXFotaBridgeState.READY_PASSIVE) {
-                        Text(
-                            "Passive handshake complete. TokenX will not send CP_FILE, recovery, factory-reset, update-package, or wipe actions.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    FeatureRow(Icons.Outlined.Extension, "LSPosed", if (runtime.xposedBridgeActive) "SYSTEM SERVER RPC • VERIFIED" else if (runtime.xposedFrameworkDetected) "Detected • _TKN RPC waiting" else "Not detected")
+                    FeatureRow(Icons.Outlined.Link, "System Server RPC", if (runtime.xposedBridgeActive) "VERIFIED • _TKN Binder transport • UID 1000" else "Not verified")
+                    FeatureRow(Icons.Outlined.AdminPanelSettings, "BridgeTest", if (runtime.systemServerBridgeAttached) "REFERENCE • identity attached" else "Reference unavailable")
+                    FeatureRow(Icons.Outlined.Security, "D2 Gate", "Protected boot boundary retained")
+                    FeatureRow(Icons.Outlined.Shield, "Compatibility", "TokenX native • no Samsung FOTA dependency")
                 }
             }
 
@@ -370,9 +342,9 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                         Icons.Outlined.AdminPanelSettings,
                         "UID 1000 operations",
                         when {
-                            runtime.systemServerBridgeActive -> "ACTIVE • execution handshake verified in system_server"
-                            runtime.systemServerBridgeAttached -> "ATTACHED • TKN Bridge identity received; live system_server verification pending"
-                            else -> "Not attached • TKN Bridge unavailable"
+                            runtime.xposedBridgeActive -> "ACTIVE • LSPosed _TKN RPC verified in system_server"
+                            runtime.xposedFrameworkDetected -> "STANDBY • LSPosed detected; RPC not verified"
+                            else -> "Unavailable • LSPosed System Server RPC offline"
                         }
                     )
                     FeatureRow(Icons.Outlined.Link, "Shizuku compatibility", "Preserved • existing Binder model stays intact")
@@ -417,10 +389,10 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
             SectionTitle("About TokenX")
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    FeatureRow(Icons.Outlined.Security, "D2 Dual Gate", "TKN Bridge + FOTA remain held until the D2 security boundary is released")
-                    FeatureRow(Icons.Outlined.Token, "Provisioning Vault", "Token Pulse • live Secure Chain • technical console")
-                    FeatureRow(Icons.Outlined.AdminPanelSettings, "Privileged payloads", "TKN Bridge UID 1000 • FOTA system_app")
-                    FeatureRow(Icons.Outlined.Extension, "Android 17 compatibility", "Receiver compatibility scoped to the tested FOTA path")
+                    FeatureRow(Icons.Outlined.Security, "D2 Gate", "Protected boot boundary retained for TokenX startup")
+                    FeatureRow(Icons.Outlined.Token, "System Integration", "LSPosed RPC • BridgeTest reference • D2 diagnostics")
+                    FeatureRow(Icons.Outlined.AdminPanelSettings, "Privilege backends", "Root UID 0 • LSPosed system_server UID 1000 • Shell fallback")
+                    FeatureRow(Icons.Outlined.Extension, "Android 17 compatibility", "TokenX-native compatibility • no Samsung FOTA dependency")
                     Text("System Server contribution: @Vikramaditya015", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
