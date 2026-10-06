@@ -5,7 +5,6 @@ import android.os.Binder
 import android.os.IBinder
 import android.os.Parcel
 import android.os.Process
-import android.os.ServiceManager
 import android.util.Log
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
@@ -13,8 +12,6 @@ import io.github.libxposed.api.XposedModuleInterface
 
 /** TokenX modern LSPosed system_server RPC and OEM compatibility layer. */
 class TokenXXposedEntry : XposedModule() {
-    private var systemServerBridge: Binder? = null
-
     override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
         if (!param.isSystemServer) return
         log(Log.INFO, TAG, "BOOT_TOKEN CLAIMED: XPOSED/SYSTEM_SERVER UID ${Process.myUid()}")
@@ -22,11 +19,9 @@ class TokenXXposedEntry : XposedModule() {
 
     override fun onPackageLoaded(param: XposedModuleInterface.PackageLoadedParam) {
         if (!param.isFirstPackage) return
-
         if (param.packageName == SYSTEM_UI_PACKAGE) installStatusBarLabs(param)
         if (param.packageName !in RECEIVER_COMPAT_PACKAGES) return
         val receiverCompatPackage = param.packageName
-
         runCatching {
             val contextImpl = Class.forName("android.app.ContextImpl", false, param.defaultClassLoader)
             val methods = contextImpl.declaredMethods.filter { method ->
@@ -62,27 +57,50 @@ class TokenXXposedEntry : XposedModule() {
         val pid = Process.myPid()
         val selinux = readSelf("/proc/self/attr/current")
         val cmdline = readSelf("/proc/self/cmdline").replace("\u0000", "").trim()
-
         if (uid != Process.SYSTEM_UID || cmdline != "system_server" || !selinux.startsWith("u:r:system_server:s0")) {
             log(Log.WARN, TAG, "SYSTEM_SERVER_IDENTITY_REJECTED pid=$pid uid=$uid selinux=$selinux process=$cmdline")
             return
         }
-
         log(Log.INFO, TAG, "SYSTEM_SERVER_IDENTITY_OK backend=XPOSED_SYSTEM_SERVER pid=$pid uid=$uid selinux=$selinux process=$cmdline")
         log(Log.INFO, TAG, "EMBEDDED_SHIZUKU_DISABLED root_shizuku_remains_fallback")
         installSystemServerBridge()
     }
 
     private fun installSystemServerBridge() {
-        log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_INSTALL_BEGIN pid=${Process.myPid()} uid=${Process.myUid()} service=$TOKENX_SERVICE_NAME")
+        log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_INSTALL_BEGIN transport=binder_execTransact transaction=0x${TOKENX_BRIDGE_TRANSACTION.toString(16)}")
         runCatching {
-            val bridge = object : Binder() {
-                override fun onTransact(code: Int, data: Parcel, reply: Parcel?, flags: Int): Boolean {
-                    if (code != TOKENX_BRIDGE_TRANSACTION) return super.onTransact(code, data, reply, flags)
+            val execTransact = Binder::class.java.getDeclaredMethod(
+                "execTransact",
+                Int::class.javaPrimitiveType,
+                Long::class.javaPrimitiveType,
+                Long::class.javaPrimitiveType,
+                Int::class.javaPrimitiveType
+            )
+            val obtainNative = Parcel::class.java.getDeclaredMethod("obtain", Long::class.javaPrimitiveType).apply {
+                isAccessible = true
+            }
 
-                    log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_INTERCEPT code=$code flags=$flags callingUid=${Binder.getCallingUid()} callingPid=${Binder.getCallingPid()}")
-                    return try {
-                        data.enforceInterface(TOKENX_BRIDGE_DESCRIPTOR)
+            hook(execTransact)
+                .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+                .intercept { chain ->
+                    val code = chain.args.getOrNull(0) as? Int ?: return@intercept chain.proceed()
+                    if (code != TOKENX_BRIDGE_TRANSACTION) return@intercept chain.proceed()
+
+                    val dataPtr = chain.args.getOrNull(1) as? Long ?: 0L
+                    val replyPtr = chain.args.getOrNull(2) as? Long ?: 0L
+                    val flags = chain.args.getOrNull(3) as? Int ?: 0
+                    val data = if (dataPtr != 0L) obtainNative.invoke(null, dataPtr) as? Parcel else null
+                    val reply = if (replyPtr != 0L) obtainNative.invoke(null, replyPtr) as? Parcel else null
+
+                    if (data == null) {
+                        log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_REJECT reason=null_data code=$code")
+                        return@intercept chain.proceed()
+                    }
+
+                    var consumed = false
+                    try {
+                        log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_INTERCEPT code=$code flags=$flags callingUid=${Binder.getCallingUid()} callingPid=${Binder.getCallingPid()}")
+                        data.enforceInterface(ACTIVITY_MANAGER_DESCRIPTOR)
                         when (val action = data.readInt()) {
                             ACTION_GET_IDENTITY -> {
                                 reply?.writeNoException()
@@ -91,33 +109,37 @@ class TokenXXposedEntry : XposedModule() {
                                 reply?.writeString(readSelf("/proc/self/attr/current"))
                                 reply?.writeString(readSelf("/proc/self/cmdline").replace("\u0000", "").trim())
                                 log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_IDENTITY callingUid=${Binder.getCallingUid()} callingPid=${Binder.getCallingPid()}")
-                                true
+                                consumed = true
                             }
-                            else -> {
-                                log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_REJECT reason=unknown_action action=$action")
-                                false
-                            }
+                            else -> log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_REJECT reason=unknown_action action=$action")
                         }
                     } catch (t: Throwable) {
                         log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_HANDLE_FAILED: ${t.javaClass.name}: ${t.message}")
-                        throw t
+                        if ((flags and IBinder.FLAG_ONEWAY) == 0 && reply != null) {
+                            reply.setDataPosition(0)
+                            reply.writeException(t as? Exception ?: RuntimeException(t))
+                            consumed = true
+                        }
+                    } finally {
+                        data.setDataPosition(0)
+                        reply?.setDataPosition(0)
+                    }
+
+                    if (consumed) {
+                        data.recycle()
+                        reply?.recycle()
+                        true
+                    } else {
+                        chain.proceed()
                     }
                 }
-            }
-            bridge.attachInterface(null, TOKENX_BRIDGE_DESCRIPTOR)
-            systemServerBridge = bridge
-            ServiceManager.addService(TOKENX_SERVICE_NAME, bridge)
-            val registered: IBinder? = ServiceManager.checkService(TOKENX_SERVICE_NAME)
-            check(registered != null) { "ServiceManager registration returned null" }
-            log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_READY transport=dedicated_binder service=$TOKENX_SERVICE_NAME protocol=3 transaction=$TOKENX_BRIDGE_TRANSACTION")
+            log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_READY transport=binder_execTransact protocol=4 transaction=0x${TOKENX_BRIDGE_TRANSACTION.toString(16)}")
         }.onFailure {
             log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_INSTALL_FAILED: ${it.javaClass.name}: ${it.message}")
         }
     }
 
-    private fun readSelf(path: String): String = runCatching {
-        java.io.File(path).readText().trim()
-    }.getOrDefault("unknown")
+    private fun readSelf(path: String): String = runCatching { java.io.File(path).readText().trim() }.getOrDefault("unknown")
 
     private fun systemPropertyEnabled(key: String): Boolean = runCatching {
         val clazz = Class.forName("android.os.SystemProperties")
@@ -146,9 +168,9 @@ class TokenXXposedEntry : XposedModule() {
 
     private companion object {
         const val TAG = "TokenX/Xposed"
-        const val TOKENX_SERVICE_NAME = "tokenx.system_server"
-        const val TOKENX_BRIDGE_DESCRIPTOR = "moe.shizuku.tokenx.ISystemServerBridge"
-        const val TOKENX_BRIDGE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION
+        const val TOKENX_BRIDGE_TRANSACTION =
+            ('_'.code shl 24) or ('T'.code shl 16) or ('K'.code shl 8) or 'N'.code
+        const val ACTIVITY_MANAGER_DESCRIPTOR = "android.app.IActivityManager"
         const val ACTION_GET_IDENTITY = 1
         const val RETAIL_MODE_PACKAGE = "com.samsung.sea.rm"
         const val SYSTEM_UI_PACKAGE = "com.android.systemui"
