@@ -8,7 +8,7 @@ import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
 
-/** TokenX modern LSPosed UID 1000 bridge and Receiver Compatibility layer. */
+/** TokenX modern LSPosed system_server RPC and OEM compatibility layer. */
 class TokenXXposedEntry : XposedModule() {
     override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
         if (!param.isSystemServer) return
@@ -50,7 +50,7 @@ class TokenXXposedEntry : XposedModule() {
                         if (!hasExportFlag) {
                             // Receiver Compatibility: preserve legacy OEM receiver semantics only when
                             // the app omitted both modern export flags. Existing explicit flags
-                            // are never rewritten, and the hook remains scoped to FOTA.
+                            // are never rewritten. This compatibility hook is scoped to retained OEM targets.
                             args[flagsIndex] = oldFlags or Context.RECEIVER_EXPORTED
                             log(Log.INFO, TAG, "TOKENX_RECEIVER_COMPAT_APPLIED: package=$receiverCompatPackage flags=$oldFlags -> ${args[flagsIndex]}")
                             chain.proceed(args)
@@ -196,11 +196,10 @@ class TokenXXposedEntry : XposedModule() {
         const val TOKENX_BRIDGE_TRANSACTION = 0x5f544b4e // "_TKN"
         const val ACTIVITY_MANAGER_DESCRIPTOR = "android.app.IActivityManager"
         const val ACTION_GET_IDENTITY = 1
-        const val FOTA_PACKAGE = "com.sdet.fotaagent"
         const val RETAIL_MODE_PACKAGE = "com.samsung.sea.rm"
         const val SYSTEM_UI_PACKAGE = "com.android.systemui"
         const val PROP_ONEUIX_LABS = "persist.tokenx.labs.oneuix"
         const val PROP_STATUS_BAR_LABS = "persist.tokenx.labs.statusbar"
-        val RECEIVER_COMPAT_PACKAGES = setOf(FOTA_PACKAGE, RETAIL_MODE_PACKAGE)
+        val RECEIVER_COMPAT_PACKAGES = setOf(RETAIL_MODE_PACKAGE)
     }
 }
