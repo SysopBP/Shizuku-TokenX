@@ -9,12 +9,11 @@ import java.io.InputStreamReader
  *
  * The KernelSU module is the primary installer. A module-local provisioning DEX may
  * remain available as a fallback; this class audits that fallback without executing it.
- * It also verifies the live TKN Bridge/com.tokenx.bridgetest backend and stages TokenX's isolated
- * UID-1000 Shizuku worker when needed.
+ * It stages TokenX's isolated UID-1000 Shizuku worker when needed. Live
+ * system_server identity is verified separately through the LSPosed _TKN RPC.
  */
 object SystemUidProvisioner {
 
-    const val LIVE_PACKAGE = "com.tokenx.bridgetest"
     const val LEGACY_PACKAGE = "com.vikram.exp"
     const val STAGED_SHIZUKU = "/data/local/tmp/libshizuku.so"
 
@@ -66,7 +65,6 @@ object SystemUidProvisioner {
             "set -e",
             "test -x ${q(STAGED_SHIZUKU)}",
             "test -r ${q(apk)}",
-            "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000'",
             "su 1000 -c ${q(inner)}",
         ).joinToString("; ")
         return runRoot(script)
@@ -83,49 +81,30 @@ object SystemUidProvisioner {
         return startShizukuUid1000(context)
     }
 
-    /**
-     * Non-destructive integration audit. FOTA and the legacy DEX backend were
-     * retired from TokenX; this verifies only the retained D2 boundary and the
-     * temporary BridgeTest identity reference.
-     */
+    /** Non-destructive audit of the retained D2 boundary and current backend architecture. */
     fun verifyProvisionedPayloads(onProgress: (Progress) -> Unit = {}): Result {
-        fun check(stage: Stage, label: String, script: String): Result {
-            onProgress(Progress(stage, StageState.CHECKING, label))
-            val result = runRoot(script)
-            onProgress(Progress(stage, if (result.success) StageState.VERIFIED else StageState.FAILED, result.output.trim().ifBlank { label }))
-            return result
+        onProgress(Progress(Stage.D2_GATE, StageState.CHECKING, "Checking D2 protected module"))
+        val d2 = runRoot("test -d /data/adb/modules/tokenx_system_server && echo D2_GATE=module-present")
+        onProgress(Progress(Stage.D2_GATE, if (d2.success) StageState.VERIFIED else StageState.FAILED, d2.output.trim()))
+        if (!d2.success) return d2
+
+        val transcript = buildString {
+            append("=== TokenX system integration ===\n")
+            append(d2.output)
+            append("LEGACY_BACKENDS=removed\n")
+            append("RECEIVER_COMPAT=TokenX-native; outside provisioning chain\n")
+            append("SYSTEM_SERVER_BACKEND=LSPosed _TKN RPC; verified by TokenX runtime\n")
+            append("UID1000_WORKER=live Shizuku binder identity\n")
         }
-        val transcript = StringBuilder("=== TokenX system integration ===\n")
-        val checks = listOf(
-            Triple(Stage.D2_GATE, "Checking D2 protected module", "test -d /data/adb/modules/tokenx_system_server && echo D2_GATE=module-present"),
-            Triple(Stage.BRIDGE_UID, "Checking BridgeTest identity reference", "cmd package list packages -U | grep -F 'package:$LIVE_PACKAGE uid:1000'")
-        )
-        for ((stage, label, script) in checks) {
-            val result = check(stage, label, script)
-            transcript.append(result.output)
-            if (!result.success) return Result(false, result.exitCode, transcript.toString(), result.command)
-        }
-        transcript.append("FOTA=removed\n")
-        transcript.append("LEGACY_DEX=removed\n")
-        transcript.append("RECEIVER_COMPAT=TokenX-native; outside provisioning chain\n")
-        transcript.append("SYSTEM_SERVER_BACKEND=LSPosed _TKN RPC; verified by TokenX runtime\n")
-        return Result(true, 0, transcript.toString(), "TokenX system integration audit")
+        return Result(true, 0, transcript, "TokenX system integration audit")
     }
 
     fun verify(): Result {
-        // Verify the live package and Android's real persistent system_server.
-        // The legacy com.vikram.exp Serv record is not a readiness signal.
-        val packageName = q(LIVE_PACKAGE)
         val script = listOf(
-            "echo '=== TKN Bridge System Server backend ==='",
-            // Samsung/Android 17 can return FAILED_TRANSACTION from pm path even while
-            // PackageManager has a valid UID-1000 record. Keep it as diagnostic only.
-            "(pm path " + packageName + " 2>&1 || true) | sed 's/^/pm_path=/'",
-            "cmd package list packages -U | grep -F 'package:" + LIVE_PACKAGE + " uid:1000'",
-            "dumpsys package " + packageName + " | grep -m1 -F 'pkg=Package{'",
+            "echo '=== TokenX System Server backend ==='",
             "dumpsys activity processes | grep -m1 -E '[0-9]+:system/1000'",
             "ps -AZ | grep -m1 -E 'u:r:system_server:s0.*system_server'",
-            "echo DIRECT_BINDER=architecture-supported",
+            "echo SYSTEM_SERVER_RPC=LSPosed__TKN",
             "echo UID1000_WORKER=on-demand",
             "echo NAMED_BINDER=not-required",
         ).joinToString("; ")
