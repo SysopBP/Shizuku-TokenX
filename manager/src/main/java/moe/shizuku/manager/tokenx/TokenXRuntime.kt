@@ -60,12 +60,10 @@ object TokenXRuntime {
         val bridgeActive = xposedSystemServerActive
         val bridgeFunctional: TokenXBridgeFunctionalResult? = null
         val bridgeCapabilities = 0
-        val nativeUid1000 = isNativeUid1000Verified()
-        // Preserve the build-173 Sserver/rish contract: the executable Server route is
-        // authoritative when the live Shizuku-compatible Binder itself reports UID 1000.
-        // BridgeTest remains independent proof that the headless bridge is truly in
-        // system_server, but it must not gate the known-good rish Server transport.
-        val sserverBinderReady = running && uid == 1000
+        // Native/system UID readiness is derived from the live Shizuku-compatible Binder.
+        // No mounted helper package is used as identity proof.
+        val nativeUid1000 = running && uid == 1000
+        val sserverBinderReady = nativeUid1000
         val state = TokenXBackendState(
             serverRunning = running,
             serverUid = uid,
@@ -111,18 +109,6 @@ object TokenXRuntime {
         )
     }
 
-    /**
-     * Native UID1000 is deliberately stricter than package presence: both PackageManager's
-     * assigned UID and the shared-user record must agree before TokenX advertises it.
-     */
-    private fun isNativeUid1000Verified(): Boolean = runCatching {
-        val uidCheck = Shell.cmd("cmd package list packages -U | grep -F 'package:com.tokenx.bridgetest uid:1000'").exec()
-        if (!uidCheck.isSuccess || uidCheck.out.none { it.contains("package:com.tokenx.bridgetest uid:1000") }) return false
-        val sharedCheck = Shell.cmd("dumpsys package com.tokenx.bridgetest | grep -E 'appId=1000|sharedUser=.*android.uid.system/1000'").exec()
-        sharedCheck.isSuccess &&
-            sharedCheck.out.any { it.contains("appId=1000") } &&
-            sharedCheck.out.any { it.contains("android.uid.system/1000") }
-    }.getOrDefault(false)
 
     private fun readOneUiVersion(): String = runCatching {
         val direct = Shell.cmd("getprop ro.build.version.oneui").exec().out.firstOrNull()?.trim().orEmpty()
