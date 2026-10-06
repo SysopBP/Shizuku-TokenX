@@ -43,6 +43,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
+import android.os.SystemClock
+import java.text.DateFormat
+import java.util.Date
 import androidx.compose.animation.core.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.graphicsLayer
@@ -77,6 +80,8 @@ fun TokenXDashboard(
     var showVaultDetails by remember { mutableStateOf(false) }
     var showBridgeDetails by remember { mutableStateOf(false) }
     var bridgeVerified by remember { mutableStateOf(false) }
+    var lastIntegrationCheck by remember { mutableStateOf<Long?>(null) }
+    var integrationDetail by remember { mutableStateOf<String?>(null) }
     var liveStage by remember { mutableStateOf<SystemUidProvisioner.Progress?>(null) }
     LaunchedEffect(provisioning) {
         if (provisioning) {
@@ -131,7 +136,13 @@ fun TokenXDashboard(
                     append(result.output.trim())
                 }
             }
-            if (dialogMode == "bridge") bridgeVerified = result.success
+            // A successful full System Integration audit proves the same live route used by
+            // the compact card. Update it immediately instead of leaving Xposed RPC on Standby.
+            if (dialogMode == "bridge" || title.startsWith("System Integration")) {
+                bridgeVerified = result.success
+                lastIntegrationCheck = System.currentTimeMillis()
+                integrationDetail = result.output.trim().takeIf { it.isNotBlank() }
+            }
             provisioning = false
             ViewCompat.performHapticFeedback(hapticView, if (result.success) HapticFeedbackConstantsCompat.CONFIRM else HapticFeedbackConstantsCompat.REJECT)
         }
@@ -338,11 +349,32 @@ fun TokenXDashboard(
                 Text(if (showVaultDetails) " Hide details" else " Details")
             }
             if (showVaultDetails) {
-                Text(
-                    "Read-only check of the D2 boundary, Xposed System Server RPC, and TokenX-native compatibility.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = .28f),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Column(
+                        Modifier.fillMaxWidth().padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(7.dp)
+                    ) {
+                        Text("LIVE INTEGRATION", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        IntegrationDetailRow("System Server", if (bridgeVerified) "Verified • UID 1000" else "UID 1000 • awaiting RPC proof")
+                        IntegrationDetailRow("Xposed RPC", if (bridgeVerified) "Verified • Binder alive" else "Standby")
+                        IntegrationDetailRow("LSPosed", if (bridgeVerified) "Hook active" else "Detected")
+                        IntegrationDetailRow("D2 Gate", if (liveStage?.stage == SystemUidProvisioner.Stage.D2_GATE && liveStage?.state == SystemUidProvisioner.StageState.FAILED) "Check failed" else "Protected")
+                        IntegrationDetailRow("Root", if (rootAvailable) "Available • UID 0" else "Unavailable")
+                        IntegrationDetailRow("Shizuku", if (running) "Binder running • UID $uid" else "Not running")
+                        IntegrationDetailRow("Router", if (bridgeVerified) "System Server → Root → Shell" else "Root → Shell fallback")
+                        IntegrationDetailRow(
+                            "Last verified",
+                            lastIntegrationCheck?.let { DateFormat.getTimeInstance(DateFormat.MEDIUM).format(Date(it)) } ?: "Not checked this session"
+                        )
+                        integrationDetail?.lineSequence()
+                            ?.firstOrNull { it.startsWith("SYSTEM_SERVER_BACKEND=") }
+                            ?.substringAfter("=")
+                            ?.let { IntegrationDetailRow("Backend", it.replace("LSPosed _TKN RPC", "Xposed System Server RPC")) }
+                    }
+                }
             }
             TokenXGlassButton(
                 onClick = { runProvision("System Integration • Live") {
@@ -383,6 +415,15 @@ fun TokenXDashboard(
                 )
             }
         }
+    }
+}
+
+
+@Composable
+private fun IntegrationDetailRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
+        Text(value, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
