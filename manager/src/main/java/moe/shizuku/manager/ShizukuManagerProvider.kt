@@ -1,8 +1,6 @@
 package moe.shizuku.manager
 
 import android.os.Bundle
-import android.util.Log
-import moe.shizuku.manager.tokenx.TokenXSystemServerBridge
 import androidx.core.os.bundleOf
 import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.flow.first
@@ -29,12 +27,7 @@ class ShizukuManagerProvider : ShizukuProvider() {
 
     override fun onCreate(): Boolean {
         disableAutomaticSuiInitialization()
-        val created = super.onCreate()
-        // The provider is initialized before Activity creation and is also the actual
-        // Shizuku binder handoff entry point. Use it as a second process-start anchor.
-        Log.i("TokenX/Bridge", "MANAGER_PROVIDER_AUTOCONNECT_START pid=${android.os.Process.myPid()}")
-        context?.let { TokenXSystemServerBridge.startAutoConnect(it.applicationContext) }
-        return created
+        return super.onCreate()
     }
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
@@ -47,8 +40,6 @@ class ShizukuManagerProvider : ShizukuProvider() {
             LOGGER.i("Receiving Shizuku binder handoff through manager provider")
             super.call(method, arg, extras).also {
                 ShizukuStateMachine.update()
-                Log.i("TokenX/Bridge", "MANAGER_PROVIDER_BINDER_RECEIVED")
-                TokenXSystemServerBridge.poke()
             }
         } else if (method == METHOD_SEND_USER_SERVICE) {
             try {
