@@ -2,6 +2,7 @@ package moe.shizuku.tokenx.xposed
 
 import android.content.Context
 import android.os.Process
+import android.os.Parcel
 import android.util.Log
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
@@ -92,6 +93,47 @@ class TokenXXposedEntry : XposedModule() {
             "SYSTEM_SERVER_IDENTITY_OK backend=XPOSED_SYSTEM_SERVER pid=$pid uid=$uid selinux=$selinux process=$cmdline"
         )
         log(Log.INFO, TAG, "EMBEDDED_SHIZUKU_DISABLED root_shizuku_remains_fallback")
+        installSystemServerBridge()
+    }
+
+    private fun installSystemServerBridge() {
+        runCatching {
+            val ams = Class.forName("com.android.server.am.ActivityManagerService")
+            val onTransact = ams.getDeclaredMethod(
+                "onTransact",
+                Int::class.javaPrimitiveType,
+                Parcel::class.java,
+                Parcel::class.java,
+                Int::class.javaPrimitiveType
+            )
+            hook(onTransact)
+                .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+                .intercept { chain ->
+                    val code = chain.args.getOrNull(0) as? Int
+                    if (code != TOKENX_BRIDGE_TRANSACTION) return@intercept chain.proceed()
+
+                    val data = chain.args.getOrNull(1) as? Parcel
+                        ?: return@intercept chain.proceed()
+                    val reply = chain.args.getOrNull(2) as? Parcel
+                    data.enforceInterface(ACTIVITY_MANAGER_DESCRIPTOR)
+
+                    when (data.readInt()) {
+                        ACTION_GET_IDENTITY -> {
+                            reply?.writeNoException()
+                            reply?.writeInt(Process.myPid())
+                            reply?.writeInt(Process.myUid())
+                            reply?.writeString(readSelf("/proc/self/attr/current"))
+                            reply?.writeString(readSelf("/proc/self/cmdline").replace("\u0000", "").trim())
+                            log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_IDENTITY callingUid=${android.os.Binder.getCallingUid()} callingPid=${android.os.Binder.getCallingPid()}")
+                            true
+                        }
+                        else -> false
+                    }
+                }
+            log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_READY transport=activity_binder protocol=1")
+        }.onFailure {
+            log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_INSTALL_FAILED: ${it.javaClass.simpleName}: ${it.message}")
+        }
     }
 
     private fun readSelf(path: String): String = runCatching {
@@ -151,6 +193,9 @@ class TokenXXposedEntry : XposedModule() {
 
     private companion object {
         const val TAG = "TokenX/Xposed"
+        const val TOKENX_BRIDGE_TRANSACTION = 0x5f544b4e // "_TKN"
+        const val ACTIVITY_MANAGER_DESCRIPTOR = "android.app.IActivityManager"
+        const val ACTION_GET_IDENTITY = 1
         const val FOTA_PACKAGE = "com.sdet.fotaagent"
         const val RETAIL_MODE_PACKAGE = "com.samsung.sea.rm"
         const val SYSTEM_UI_PACKAGE = "com.android.systemui"
