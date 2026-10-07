@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Looper;
-import android.os.UserHandle;
 import android.system.Os;
 
 import rikka.hidden.compat.PackageManagerApis;
@@ -88,10 +87,9 @@ public final class TokenXTransportClient {
             }
             Context systemContext = ActivityThread.systemMain().getSystemContext();
             String pkg = packageName();
-            Context packageContext = systemContext.createPackageContextAsUser(
+            Context packageContext = systemContext.createPackageContext(
                     pkg,
-                    Context.CONTEXT_IGNORE_SECURITY,
-                    new UserHandle(Os.getuid() / 100000)
+                    Context.CONTEXT_IGNORE_SECURITY
             );
             Context context = new ContextWrapper(packageContext) {
                 @Override public String getOpPackageName() { return pkg; }
