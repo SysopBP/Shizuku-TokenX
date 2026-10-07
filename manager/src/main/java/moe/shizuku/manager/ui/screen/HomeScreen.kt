@@ -165,6 +165,7 @@ fun HomeScreen(bottomPadding: Dp) {
     var rooted by remember { mutableStateOf(false) }
     var startMethod by remember { mutableStateOf(ShizukuSettings.getStartMethod()) }
     var systemRishActive by remember { mutableStateOf(ShellBinderRequestHandler.isSystemRishConnected()) }
+    var rootBackendAlive by remember { mutableStateOf(false) }
     var systemBackendAlive by remember { mutableStateOf(ShizukuManagerProvider.systemBinder()?.isBinderAlive == true) }
     var systemConnectBusy by remember { mutableStateOf(false) }
     var rootClients by remember { mutableStateOf(0) }
@@ -366,6 +367,7 @@ fun HomeScreen(bottomPadding: Dp) {
             val health = TokenXWatchdog.probe()
             rootClients = health.root.clients
             systemClients = health.system.clients
+            rootBackendAlive = health.root.binderAlive
             systemBackendAlive = health.system.binderAlive
             shellClients = health.shell.clients
             transportAlive = health.transport == TokenXWatchdog.State.ONLINE
@@ -680,6 +682,8 @@ fun HomeScreen(bottomPadding: Dp) {
                 StatusCard(
                     running = running,
                     uid = uid,
+                    rootBackendAlive = rootBackendAlive,
+                    systemBackendAlive = systemBackendAlive,
                     startMethodLabelRes = startMethodLabelRes(startMethod)
                 )
             }
@@ -1248,16 +1252,41 @@ private fun StartMethodRow(
 private fun StatusCard(
     running: Boolean,
     uid: Int,
+    rootBackendAlive: Boolean,
+    systemBackendAlive: Boolean,
     @StringRes startMethodLabelRes: Int
 ) {
     val glass = LocalTokenXGlass.current
     val accent = MaterialTheme.colorScheme.primary
+    val dualBackend = rootBackendAlive && systemBackendAlive
+    val anyBackend = rootBackendAlive || systemBackendAlive || running
+    val statusTitle = when {
+        dualBackend -> "Dual Backend Active"
+        systemBackendAlive && !rootBackendAlive -> "System Server Active"
+        rootBackendAlive && !systemBackendAlive -> "Root Active"
+        running -> stringResource(R.string.status_running_short)
+        else -> stringResource(R.string.status_stopped_short)
+    }
+    val statusSubtitle = when {
+        dualBackend -> "Root + System Server bound • 2/2 privilege backends online"
+        systemBackendAlive && !rootBackendAlive -> "System Server backend bound"
+        rootBackendAlive && !systemBackendAlive -> "Root backend bound"
+        running -> "Privilege engine active"
+        else -> "Privilege engines offline"
+    }
+    val uidBadge = when {
+        dualBackend -> "UID 0 + 1000"
+        systemBackendAlive && !rootBackendAlive -> "UID 1000"
+        rootBackendAlive && !systemBackendAlive -> "UID 0"
+        running -> "UID $uid"
+        else -> "OFFLINE"
+    }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .border(
                 1.dp,
-                if (running) accent.copy(alpha = .34f) else MaterialTheme.colorScheme.outlineVariant,
+                if (anyBackend) accent.copy(alpha = .34f) else MaterialTheme.colorScheme.outlineVariant,
                 MaterialTheme.shapes.large
             ),
         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
@@ -1273,37 +1302,37 @@ private fun StatusCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = CircleShape,
-                    color = if (running) accent.copy(alpha = .18f) else MaterialTheme.colorScheme.surfaceContainerHighest
+                    color = if (anyBackend) accent.copy(alpha = .18f) else MaterialTheme.colorScheme.surfaceContainerHighest
                 ) {
                     Icon(
-                        if (running) Icons.Rounded.CheckCircle else Icons.Rounded.StopCircle,
+                        if (anyBackend) Icons.Rounded.CheckCircle else Icons.Rounded.StopCircle,
                         contentDescription = null,
-                        tint = if (running) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (anyBackend) accent else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(9.dp).size(22.dp)
                     )
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        stringResource(if (running) R.string.status_running_short else R.string.status_stopped_short),
+                        statusTitle,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        if (running) "Privilege engine active" else "Privilege engine offline",
+                        statusSubtitle,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Surface(
                     shape = CircleShape,
-                    color = if (running) accent.copy(alpha = .14f) else MaterialTheme.colorScheme.surfaceContainerHighest
+                    color = if (anyBackend) accent.copy(alpha = .14f) else MaterialTheme.colorScheme.surfaceContainerHighest
                 ) {
                     Text(
-                        if (running) "UID $uid" else "OFFLINE",
+                        uidBadge,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                         style = MaterialTheme.typography.labelLarge,
-                        color = if (running) accent else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (anyBackend) accent else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -1315,18 +1344,18 @@ private fun StatusCard(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 CompactStatusFact(
-                    "Current",
-                    if (running) runningMethodLabel(uid) else stringResource(R.string.status_value_none),
+                    "Root",
+                    if (rootBackendAlive) "Bound" else "Offline",
+                    Modifier.weight(1f)
+                )
+                CompactStatusFact(
+                    "System",
+                    if (systemBackendAlive) "Bound" else "Offline",
                     Modifier.weight(1f)
                 )
                 CompactStatusFact(
                     "Default",
                     stringResource(startMethodLabelRes),
-                    Modifier.weight(1f)
-                )
-                CompactStatusFact(
-                    "Transport",
-                    if (running) transportLabel(uid) else stringResource(R.string.status_value_none),
                     Modifier.weight(1f)
                 )
             }
