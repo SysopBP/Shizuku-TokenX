@@ -6,7 +6,7 @@
 
 ### Shizuku-compatible multi-backend privilege engine for Android
 
-**v14.2.0-TKN · Beta Pre-release**
+**v14.1.0-TKN · Active development**
 
 **System / UID 1000 · Root / UID 0 · Shell / UID 2000**
 
@@ -16,7 +16,7 @@
 </div>
 
 > [!IMPORTANT]
-> **Read the README before installing or updating Shizuku-TokenX.** System / UID 1000 requires the TokenX System Server Integration and a supported KernelSU/systemless-mount environment. The manager APK by itself is not the System Server Bridge.
+> **Read the README before installing or updating Shizuku-TokenX.** Root / UID 0 requires a working root solution. System / UID 1000 uses TokenX's LSPosed `_TKN` system_server RPC and the manager-owned TokenX transport. The current System path does **not** require the legacy Serv.apk/UID-1000 package bridge.
 
 ## Shizuku-TokenX at a glance
 
@@ -25,7 +25,7 @@ Shizuku-TokenX combines Shizuku-compatible app authorization with multiple Andro
 ### Before installing
 
 1. Read the **Requirements** and **Installation notes** below.
-2. For the System / UID 1000 backend, follow [SYSTEM_UID_INSTALL.md](SYSTEM_UID_INSTALL.md).
+2. For the System / UID 1000 backend, enable the TokenX LSPosed module for `system_server` and follow [SYSTEM_UID_INSTALL.md](SYSTEM_UID_INSTALL.md).
 3. Verify the System Server Bridge after reboot before relying on UID 1000 routing.
 4. Remember that UID 1000, UID 0, and UID 2000 are different Android security contexts.
 5. Kiosk D2 Guardian integration is optional and only applies when D2 is installed.
@@ -65,10 +65,10 @@ TokenX is a fork in the Shizuku family. The original Shizuku server, API, shell,
 
 The manager coordinates the available privilege paths and reports the runtime state separately from the configured default.
 
-- **System** — UID 1000 path provided through the TokenX System Server Integration.
+- **System** — UID 1000 path provided through the TokenX LSPosed `_TKN` RPC plus the manager-owned TokenX transport.
 - **Root** — UID 0 backend for rooted devices.
 - **Shell** — UID 2000 Shizuku/ADB path and fallback.
-- **Token Boot** — coordinates startup so multiple backends do not race to publish the same service.
+- **Token Boot** — coordinates startup while Root, System and Shell remain independently discoverable; selecting one route does not replace the others.
 - **Watchdog** — monitors the active engine and recovery path.
 - **TokenX Router** — keeps client authorization separate from the backend currently serving it.
 
@@ -78,7 +78,7 @@ A package running as UID 1000 is not, by itself, proof that code is executing in
 
 The current System / UID 1000 framework path uses the TokenX LSPosed module and the private **_TKN Binder RPC** inside Android's real `system_server` process. TokenX verifies the returned identity directly: UID 1000, process `system_server`, and SELinux `u:r:system_server:s0`.
 
-Root/Shizuku remains the UID 0 backend. Shell/ADB remains the UID 2000 fallback. Interactive rish execution stays outside `system_server`.
+Root/Shizuku remains the UID 0 backend. Shell/ADB remains the UID 2000 backend/fallback. The packaged `rish_shizuku.dex` now contains the TokenX multi-backend transport client; `rish --root`, `rish --system` (or legacy `--sserver`), and `rish --shell` request UID 0, UID 1000, and UID 2000 sessions respectively. Interactive execution stays outside `system_server`.
 
 Current integration behavior includes:
 
@@ -116,9 +116,9 @@ Replay persisted grants
 
 A temporary backend outage is therefore not treated as an intentional revoke.
 
-## Start methods
+## Start methods and global routing
 
-TokenX exposes the available launch paths instead of hiding them behind one generic state.
+TokenX exposes the available launch paths instead of hiding them behind one generic state. Root, System and Shell are tracked as independent backends. A client can use the global/default route or be pinned per package to Root, System, or Shell without redefining app authorization.
 
 | Method | Typical UID | Purpose |
 | --- | ---: | --- |
@@ -131,9 +131,7 @@ The exact operations available still depend on Android's permission and SELinux 
 
 ## Systemless mounting
 
-The current **TokenX System Server Integration** setup uses [Meta Magic Mount RS](https://github.com/Tools-cx-app/meta-magic_mount-rs) as its systemless mount layer with KernelSU.
-
-Meta Magic Mount RS is a separate project and is not bundled as TokenX source. Install and maintain the required metamodule according to its own documentation.
+Legacy TokenX experiments used systemless-mounted UID-1000 packages and Meta Magic Mount RS. The current LSPosed `_TKN` System backend does not use the legacy `Serv.apk`/`com.vikram.exp` package bridge as its runtime transport. Do not install an old TokenX UID-1000 bridge solely for the current System route.
 
 ## Features inherited from Shizuku Next / thedjchi
 
@@ -160,7 +158,7 @@ For upstream behavior and history, see [thedjchi/Shizuku](https://github.com/the
 
 Backend-specific requirements:
 
-- **System / UID 1000:** rooted device plus the TokenX System Server Integration and its required systemless-mount environment.
+- **System / UID 1000:** LSPosed with the TokenX module enabled for `system_server`; root is still required for the rooted TokenX environment and Root backend.
 - **Root / UID 0:** a working root solution.
 - **Wireless debugging:** Android 11+ on supported devices.
 - **USB debugging:** ADB access.
@@ -176,9 +174,7 @@ The manager keeps the Shizuku package/API compatibility expected by Shizuku clie
 
 ### System UID backend
 
-The System Server Bridge is a separate privileged/root component. See [SYSTEM_UID_INSTALL.md](SYSTEM_UID_INSTALL.md) for the repository's System UID installation and verification notes.
-
-Do not treat the manager APK alone as the System Server Bridge.
+The System route is formed by the TokenX manager/transport plus the TokenX LSPosed hook inside `system_server`. See [SYSTEM_UID_INSTALL.md](SYSTEM_UID_INSTALL.md) for installation and verification. The legacy standalone `Serv.apk` UID-1000 bridge is not the current runtime path.
 
 ## Diagnostics
 
