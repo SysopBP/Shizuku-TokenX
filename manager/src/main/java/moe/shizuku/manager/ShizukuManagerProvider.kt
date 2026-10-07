@@ -3,6 +3,7 @@ package moe.shizuku.manager
 import android.os.Bundle
 import android.os.IBinder
 import android.os.Process
+import android.os.Parcel
 import android.util.Log
 import androidx.core.os.bundleOf
 import kotlinx.coroutines.android.asCoroutineDispatcher
@@ -113,14 +114,20 @@ class ShizukuManagerProvider : ShizukuProvider() {
     }
 
     private fun probeServerUid(binder: IBinder): Int = runCatching {
-        // Shizuku's public client API already performs the server UID query.
-        // Only use it when this is the currently installed compatibility Binder;
-        // otherwise leave the incoming backend unclassified rather than relying
-        // on a private transaction constant that is not part of this build.
-        if (Shizuku.getBinder() === binder || Shizuku.getBinder() == binder) {
-            Shizuku.getUid()
-        } else {
-            -1
+        // IShizukuService.aidl assigns getUid() the stable explicit transaction 3.
+        // Probe the incoming Binder itself so ROOT and embedded UID-1000 backends
+        // can be classified before either one is allowed to touch the compatibility
+        // Shizuku global Binder.
+        val data = Parcel.obtain()
+        val reply = Parcel.obtain()
+        try {
+            data.writeInterfaceToken("moe.shizuku.server.IShizukuService")
+            if (!binder.transact(3, data, reply, 0)) return@runCatching -1
+            reply.readException()
+            reply.readInt()
+        } finally {
+            data.recycle()
+            reply.recycle()
         }
     }.getOrDefault(-1)
 
