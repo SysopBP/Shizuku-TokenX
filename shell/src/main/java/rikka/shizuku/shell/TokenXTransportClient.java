@@ -23,7 +23,11 @@ public final class TokenXTransportClient {
     private static final int TX_PING = IBinder.FIRST_CALL_TRANSACTION + 2;
     private static final int TX_STATUS = IBinder.FIRST_CALL_TRANSACTION + 3;
     private static final int TX_CLOSE = IBinder.FIRST_CALL_TRANSACTION + 4;
+    private static final int ROOT = 0;
     private static final int SYSTEM = 1;
+    private static final int SHELL = 2;
+    private static int requestedBackend = SYSTEM;
+    private static int expectedUid = 1000;
     private static final Binder LIFETIME = new Binder();
     private static Handler handler;
     private static String callingPackage;
@@ -77,7 +81,7 @@ public final class TokenXTransportClient {
         String pkg=r.readString();
         System.out.println(label+" sessionId="+id+" backend="+backend+" backendUid="+uid+
                 " callerUid="+callerUid+" callerPid="+callerPid+" package="+pkg);
-        if(uid!=1000) throw new IllegalStateException("SYSTEM backend UID mismatch: "+uid);
+        if(uid!=expectedUid) throw new IllegalStateException("TokenX backend UID mismatch: expected="+expectedUid+" actual="+uid);
         return id;
     }
     private static void runTest(IBinder remote, int generation) {
@@ -85,25 +89,29 @@ public final class TokenXTransportClient {
             if(remote==null || !remote.isBinderAlive()) throw new IllegalStateException("transport unavailable");
             Parcel h=tx(remote,TX_HELLO,null); int v=h.readInt(); h.recycle();
             System.out.println("HELLO="+v+" generation="+generation+" binderAlive="+remote.isBinderAlive());
-            Parcel o=tx(remote,TX_REQUEST_SESSION,p->{p.writeStrongBinder(LIFETIME);p.writeInt(SYSTEM);p.writeString(callingPackage);});
+            Parcel o=tx(remote,TX_REQUEST_SESSION,p->{p.writeStrongBinder(LIFETIME);p.writeInt(requestedBackend);p.writeString(callingPackage);});
             long id=readSession(o,"OPEN"); o.recycle();
             Parcel p=tx(remote,TX_PING,x->x.writeLong(id)); readSession(p,"PING"); p.recycle();
             Parcel st=tx(remote,TX_STATUS,x->x.writeLong(id)); readSession(st,"STATUS"); st.recycle();
             Parcel c=tx(remote,TX_CLOSE,x->x.writeLong(id)); boolean closed=c.readInt()!=0;c.recycle();
             System.out.println("CLOSE="+closed);
-            System.out.println("TOKENX_SYSTEM_SESSION_TEST=PASS");
+            System.out.println("TOKENX_SESSION_TEST=PASS backend="+requestedBackend+" uid="+expectedUid);
             System.exit(0);
         } catch(Throwable t) {
-            t.printStackTrace(System.err); System.out.println("TOKENX_SYSTEM_SESSION_TEST=FAIL"); System.exit(1);
+            t.printStackTrace(System.err); System.out.println("TOKENX_SESSION_TEST=FAIL backend="+requestedBackend); System.exit(1);
         }
     }
 
     public static void main(String[] args) {
+        String backend = System.getenv("TOKENX_RISH_BACKEND");
+        if ("root".equalsIgnoreCase(backend)) { requestedBackend = ROOT; expectedUid = 0; }
+        else if ("shell".equalsIgnoreCase(backend) || "shizuku".equalsIgnoreCase(backend)) { requestedBackend = SHELL; expectedUid = 2000; }
+        else { requestedBackend = SYSTEM; expectedUid = 1000; }
         callingPackage=packageName();
         if(Looper.getMainLooper()==null) Looper.prepareMainLooper();
         handler=new Handler(Looper.getMainLooper());
         try { requestTransport(); }
-        catch(Throwable t){t.printStackTrace(System.err);System.out.println("TOKENX_SYSTEM_SESSION_TEST=FAIL");return;}
+        catch(Throwable t){t.printStackTrace(System.err);System.out.println("TOKENX_SESSION_TEST=FAIL backend="+requestedBackend);return;}
         handler.postDelayed(()->{System.err.println("TokenX transport request timeout");System.exit(1);},5000);
         Looper.loop();
     }
