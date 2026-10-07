@@ -3,12 +3,14 @@ package rikka.shizuku.shell;
 import android.app.ActivityThread;
 import android.content.ContentProviderClient;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Looper;
+import android.os.UserHandle;
 import android.system.Os;
 
 import rikka.hidden.compat.PackageManagerApis;
@@ -84,13 +86,22 @@ public final class TokenXTransportClient {
             if (Looper.getMainLooper() == null) {
                 Looper.prepareMainLooper();
             }
-            Context context = ActivityThread.systemMain().getSystemContext();
+            Context systemContext = ActivityThread.systemMain().getSystemContext();
+            String pkg = packageName();
+            Context packageContext = systemContext.createPackageContextAsUser(
+                    pkg,
+                    Context.CONTEXT_IGNORE_SECURITY,
+                    UserHandle.of(Os.getuid() / 100000)
+            );
+            Context context = new ContextWrapper(packageContext) {
+                @Override public String getOpPackageName() { return pkg; }
+                @Override public String getAttributionTag() { return null; }
+            };
             IBinder remote = discover(context);
             Parcel hello = transact(remote, TX_HELLO, null);
             int version = hello.readInt(); hello.recycle();
             System.out.println("HELLO=" + version + " binderAlive=" + remote.isBinderAlive());
 
-            String pkg = packageName();
             Parcel opened = transact(remote, TX_REQUEST_SESSION, d -> {
                 d.writeStrongBinder(LIFETIME); d.writeInt(SYSTEM); d.writeString(pkg);
             });
