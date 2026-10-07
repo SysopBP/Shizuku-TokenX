@@ -786,9 +786,19 @@ fun HomeScreen(bottomPadding: Dp) {
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { transportStatsExpanded = !transportStatsExpanded }
                     ) {
-                        Icon(Icons.Rounded.Numbers, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(if (transportStatsExpanded) "Hide transport stats" else "Check Transport Stats")
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Rounded.Numbers, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                if (transportStatsExpanded) "Hide transport stats" else "Check Transport Stats",
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                     if (transportStatsExpanded) {
                         TokenXGlassCard(modifier = Modifier.fillMaxWidth()) {
@@ -1073,18 +1083,30 @@ private fun GlobalConnectionCard(
                     }
                 }
                 Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(if (uid != null) "$title · UID $uid" else title, fontWeight = FontWeight.SemiBold)
-                        if (identity != null) {
-                            Text(identity, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            if (uid != null) "$title · UID $uid" else title,
+                            modifier = Modifier.weight(1f, fill = false),
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(Modifier.width(7.dp))
                         Surface(
                             modifier = Modifier.size(9.dp).alpha(if (online) pulseAlpha else .28f),
                             shape = CircleShape,
                             color = if (online) accent else MaterialTheme.colorScheme.onSurfaceVariant
                         ) {}
+                    }
+                    if (identity != null) {
+                        Text(
+                            identity,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                     Text(
                         when {
@@ -1093,16 +1115,22 @@ private fun GlobalConnectionCard(
                             else -> "OFFLINE"
                         },
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (online) accent else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (online) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
-                Text(
-                    if (online) "HEARTBEAT" else if (available) "READY" else "OFFLINE",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (online) accent else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.width(4.dp))
-                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null)
+                Spacer(Modifier.width(8.dp))
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        if (online) "HEARTBEAT" else if (available) "READY" else "OFFLINE",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (online) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, modifier = Modifier.size(20.dp))
+                }
             }
             if (expanded) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))
