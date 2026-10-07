@@ -182,7 +182,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                         runtime.corePatchDetected -> "DETECTED • RPC UID 1000 verified separately from PM admission"
                         else -> "Not detected"
                     })
-                    FeatureRow(Icons.Outlined.Badge, "Native PM UID1000", if (runtime.nativeUid1000Verified) "VERIFIED • android.uid.system/1000" else "SEPARATE CAPABILITY • PM admission not verified")
+                    FeatureRow(Icons.Outlined.Badge, "PackageManager System UID", if (runtime.nativeUid1000Verified) "VERIFIED • android.uid.system/1000" else "NOT PROVISIONED • separate from System Server RPC")
                     FeatureRow(Icons.Outlined.AdminPanelSettings, "System Server identity", if (runtime.systemServerBridgeAttached) "ATTACHED • _TKN RPC" else "Not attached")
                     FeatureRow(Icons.Outlined.Link, "System Server RPC", if (runtime.xposedBridgeActive) "VERIFIED • _TKN • UID 1000" else "Not active")
                     HorizontalDivider()
@@ -229,7 +229,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                                     Text(backendLabel, fontWeight = FontWeight.Medium)
                                     Text(backendDetail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
-                                Text(if (entry.verified) "VERIFIED" else if (entry.ready) "READY" else "OFFLINE", style = MaterialTheme.typography.labelSmall)
+                                Text(if (entry.verified) "VERIFIED" else if (entry.ready) "READY" else if (entry.backend == TokenXBackend.NATIVE_UID) "NOT PROVISIONED" else "OFFLINE", style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
