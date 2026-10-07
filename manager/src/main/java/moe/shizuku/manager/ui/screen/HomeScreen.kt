@@ -800,7 +800,9 @@ fun HomeScreen(bottomPadding: Dp) {
                             color = MaterialTheme.colorScheme.surfaceContainerHigh
                         ) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text("TOKENX TRANSPORT STATS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)\n                                Text("Client: rish_shizuku.dex · TokenXTransportClient")\n                                Text("Launcher pair: rish + rish_shizuku.dex")
+                                Text("TOKENX TRANSPORT STATS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Client: rish_shizuku.dex · TokenXTransportClient")
+                                Text("Launcher pair: rish + rish_shizuku.dex")
                                 Text("Binder: " + if (transportAlive) "LIVE" else "OFFLINE")
                                 Text("Protocol: v${TokenXBinderProtocol.VERSION}")
                                 Text("Rendezvous generation: $transportGeneration")
