@@ -19,6 +19,8 @@ import moe.shizuku.manager.tokenx.transport.TokenXManagerBinderAuthority
 import moe.shizuku.manager.tokenx.transport.TokenXRendezvous
 import moe.shizuku.manager.tokenx.transport.TokenXRendezvousContract
 import moe.shizuku.manager.tokenx.transport.TokenXTransportBinder
+import moe.shizuku.manager.tokenx.transport.TokenXBinderClient
+import moe.shizuku.manager.tokenx.transport.TokenXBinderProtocol
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuApiConstants.USER_SERVICE_ARG_TOKEN
@@ -84,7 +86,25 @@ class ShizukuManagerProvider : ShizukuProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         if (extras == null) return null
 
-        return if (method == TokenXRendezvousContract.METHOD_GET_TRANSPORT_STATUS) {
+        return if (method == "tokenx.transportProbe") {
+            val snapshot = TokenXRendezvous.snapshot()
+            val transport = tokenXTransportBinder?.takeIf { it.isBinderAlive }
+                ?: snapshot.binder?.takeIf { it.isBinderAlive }
+            val hello = transport?.let { runCatching { TokenXBinderClient(it).hello() }.getOrNull() }
+            Log.i("TokenX/Transport", "probe generation=" + snapshot.generation +
+                " alive=" + (transport?.isBinderAlive == true) + " hello=" + hello +
+                " root=" + (rootBinder() != null) + " system=" + (systemBinder() != null) +
+                " shell=" + (shellBinder() != null))
+            Bundle().apply {
+                putInt("tokenx.hello", hello ?: -1)
+                putInt(TokenXRendezvousContract.EXTRA_PROTOCOL_VERSION, TokenXRendezvousContract.PROTOCOL_VERSION)
+                putLong(TokenXRendezvousContract.EXTRA_GENERATION, snapshot.generation)
+                putBoolean(TokenXRendezvousContract.EXTRA_BINDER_ALIVE, transport?.isBinderAlive == true)
+                putBoolean("tokenx.rootAvailable", rootBinder() != null)
+                putBoolean("tokenx.systemAvailable", systemBinder() != null)
+                putBoolean("tokenx.shellAvailable", shellBinder() != null)
+            }
+        } else if (method == TokenXRendezvousContract.METHOD_GET_TRANSPORT_STATUS) {
             val snapshot = TokenXRendezvous.snapshot()
             val transport = tokenXTransportBinder?.takeIf { it.isBinderAlive }
                 ?: snapshot.binder?.takeIf { it.isBinderAlive }
