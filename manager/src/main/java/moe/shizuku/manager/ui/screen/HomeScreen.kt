@@ -32,6 +32,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
@@ -99,6 +101,8 @@ import moe.shizuku.manager.receiver.ShizukuReceiverStarter
 import moe.shizuku.manager.shell.ShellBackend
 import moe.shizuku.manager.shell.ShellSession
 import moe.shizuku.manager.shell.ShellBinderRequestHandler
+import moe.shizuku.manager.tokenx.TokenXBackend
+import moe.shizuku.manager.tokenx.TokenXSessionRegistry
 import moe.shizuku.manager.start.StartFailureKind
 import moe.shizuku.manager.start.StartStatus
 import moe.shizuku.manager.start.StartStatusReporter
@@ -152,6 +156,10 @@ fun HomeScreen(bottomPadding: Dp) {
     var rooted by remember { mutableStateOf(false) }
     var startMethod by remember { mutableStateOf(ShizukuSettings.getStartMethod()) }
     var systemRishActive by remember { mutableStateOf(ShellBinderRequestHandler.isSystemRishConnected()) }
+    var rootClients by remember { mutableStateOf(0) }
+    var systemClients by remember { mutableStateOf(0) }
+    var shellClients by remember { mutableStateOf(0) }
+    var heartbeatTick by remember { mutableStateOf(false) }
     var developerOptionsOn by remember { mutableStateOf(context.isDeveloperOptionsEnabled()) }
     var selinuxRes by remember { mutableStateOf<Int?>(null) }
     var seccompRes by remember { mutableStateOf<Int?>(null) }
@@ -340,6 +348,15 @@ fun HomeScreen(bottomPadding: Dp) {
     LaunchedEffect(Unit) {
         while (true) {
             systemRishActive = ShellBinderRequestHandler.isSystemRishConnected()
+            val sessions = TokenXSessionRegistry.snapshot()
+            rootClients = sessions.count { it.backend == TokenXBackend.ROOT }
+            systemClients = sessions.count {
+                it.backend == TokenXBackend.SYSTEM_UID ||
+                    it.backend == TokenXBackend.SYSTEM_SERVER ||
+                    it.backend == TokenXBackend.NATIVE_UID
+            }
+            shellClients = sessions.count { it.backend == TokenXBackend.SHELL }
+            if (runCatching { Shizuku.pingBinder() }.getOrDefault(false)) heartbeatTick = !heartbeatTick
             delay(500)
         }
     }
@@ -715,98 +732,51 @@ fun HomeScreen(bottomPadding: Dp) {
 
             item {
                 HomeSectionHeader(
-                    title = "Start methods",
-                    subtitle = "Root first, with System Server and ADB fallback paths"
+                    title = "Global connections",
+                    subtitle = "Independent privilege backends • live heartbeat and client routing"
                 )
             }
 
             item {
-                SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
-                    item {
-                        StartMethodRow(
-                            icon = Icons.Rounded.Numbers,
-                            title = stringResource(R.string.home_root_title),
-                            summary = if (rooted) {
-                                if (running && uid == 0) "Active now • UID 0" else "Primary • UID 0"
-                            } else "Root unavailable",
-                            enabled = rooted && !(running && uid == 0),
-                            active = running && uid == 0,
-                            onClick = {
-                                ShizukuReceiverStarter.switchMode(
-                                    context,
-                                    ShizukuSettings.StartMethod.ROOT,
-                                    userInitiated = true
-                                )
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    GlobalConnectionCard(
+                        icon = Icons.Rounded.Numbers, title = "Root", uid = 0,
+                        online = running && uid == 0, available = rooted, clients = rootClients,
+                        heartbeatTick = heartbeatTick && running && uid == 0,
+                        detail = if (rooted) "KernelSU / root backend" else "Root unavailable",
+                        command = "TOKENX_RISH_BACKEND=root ./rish",
+                        actionLabel = if (running && uid == 0) "Connected" else "Connect",
+                        actionEnabled = rooted && !(running && uid == 0),
+                        onAction = { ShizukuReceiverStarter.switchMode(context, ShizukuSettings.StartMethod.ROOT, userInitiated = true) }
+                    )
+                    GlobalConnectionCard(
+                        icon = Icons.Rounded.AdminPanelSettings, title = "System", uid = 1000,
+                        online = (running && uid == 1000) || systemRishActive, available = true, clients = systemClients,
+                        heartbeatTick = heartbeatTick && running && uid == 1000,
+                        detail = if (systemRishActive) "System transport / rish attached" else "Framework UID 1000 backend",
+                        command = "TOKENX_RISH_BACKEND=system ./rish",
+                        actionLabel = if (running && uid == 1000) "Connected" else "Connect",
+                        actionEnabled = !(running && uid == 1000),
+                        onAction = { ShizukuReceiverStarter.switchMode(context, ShizukuSettings.StartMethod.SYSTEM, userInitiated = true) }
+                    )
+                    GlobalConnectionCard(
+                        icon = Icons.Rounded.Wifi, title = "Shell / ADB", uid = 2000,
+                        online = running && uid == 2000, available = true, clients = shellClients,
+                        heartbeatTick = heartbeatTick && running && uid == 2000,
+                        detail = "Wireless, USB or computer ADB",
+                        command = "TOKENX_RISH_BACKEND=shell ./rish",
+                        actionLabel = if (running && uid == 2000) "Connected" else "Wireless",
+                        actionEnabled = !(running && uid == 2000),
+                        onAction = {
+                            startWithLocalNetworkPermission(ShizukuSettings.StartMethod.WIRELESS) {
+                                ShizukuReceiverStarter.switchMode(context, ShizukuSettings.StartMethod.WIRELESS, userInitiated = true)
                             }
-                        )
-                    }
-                    item {
-                        StartMethodRow(
-                            icon = Icons.Rounded.AdminPanelSettings,
-                            title = stringResource(R.string.home_system_title),
-                            summary = when {
-                                running && uid == 1000 -> "Active now • UID 1000"
-                                systemRishActive -> "rish connected • UID 1000"
-                                else -> "Framework • UID 1000"
-                            },
-                            enabled = !(running && uid == 1000),
-                            active = (running && uid == 1000) || systemRishActive,
-                            onClick = {
-                                ShizukuReceiverStarter.switchMode(
-                                    context,
-                                    ShizukuSettings.StartMethod.SYSTEM,
-                                    userInitiated = true
-                                )
-                            }
-                        )
-                    }
-                    item {
-                        StartMethodRow(
-                            icon = Icons.Rounded.Wifi,
-                            title = stringResource(R.string.home_wireless_adb_title),
-                            summary = if (startStatus is StartStatus.Starting && ShizukuSettings.getForceWirelessDebugging()) {
-                                stringResource(R.string.home_wireless_adb_starting_without_wifi)
-                            } else "ADB • wireless",
-                            enabled = !(running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS),
-                            active = running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS,
-                            onClick = {
-                                startWithLocalNetworkPermission(ShizukuSettings.StartMethod.WIRELESS) {
-                                    ShizukuReceiverStarter.switchMode(
-                                        context,
-                                        ShizukuSettings.StartMethod.WIRELESS,
-                                        userInitiated = true
-                                    )
-                                }
-                            }
-                        )
-                    }
-                    item {
-                        StartMethodRow(
-                            icon = Icons.Rounded.Usb,
-                            title = stringResource(R.string.home_usb_adb_title),
-                            summary = if (!EnvironmentUtils.isWifiConnected() && EnvironmentUtils.getAdbTcpPort() <= 0) {
-                                stringResource(R.string.home_usb_adb_needs_network)
-                            } else "ADB • USB / TCP",
-                            enabled = !(running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB),
-                            active = running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB,
-                            onClick = {
-                                ShizukuReceiverStarter.switchMode(
-                                    context,
-                                    ShizukuSettings.StartMethod.USB,
-                                    userInitiated = true
-                                )
-                            }
-                        )
-                    }
-                    item {
-                        StartMethodRow(
-                            icon = Icons.Rounded.Computer,
-                            title = stringResource(R.string.intents_adb_command),
-                            summary = "ADB command • copy and run from computer",
-                            enabled = !running,
-                            active = false,
-                            onClick = { showAdbCommand = true }
-                        )
+                        }
+                    )
+                    OutlinedButton(modifier = Modifier.fillMaxWidth(), onClick = { showAdbCommand = true }) {
+                        Icon(Icons.Rounded.Computer, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Computer / ADB command")
                     }
                 }
             }
@@ -964,6 +934,102 @@ private fun HomeSectionHeader(title: String, subtitle: String) {
         )
     }
 }
+
+@Composable
+private fun GlobalConnectionCard(
+    icon: ImageVector, title: String, uid: Int, online: Boolean, available: Boolean,
+    clients: Int, heartbeatTick: Boolean, detail: String, command: String,
+    actionLabel: String, actionEnabled: Boolean, onAction: () -> Unit
+) {
+    val context = LocalContext.current
+    var expanded by remember { mutableStateOf(false) }
+    val accent = MaterialTheme.colorScheme.primary
+    val pulseAlpha by animateFloatAsState(
+        targetValue = if (heartbeatTick) 1f else .42f,
+        animationSpec = tween(260),
+        label = "backend-heartbeat"
+    )
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = if (online) 2.dp else 0.dp
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(44.dp), shape = RoundedCornerShape(15.dp),
+                    color = if (online) accent.copy(alpha = .16f) else MaterialTheme.colorScheme.surfaceContainerHighest
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(icon, null, tint = if (online) accent else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("$title · UID $uid", fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.width(8.dp))
+                        Surface(
+                            modifier = Modifier.size(9.dp).alpha(if (online) pulseAlpha else .28f),
+                            shape = CircleShape,
+                            color = if (online) accent else MaterialTheme.colorScheme.onSurfaceVariant
+                        ) {}
+                    }
+                    Text(
+                        when {
+                            online -> "ONLINE • $clients apps connected"
+                            available -> "STANDBY • $clients apps connected"
+                            else -> "OFFLINE"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (online) accent else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Text(
+                    if (online) "HEARTBEAT" else if (available) "READY" else "OFFLINE",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (online) accent else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.width(4.dp))
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null)
+            }
+            if (expanded) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        if (online) "Binder ✓  •  heartbeat live  •  $clients active clients"
+                        else "Binder —  •  heartbeat —  •  $clients active clients",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            if (ClipboardUtils.put(context, command)) {
+                                Toast.makeText(context, "Termux command copied", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                    ) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text("TERMUX / RISH", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(command, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+                            Text("Tap to copy", style = MaterialTheme.typography.labelSmall, color = accent)
+                        }
+                    }
+                    Button(modifier = Modifier.fillMaxWidth(), enabled = actionEnabled, onClick = onAction) {
+                        Text(actionLabel)
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 private fun StartMethodRow(
