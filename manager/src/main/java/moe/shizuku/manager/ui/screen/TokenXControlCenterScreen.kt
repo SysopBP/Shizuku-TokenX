@@ -102,6 +102,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0f)),
             windowInsets = WindowInsets(0.dp)
         )
         Column(
