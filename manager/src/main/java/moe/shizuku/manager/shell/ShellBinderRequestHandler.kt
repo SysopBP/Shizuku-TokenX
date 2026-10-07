@@ -10,6 +10,7 @@ import moe.shizuku.manager.tokenx.TokenXBackend
 import moe.shizuku.manager.tokenx.TokenXSessionRegistry
 import moe.shizuku.manager.tokenx.TokenXXposedSystemServerClient
 import moe.shizuku.manager.tokenx.transport.TokenXRendezvous
+import moe.shizuku.manager.authorization.AuthorizationManager
 import rikka.shizuku.Shizuku
 
 object ShellBinderRequestHandler {
@@ -66,10 +67,34 @@ object ShellBinderRequestHandler {
             val packageName = intent.getStringExtra("tokenx_package")
                 ?: intent.`package`
                 ?: "rish"
+
+            // Explicit TokenX rish routes must pass the same authorization gate as
+            // the transport session API.  The broadcast itself does not preserve
+            // Binder caller identity, so resolve the package UID here and bind the
+            // resulting session to the client-owned receiver Binder lifetime.
+            val packageUid = runCatching {
+                context.packageManager.getApplicationInfo(packageName, 0).uid
+            }.getOrDefault(-1)
+            val authorized = sessionBackend == null || (
+                packageUid >= 0 &&
+                    runCatching { AuthorizationManager.granted(packageName, packageUid) }
+                        .getOrDefault(false)
+            )
+            if (sessionBackend != null && !authorized) {
+                LOGGER.w("TokenX rish session denied backend=%s package=%s uid=%d",
+                    sessionBackend.name, packageName, packageUid)
+                return false
+            }
+
             val session = if (shizukuBinder != null && sessionBackend != null) {
                 TokenXSessionRegistry.register(binder, packageName, sessionBackend)
             } else {
                 null
+            }
+            if (sessionBackend != null && session == null) {
+                LOGGER.w("TokenX rish Binder withheld because session registration failed backend=%s package=%s",
+                    sessionBackend.name, packageName)
+                return false
             }
 
             data.writeStrongBinder(shizukuBinder)
