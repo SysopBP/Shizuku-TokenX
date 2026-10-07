@@ -3,6 +3,7 @@ package rikka.shizuku.shell;
 import android.app.ActivityManagerNative;
 import android.app.IActivityManager;
 import android.content.Intent;
+import android.content.ComponentName;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
@@ -64,12 +65,28 @@ public class ShizukuShellLoader {
             managerApplicationId = BuildConfig.MANAGER_APPLICATION_ID;
         }
 
+        String tokenXBackend = System.getenv("TOKENX_RISH_BACKEND");
         Intent intent = new Intent("rikka.shizuku.intent.action.REQUEST_BINDER")
                 .setPackage(managerApplicationId)
                 .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
                 .putExtra("data", data)
-                .putExtra("tokenx_backend", System.getenv("TOKENX_RISH_BACKEND"))
+                .putExtra("tokenx_backend", tokenXBackend)
                 .putExtra("tokenx_package", callingPackage);
+
+        // Android 17 can accept the package-targeted broadcast at ActivityManager
+        // while never dispatching it to the exported receiver after a cold boot.
+        // TokenX explicit backend requests know the exact receiver, so address it
+        // directly. Keep the original implicit/package route untouched for normal
+        // upstream Shizuku compatibility.
+        if (!TextUtils.isEmpty(tokenXBackend)) {
+            intent.setComponent(new ComponentName(
+                    managerApplicationId,
+                    "moe.shizuku.manager.receiver.BinderRequestReceiver"));
+            System.out.println("TOKENX_RISH_REQUEST backend=" + tokenXBackend +
+                    " manager=" + managerApplicationId +
+                    " component=" + intent.getComponent() +
+                    " package=" + callingPackage);
+        }
 
         IBinder amBinder = ServiceManager.getService("activity");
         IActivityManager am;
