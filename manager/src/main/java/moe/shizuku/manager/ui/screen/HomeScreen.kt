@@ -164,6 +164,8 @@ fun HomeScreen(bottomPadding: Dp) {
     var heartbeatTick by remember { mutableStateOf(false) }
     var transportAlive by remember { mutableStateOf(false) }
     var transportGeneration by remember { mutableStateOf(0L) }
+    var transportInfoExpanded by remember { mutableStateOf(false) }
+    var transportStatsExpanded by remember { mutableStateOf(false) }
     var developerOptionsOn by remember { mutableStateOf(context.isDeveloperOptionsEnabled()) }
     var selinuxRes by remember { mutableStateOf<Int?>(null) }
     var seccompRes by remember { mutableStateOf<Int?>(null) }
@@ -757,6 +759,56 @@ fun HomeScreen(bottomPadding: Dp) {
                         actionEnabled = false,
                         onAction = {}
                     )
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer
+                    ) {
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().clickable { transportInfoExpanded = !transportInfoExpanded }.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("New transport format", fontWeight = FontWeight.SemiBold)
+                                    Text("Legacy Binder → TokenX multi-backend client", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null)
+                            }
+                            if (transportInfoExpanded) {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))
+                                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                                    Text("The legacy rish path followed the single active Shizuku Binder. The new rish_shizuku.dex client requests a TokenX transport session and explicitly selects Root, System, or Shell.", style = MaterialTheme.typography.bodySmall)
+                                    Text("New commands: ./rish --root  •  ./rish --system  •  ./rish --shell", style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+                                    Text("Sessions are tied to the client Binder lifetime, so they disappear automatically when the client exits.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
+                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { transportStatsExpanded = !transportStatsExpanded }
+                    ) {
+                        Icon(Icons.Rounded.Numbers, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (transportStatsExpanded) "Hide transport stats" else "Check Transport Stats")
+                    }
+                    if (transportStatsExpanded) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh
+                        ) {
+                            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text("TOKENX TRANSPORT STATS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Binder: " + if (transportAlive) "LIVE" else "OFFLINE")
+                                Text("Protocol: v${TokenXBinderProtocol.VERSION}")
+                                Text("Rendezvous generation: $transportGeneration")
+                                Text("Active sessions: ${rootClients + systemClients + shellClients}")
+                                Text("Root: $rootClients  •  System: $systemClients  •  Shell: $shellClients")
+                            }
+                        }
+                    }
                     GlobalConnectionCard(
                         icon = Icons.Rounded.Numbers, title = "Root", uid = 0,
                         online = running && uid == 0, available = rooted, clients = rootClients,
