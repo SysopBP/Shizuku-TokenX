@@ -42,7 +42,16 @@ class TokenXManagerBinderAuthority(
     private fun resolvePackage(uid:Int,hint:String?):String? {
         val packages=context.packageManager.getPackagesForUid(uid)?.distinct().orEmpty()
         if(!hint.isNullOrBlank()&&hint in packages)return hint
-        return packages.singleOrNull()
+        packages.singleOrNull()?.let{return it}
+
+        // Android 17 package visibility can filter getPackagesForUid() across the
+        // manager/client boundary (for example Termux), even though Binder has
+        // already supplied the authoritative caller UID/PID.  Keep the caller's
+        // package hint as an identity label and let isAuthorized(package, uid)
+        // make the actual access decision.  Sessions remain bound to the kernel
+        // Binder caller UID/PID, so a package hint cannot change privileges.
+        if(!hint.isNullOrBlank())return hint
+        return null
     }
     private fun backendAvailable(b:Int)=when(b) {
         TokenXBinderProtocol.BACKEND_ROOT->ShizukuManagerProvider.rootBinder()!=null
