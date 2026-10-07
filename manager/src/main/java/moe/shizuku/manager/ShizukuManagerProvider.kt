@@ -64,7 +64,20 @@ class ShizukuManagerProvider : ShizukuProvider() {
         @Volatile private var systemBackendBinder: IBinder? = null
         @Volatile private var shellBackendBinder: IBinder? = null
 
-        fun rootBinder(): IBinder? = rootBackendBinder?.takeIf { it.isBinderAlive }
+        fun rootBinder(): IBinder? {
+            rootBackendBinder?.takeIf { it.isBinderAlive }?.let { return it }
+            // The compatibility Binder can arrive before probeServerUid() can classify it.
+            // If Shizuku itself has verified that the live global Binder is UID 0, adopt it
+            // into TokenX's independent ROOT slot so explicit rish routing does not time out.
+            val global = Shizuku.getBinder()?.takeIf { it.isBinderAlive && Shizuku.pingBinder() }
+            val uid = runCatching { if (global != null) Shizuku.getUid() else -1 }.getOrDefault(-1)
+            if (global != null && uid == 0) {
+                rootBackendBinder = global
+                Log.i("TokenX/Transport", "adopted verified ROOT Binder from compatibility route")
+                return global
+            }
+            return null
+        }
         fun systemBinder(): IBinder? {
             systemBackendBinder?.takeIf { it.isBinderAlive }?.let { return it }
             val xposed = TokenXXposedSystemServerClient.binder()?.takeIf { it.isBinderAlive && it.pingBinder() }
@@ -74,7 +87,17 @@ class ShizukuManagerProvider : ShizukuProvider() {
             }
             return xposed
         }
-        fun shellBinder(): IBinder? = shellBackendBinder?.takeIf { it.isBinderAlive }
+        fun shellBinder(): IBinder? {
+            shellBackendBinder?.takeIf { it.isBinderAlive }?.let { return it }
+            val global = Shizuku.getBinder()?.takeIf { it.isBinderAlive && Shizuku.pingBinder() }
+            val uid = runCatching { if (global != null) Shizuku.getUid() else -1 }.getOrDefault(-1)
+            if (global != null && uid == Process.SHELL_UID) {
+                shellBackendBinder = global
+                Log.i("TokenX/Transport", "adopted verified SHELL Binder from compatibility route")
+                return global
+            }
+            return null
+        }
     }
 
     override fun onCreate(): Boolean {
