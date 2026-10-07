@@ -266,11 +266,11 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     PreviewSwitch("Prefer Root when capable", "Root-first policy; supported framework work can route through the LSPosed System Server RPC.", rootFirst) {
                         rootFirst = it; prefs.edit().putBoolean("tokenx_root_first", it).apply()
                     }
-                    CapabilityLine("Filesystem", runtime.routes.getValue(TokenXCapability.FILESYSTEM).backend.name)
-                    CapabilityLine("Process", runtime.routes.getValue(TokenXCapability.PROCESS).backend.name)
-                    CapabilityLine("Android framework", runtime.routes.getValue(TokenXCapability.FRAMEWORK).backend.name)
-                    CapabilityLine("Shell commands", runtime.routes.getValue(TokenXCapability.SHELL_COMMAND).backend.name)
-                    CapabilityLine("General", runtime.routes.getValue(TokenXCapability.GENERAL).backend.name)
+                    CapabilityLine("Filesystem", runtime.routes.getValue(TokenXCapability.FILESYSTEM).backend.name, availableBackends(runtime, TokenXCapability.FILESYSTEM))
+                    CapabilityLine("Process", runtime.routes.getValue(TokenXCapability.PROCESS).backend.name, availableBackends(runtime, TokenXCapability.PROCESS))
+                    CapabilityLine("Android framework", runtime.routes.getValue(TokenXCapability.FRAMEWORK).backend.name, availableBackends(runtime, TokenXCapability.FRAMEWORK))
+                    CapabilityLine("Shell commands", runtime.routes.getValue(TokenXCapability.SHELL_COMMAND).backend.name, availableBackends(runtime, TokenXCapability.SHELL_COMMAND))
+                    CapabilityLine("General", runtime.routes.getValue(TokenXCapability.GENERAL).backend.name, availableBackends(runtime, TokenXCapability.GENERAL))
                     HorizontalDivider()
                     PreviewSwitch(
                         "Experimental: System Server Operations",
@@ -454,11 +454,30 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
     }
 }
 
-@Composable private fun CapabilityLine(label: String, route: String) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyMedium)
-        Text(route, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+@Composable private fun CapabilityLine(label: String, route: String, available: String) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = MaterialTheme.typography.bodyMedium)
+            Text(route.replace('_', ' '), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        }
+        Text(
+            "Available: $available",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
+}
+
+private fun availableBackends(runtime: TokenXRuntimeState, capability: TokenXCapability): String {
+    val available = buildList {
+        if (runtime.backendRegistry.isReady(TokenXBackend.ROOT)) add("ROOT")
+        if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID)) add("SYSTEM UID 1000")
+        if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_SERVER)) {
+            add(if (capability == TokenXCapability.FRAMEWORK) "SYSTEM SERVER" else "SYSTEM SERVER RPC")
+        }
+        if (runtime.backendRegistry.isReady(TokenXBackend.SHELL)) add("SHELL")
+    }
+    return available.joinToString(" · ").ifEmpty { "NONE" }
 }
 
 @Composable private fun PreviewSwitch(title: String, summary: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
