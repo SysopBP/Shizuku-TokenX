@@ -760,17 +760,52 @@ fun HomeScreen(bottomPadding: Dp) {
                         onAction = { ShizukuReceiverStarter.switchMode(context, ShizukuSettings.StartMethod.SYSTEM, userInitiated = true) }
                     )
                     GlobalConnectionCard(
-                        icon = Icons.Rounded.Wifi, title = "Shell / ADB", uid = 2000,
-                        online = running && uid == 2000, available = true, clients = shellClients,
-                        heartbeatTick = heartbeatTick && running && uid == 2000,
-                        detail = "Wireless, USB or computer ADB",
+                        icon = Icons.Rounded.Wifi, title = "Wireless debugging", uid = 2000,
+                        online = running && uid == 2000 &&
+                            (ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS ||
+                                ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK),
+                        available = true,
+                        clients = if (running && uid == 2000 &&
+                            (ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS ||
+                                ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK)) shellClients else 0,
+                        heartbeatTick = heartbeatTick && running && uid == 2000 &&
+                            (ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS ||
+                                ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK),
+                        detail = "Wireless ADB transport • UID 2000 shell backend",
                         command = "TOKENX_RISH_BACKEND=shell ./rish",
-                        actionLabel = if (running && uid == 2000) "Connected" else "Wireless",
-                        actionEnabled = !(running && uid == 2000),
+                        actionLabel = if (running && uid == 2000 &&
+                            (ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS ||
+                                ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK)) "Connected" else "Connect wireless",
+                        actionEnabled = !(running && uid == 2000 &&
+                            (ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS ||
+                                ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK)),
                         onAction = {
                             startWithLocalNetworkPermission(ShizukuSettings.StartMethod.WIRELESS) {
                                 ShizukuReceiverStarter.switchMode(context, ShizukuSettings.StartMethod.WIRELESS, userInitiated = true)
                             }
+                        }
+                    )
+                    GlobalConnectionCard(
+                        icon = Icons.Rounded.Usb, title = "USB debugging", uid = 2000,
+                        online = running && uid == 2000 &&
+                            ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB,
+                        available = true,
+                        clients = if (running && uid == 2000 &&
+                            ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB) shellClients else 0,
+                        heartbeatTick = heartbeatTick && running && uid == 2000 &&
+                            ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB,
+                        detail = "USB / TCP ADB transport • UID 2000 shell backend",
+                        command = "TOKENX_RISH_BACKEND=shell ./rish",
+                        actionLabel = if (running && uid == 2000 &&
+                            ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB) "Connected" else "Connect USB",
+                        actionEnabled = !(running && uid == 2000 &&
+                            ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB),
+                        onAction = {
+                            ShizukuReceiverStarter.switchMode(
+                                context,
+                                ShizukuSettings.StartMethod.USB,
+                                userInitiated = true
+                            )
                         }
                     )
                     GlobalConnectionCard(
@@ -779,7 +814,7 @@ fun HomeScreen(bottomPadding: Dp) {
                         available = true,
                         clients = if (running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB) shellClients else 0,
                         heartbeatTick = heartbeatTick && running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB,
-                        detail = "Computer-started ADB transport • UID 2000 shell backend",
+                        detail = "Computer ADB command • shares the live USB/TCP shell transport",
                         command = Starter.adbCommand,
                         actionLabel = "Show PC command",
                         actionEnabled = true,
