@@ -202,7 +202,7 @@ class TokenXXposedEntry : XposedModule() {
                             }
                             ACTION_RESOLVE_PACKAGE_UID -> {
                                 val packageName = data.readString().orEmpty()
-                                val callingUserId = android.os.UserHandle.getUserId(Binder.getCallingUid())
+                                val callingUserId = Binder.getCallingUid() / 100000
                                 val resolvedUid = resolvePackageUidFromSystem(packageName, callingUserId)
                                 reply?.writeNoException()
                                 reply?.writeInt(resolvedUid)
