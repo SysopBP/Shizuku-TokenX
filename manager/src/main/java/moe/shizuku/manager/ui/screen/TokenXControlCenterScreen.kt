@@ -199,7 +199,9 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
             TokenXGlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Selected route: ${runtime.backendRegistry.selected.name.replace('_', ' ')}", fontWeight = FontWeight.SemiBold)
-                    runtime.backendRegistry.backends.values.forEach { entry ->
+                    runtime.backendRegistry.backends.values
+                        .filter { it.backend != TokenXBackend.NATIVE_UID }
+                        .forEach { entry ->
                         Surface(
                             onClick = {
                                 if (entry.ready) TokenXRouteState.select(entry.backend, "Selected from Privilege Inspector")
@@ -210,8 +212,22 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                         ) {
                             Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f)) {
-                                    Text(entry.backend.name.replace('_', ' '), fontWeight = FontWeight.Medium)
-                                    Text("UID ${entry.uid} • ${entry.detail}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    val backendLabel = when (entry.backend) {
+                                        TokenXBackend.ROOT -> "ROOT"
+                                        TokenXBackend.SYSTEM_UID -> "SYSTEM UID"
+                                        TokenXBackend.SYSTEM_SERVER -> "SYSTEM SERVER"
+                                        TokenXBackend.SHELL -> "SHELL"
+                                        else -> entry.backend.name.replace('_', ' ')
+                                    }
+                                    val backendDetail = when (entry.backend) {
+                                        TokenXBackend.ROOT -> if (entry.ready) "UID 0 • KernelSU root transport ready" else "UID 0 • Root transport unavailable"
+                                        TokenXBackend.SYSTEM_UID -> if (entry.ready) "UID 1000 • Shizuku isolated system worker ready" else "UID 1000 • System worker unavailable"
+                                        TokenXBackend.SYSTEM_SERVER -> if (entry.ready) "UID 1000 • LSPosed _TKN framework RPC verified" else "UID 1000 • System Server RPC unavailable"
+                                        TokenXBackend.SHELL -> if (entry.ready) "UID 2000 • Shizuku shell fallback ready" else "UID 2000 • Shell fallback unavailable"
+                                        else -> "UID ${entry.uid} • ${entry.detail}"
+                                    }
+                                    Text(backendLabel, fontWeight = FontWeight.Medium)
+                                    Text(backendDetail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Text(if (entry.verified) "VERIFIED" else if (entry.ready) "READY" else "OFFLINE", style = MaterialTheme.typography.labelSmall)
                             }
@@ -227,7 +243,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     FeatureRow(Icons.Outlined.Route, "Selected backend", runtime.backendRegistry.selected.name.replace('_', ' '))
                     FeatureRow(Icons.Outlined.Badge, "Identity", selected?.let { "UID ${it.uid} • ${if (it.verified) "verified" else "discovered"}" } ?: "Unavailable")
                     FeatureRow(Icons.Outlined.Link, "System Server RPC", if (runtime.xposedBridgeActive) "VERIFIED • LSPosed _TKN identity" else "Not active")
-                    FeatureRow(Icons.Outlined.Security, "System UID Binder", if (runtime.nativeUid1000Verified) "VERIFIED • live binder UID 1000" else "Unavailable")
+                    FeatureRow(Icons.Outlined.Security, "System UID Binder", if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID)) "VERIFIED • isolated Shizuku UID 1000 transport" else "Unavailable")
                     FeatureRow(Icons.Outlined.Security, "System Server Identity", if (runtime.systemServerBridgeActive) "VERIFIED • LSPosed _TKN" else "Unavailable")
                     FeatureRow(Icons.Outlined.Terminal, "Root", if (runtime.backendRegistry.isReady(TokenXBackend.ROOT)) "READY • UID 0" else "Unavailable")
                 }
