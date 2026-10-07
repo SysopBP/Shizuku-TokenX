@@ -3,7 +3,7 @@ BASEDIR=$(dirname "$0")
 DEX="$BASEDIR"/rish_shizuku.dex
 
 # TokenX rish backend selector.
-#   ./rish                 -> normal/saved Shizuku route
+#   ./rish                 -> normal/default Shizuku route
 #   ./rish --system [CMD]  -> TokenX System Server bridge (uid 1000)
 #   ./rish --sserver [CMD] -> legacy alias for --system
 #   ./rish --root [CMD]    -> TokenX/Shizuku Root backend (uid 0)
@@ -20,8 +20,8 @@ case "$1" in
   --system|--sserver)
     shift
     # Selector consumed here; empty argv opens the interactive remote shell.
-    # The exported rish dex contains the TokenX Sserver client entry point.
-    export TOKENX_RISH_BACKEND=sserver
+    # The exported rish dex contains the TokenX multi-backend transport client.
+    export TOKENX_RISH_BACKEND=system
     ;;
   --shell|--shizuku)
     shift
