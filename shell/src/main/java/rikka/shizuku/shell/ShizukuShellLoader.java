@@ -69,19 +69,18 @@ public class ShizukuShellLoader {
                 .setPackage(managerApplicationId)
                 .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
                 .putExtra("data", data)
-                .putExtra("tokenx_backend", tokenXBackend)
                 .putExtra("tokenx_package", callingPackage);
 
-        // Keep explicit TokenX backend requests on the same package-targeted
-        // REQUEST_BINDER delivery path as the proven default rish route. On Samsung
-        // Android 17 the component-pinned variant can be accepted by ActivityManager
-        // without BinderRequestReceiver ever receiving it, which presents as a 5 s
-        // client timeout. The tokenx_backend extra is sufficient for manager-side
-        // backend selection.
+        // Keep the proven default REQUEST_BINDER path byte-for-byte compatible.
+        // Explicit route metadata is carried in the data Bundle instead of as a
+        // top-level Intent extra. Samsung Android 17 was dropping the explicit
+        // broadcasts before BinderRequestReceiver while the otherwise identical
+        // default request continued to arrive.
         if (!TextUtils.isEmpty(tokenXBackend)) {
+            data.putString("tokenx_backend", tokenXBackend);
             System.out.println("TOKENX_RISH_REQUEST backend=" + tokenXBackend +
                     " manager=" + managerApplicationId +
-                    " delivery=package" +
+                    " delivery=default-compatible-bundle" +
                     " package=" + callingPackage);
         }
 
