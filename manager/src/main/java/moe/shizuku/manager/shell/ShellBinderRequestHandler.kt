@@ -25,9 +25,6 @@ object ShellBinderRequestHandler {
 
         val binder = intent.getBundleExtra("data")?.getBinder("binder") ?: return false
         if (tokenXTransportRequest) {
-            // The broadcast receiver can be the first manager component touched after
-            // reboot. Do not assume the provider/rendezvous has already published the
-            // transport; ensure the manager-owned transport exists before replying.
             val transport = runCatching {
                 ShizukuManagerProvider.ensureTokenXTransport(context)
             }.onFailure {
@@ -56,19 +53,35 @@ object ShellBinderRequestHandler {
             "shell" -> TokenXBackend.SHELL
             else -> null
         }
+
+        // Explicit Root must preserve the same proven binder path used by default rish.
+        // Retained Root is preferred, but a missing retained slot must not make an
+        // otherwise healthy root Shizuku server unreachable.
         val shizukuBinder = when (requestedBackend) {
-            "sserver", "system" -> ShizukuManagerProvider.systemBinder().also {
-                if (it == null) LOGGER.w("TokenX System Shizuku Binder was requested but is not published")
+            "sserver", "system" -> ShizukuManagerProvider.systemBinder()?.takeIf { it.isBinderAlive }.also {
+                if (it == null) LOGGER.w("TokenX System Shizuku Binder requested but not published/alive")
             }
-            "root" -> ShizukuManagerProvider.rootBinder().also {
-                if (it == null) LOGGER.w("TokenX Root Binder was requested but is not published")
+            "root" -> (
+                ShizukuManagerProvider.rootBinder()?.takeIf { it.isBinderAlive }
+                    ?: Shizuku.getBinder()?.takeIf { it.isBinderAlive }
+                ).also {
+                    if (it == null) LOGGER.w("TokenX Root Binder requested but neither retained nor default binder is alive")
+                }
+            "shell" -> ShizukuManagerProvider.shellBinder()?.takeIf { it.isBinderAlive }.also {
+                if (it == null) LOGGER.w("TokenX Shell Binder requested but not published/alive")
             }
-            "shell" -> ShizukuManagerProvider.shellBinder().also {
-                if (it == null) LOGGER.w("TokenX Shell Binder was requested but is not published")
-            }
-            else -> Shizuku.getBinder().also {
+            else -> Shizuku.getBinder()?.takeIf { it.isBinderAlive }.also {
                 if (it == null) LOGGER.w("Binder not received or Shizuku service not running")
             }
+        }
+
+        // Never deliver a null/dead explicit backend binder. This turns the failure into
+        // a precise manager-side routing error instead of letting the client wait for the
+        // generic Shizuku request timeout.
+        if (sessionBackend != null && shizukuBinder == null) {
+            LOGGER.w("TokenX explicit rish route unavailable backend=%s requested=%s",
+                sessionBackend.name, requestedBackend ?: "default")
+            return false
         }
 
         val data = Parcel.obtain()
@@ -77,10 +90,6 @@ object ShellBinderRequestHandler {
                 ?: intent.`package`
                 ?: "rish"
 
-            // Explicit TokenX rish routes must pass the same authorization gate as
-            // the transport session API.  The broadcast itself does not preserve
-            // Binder caller identity, so resolve the package UID here and bind the
-            // resulting session to the client-owned receiver Binder lifetime.
             val localPackageUid = runCatching {
                 context.packageManager.getApplicationInfo(packageName, 0).uid
             }.getOrDefault(-1)
@@ -127,7 +136,7 @@ object ShellBinderRequestHandler {
             }
             delivered
         } catch (e: Throwable) {
-            e.printStackTrace()
+            LOGGER.w(e, "TokenX rish Binder delivery failed backend=%s", requestedBackend ?: "default")
             false
         } finally {
             data.recycle()
