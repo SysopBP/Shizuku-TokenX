@@ -41,7 +41,7 @@ D2 is optional. When installed, its gate protects TokenX startup so privileged i
 
 ## rish and the new TokenX client
 
-`rish_shizuku.dex` contains `rikka.shizuku.shell.TokenXTransportClient`, the current multi-backend TokenX client. The launcher selects the requested backend and the transport verifies the UID returned by the session:
+`rish_shizuku.dex` contains the TokenX RISH protocol v3 client. The launcher selects the requested backend; the manager resolves and classifies the backend slot, and the client validates the routed UID delivered with that session. This avoids a redundant raw Binder UID probe that can report `-1` on Android 17 even when the selected System Binder is healthy:
 
 ```text
 rish --root              -> Root session / UID 0
