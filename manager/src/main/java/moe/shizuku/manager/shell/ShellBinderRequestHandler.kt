@@ -45,20 +45,28 @@ object ShellBinderRequestHandler {
 
         val data = Parcel.obtain()
         return try {
+            val packageName = intent.getStringExtra("tokenx_package")
+                ?: intent.`package`
+                ?: "rish"
+            val session = if (shizukuBinder != null && sessionBackend != null) {
+                TokenXSessionRegistry.register(binder, packageName, sessionBackend)
+            } else {
+                null
+            }
+
             data.writeStrongBinder(shizukuBinder)
             data.writeString(context.applicationInfo.sourceDir)
+            data.writeLong(session?.id ?: 0L)
+            data.writeString(session?.backend?.name)
             val delivered = binder.transact(1, data, null, IBinder.FLAG_ONEWAY)
-            if (delivered && shizukuBinder != null && sessionBackend != null) {
-                val packageName = intent.getStringExtra("tokenx_package")
-                    ?: intent.`package`
-                    ?: "rish"
-                val session = TokenXSessionRegistry.register(binder, packageName, sessionBackend)
-                if (session != null) {
-                    LOGGER.i("TokenX session %d registered backend=%s package=%s",
-                        session.id, session.backend.name, session.packageName)
-                } else {
-                    LOGGER.w("TokenX Binder delivered but client session registration failed")
-                }
+
+            if (!delivered && session != null) {
+                TokenXSessionRegistry.remove(binder)
+            } else if (delivered && session != null) {
+                LOGGER.i("TokenX session %d registered backend=%s package=%s",
+                    session.id, session.backend.name, session.packageName)
+            } else if (delivered && shizukuBinder != null && sessionBackend != null) {
+                LOGGER.w("TokenX Binder delivered but client session registration failed")
             }
             delivered
         } catch (e: Throwable) {
