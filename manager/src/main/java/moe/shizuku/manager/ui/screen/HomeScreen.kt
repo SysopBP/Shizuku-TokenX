@@ -145,6 +145,7 @@ fun HomeScreen(bottomPadding: Dp) {
     var showAdbCommand by remember { mutableStateOf(false) }
     var rebootRequired by remember { mutableStateOf(false) }
     var showDeviceRestartMenu by remember { mutableStateOf(false) }
+    var deviceRuntimeExpanded by remember { mutableStateOf(false) }
     var pendingDeviceRestart by remember { mutableStateOf<DeviceRestartAction?>(null) }
     var duplicateApp by remember { mutableStateOf(false) }
     var updateAvailable by remember { mutableStateOf(false) }
@@ -811,12 +812,15 @@ fun HomeScreen(bottomPadding: Dp) {
             }
 
             item {
-                HomeSectionHeader(
+                HomeCollapsibleSectionHeader(
                     title = "Device & runtime",
-                    subtitle = "Manager, kernel and Android security state"
+                    subtitle = "Manager, kernel and Android security state",
+                    expanded = deviceRuntimeExpanded,
+                    onClick = { deviceRuntimeExpanded = !deviceRuntimeExpanded }
                 )
             }
 
+            if (deviceRuntimeExpanded) {
             item {
                 SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
                     // Same rows KernelSU's manager shows, so the device is described the
@@ -859,6 +863,7 @@ fun HomeScreen(bottomPadding: Dp) {
                     }
                 }
             }
+            }
         }
     }
 
@@ -898,6 +903,45 @@ fun HomeScreen(bottomPadding: Dp) {
     }
 }
 
+
+@Composable
+private fun HomeCollapsibleSectionHeader(
+    title: String,
+    subtitle: String,
+    expanded: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(start = 4.dp, top = 6.dp, end = 4.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = if (expanded) "$subtitle • Tap to collapse" else "$subtitle • Tap to expand",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Icon(
+            Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            contentDescription = if (expanded) "Collapse" else "Expand",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.alpha(if (expanded) .55f else 1f)
+        )
+    }
+}
 
 @Composable
 private fun HomeSectionHeader(title: String, subtitle: String) {
