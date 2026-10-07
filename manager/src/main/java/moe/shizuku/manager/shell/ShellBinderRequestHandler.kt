@@ -8,6 +8,7 @@ import moe.shizuku.manager.utils.Logger.LOGGER
 import moe.shizuku.manager.ShizukuManagerProvider
 import moe.shizuku.manager.tokenx.TokenXBackend
 import moe.shizuku.manager.tokenx.TokenXSessionRegistry
+import moe.shizuku.manager.tokenx.TokenXXposedSystemServerClient
 import moe.shizuku.manager.tokenx.transport.TokenXRendezvous
 import moe.shizuku.manager.authorization.AuthorizationManager
 import rikka.shizuku.Shizuku
@@ -71,9 +72,14 @@ object ShellBinderRequestHandler {
             // the transport session API.  The broadcast itself does not preserve
             // Binder caller identity, so resolve the package UID here and bind the
             // resulting session to the client-owned receiver Binder lifetime.
-            val packageUid = runCatching {
+            val localPackageUid = runCatching {
                 context.packageManager.getApplicationInfo(packageName, 0).uid
             }.getOrDefault(-1)
+            val packageUid = if (localPackageUid >= 0) {
+                localPackageUid
+            } else {
+                TokenXXposedSystemServerClient.packageUid(packageName)
+            }
             val authorized = sessionBackend == null || (
                 packageUid >= 0 &&
                     runCatching { AuthorizationManager.granted(packageName, packageUid) }
