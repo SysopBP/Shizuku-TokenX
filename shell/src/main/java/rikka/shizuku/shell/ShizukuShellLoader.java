@@ -3,7 +3,6 @@ package rikka.shizuku.shell;
 import android.app.ActivityManagerNative;
 import android.app.IActivityManager;
 import android.content.Intent;
-import android.content.ComponentName;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
@@ -73,18 +72,16 @@ public class ShizukuShellLoader {
                 .putExtra("tokenx_backend", tokenXBackend)
                 .putExtra("tokenx_package", callingPackage);
 
-        // Android 17 can accept the package-targeted broadcast at ActivityManager
-        // while never dispatching it to the exported receiver after a cold boot.
-        // TokenX explicit backend requests know the exact receiver, so address it
-        // directly. Keep the original implicit/package route untouched for normal
-        // upstream Shizuku compatibility.
+        // Keep explicit TokenX backend requests on the same package-targeted
+        // REQUEST_BINDER delivery path as the proven default rish route. On Samsung
+        // Android 17 the component-pinned variant can be accepted by ActivityManager
+        // without BinderRequestReceiver ever receiving it, which presents as a 5 s
+        // client timeout. The tokenx_backend extra is sufficient for manager-side
+        // backend selection.
         if (!TextUtils.isEmpty(tokenXBackend)) {
-            intent.setComponent(new ComponentName(
-                    managerApplicationId,
-                    "moe.shizuku.manager.receiver.BinderRequestReceiver"));
             System.out.println("TOKENX_RISH_REQUEST backend=" + tokenXBackend +
                     " manager=" + managerApplicationId +
-                    " component=" + intent.getComponent() +
+                    " delivery=package" +
                     " package=" + callingPackage);
         }
 
