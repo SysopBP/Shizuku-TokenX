@@ -748,7 +748,7 @@ fun HomeScreen(bottomPadding: Dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     GlobalConnectionCard(
                         icon = Icons.Rounded.Refresh, title = "TokenX Multi-Backend Transport", uid = null,
-                        identity = "Protocol v${TokenXBinderProtocol.VERSION} · rish_shizuku.dex",
+                        identity = "TokenX RISH DEX · Multi-Backend Client",
                         online = transportAlive, available = true,
                         clients = rootClients + systemClients + shellClients,
                         heartbeatTick = heartbeatTick && transportAlive,
@@ -792,7 +792,7 @@ fun HomeScreen(bottomPadding: Dp) {
                         TokenXGlassCard(modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text("TOKENX TRANSPORT STATS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("Client: rish_shizuku.dex · TokenXTransportClient")
+                                Text("Client: TokenX RISH DEX · Multi-Backend Client")\n                                Text("File: rish_shizuku.dex · TokenXTransportClient")
                                 Text("Launcher pair: rish + rish_shizuku.dex")
                                 Text("Binder: " + if (transportAlive) "LIVE" else "OFFLINE")
                                 Text("Protocol: v${TokenXBinderProtocol.VERSION}")
