@@ -200,6 +200,15 @@ class TokenXXposedEntry : XposedModule() {
                                 log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_FUNCTIONAL uid=${Process.myUid()} pid=${Process.myPid()} services=${available.joinToString(",")}")
                                 consumed = true
                             }
+                            ACTION_RESOLVE_PACKAGE_UID -> {
+                                val packageName = data.readString().orEmpty()
+                                val callingUserId = android.os.UserHandle.getUserId(Binder.getCallingUid())
+                                val resolvedUid = resolvePackageUidFromSystem(packageName, callingUserId)
+                                reply?.writeNoException()
+                                reply?.writeInt(resolvedUid)
+                                log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID package=$packageName user=$callingUserId uid=$resolvedUid callingUid=${Binder.getCallingUid()}")
+                                consumed = true
+                            }
                             else -> log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_REJECT reason=unknown_action action=$action")
                         }
                     } catch (t: Throwable) {
@@ -227,6 +236,33 @@ class TokenXXposedEntry : XposedModule() {
         }.onFailure {
             log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_INSTALL_FAILED: ${it.javaClass.name}: ${it.message}")
         }
+    }
+
+    private fun resolvePackageUidFromSystem(packageName: String, userId: Int): Int {
+        if (packageName.isBlank()) return -1
+        return runCatching {
+            // Run the lookup with system_server's system Context so Android 17 package
+            // visibility filtering in the manager process cannot hide the requesting app.
+            val activityThread = Class.forName("android.app.ActivityThread")
+            val current = activityThread.getDeclaredMethod("currentActivityThread").invoke(null)
+                ?: return@runCatching -1
+            val systemContext = activityThread.getDeclaredMethod("getSystemContext").invoke(current) as? Context
+                ?: return@runCatching -1
+            val pm = systemContext.packageManager
+            val method = pm.javaClass.methods.firstOrNull {
+                it.name == "getPackageUidAsUser" &&
+                    it.parameterTypes.size == 2 &&
+                    it.parameterTypes[0] == String::class.java
+            } ?: android.content.pm.PackageManager::class.java.declaredMethods.firstOrNull {
+                it.name == "getPackageUidAsUser" &&
+                    it.parameterTypes.size == 2 &&
+                    it.parameterTypes[0] == String::class.java
+            } ?: return@runCatching -1
+            method.isAccessible = true
+            (method.invoke(pm, packageName, userId) as? Int) ?: -1
+        }.onFailure {
+            log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID_FAILED package=$packageName user=$userId: ${it.javaClass.simpleName}: ${it.message}")
+        }.getOrDefault(-1)
     }
 
     private fun readSelf(path: String): String = runCatching { java.io.File(path).readText().trim() }.getOrDefault("unknown")
@@ -265,6 +301,7 @@ class TokenXXposedEntry : XposedModule() {
         const val ACTION_SET_BINDER = 2
         const val ACTION_GET_BINDER = 3
         const val ACTION_SYSTEM_PROBE = 4
+        const val ACTION_RESOLVE_PACKAGE_UID = 5
         const val RETAIL_MODE_PACKAGE = "com.samsung.sea.rm"
         const val SYSTEM_UI_PACKAGE = "com.android.systemui"
         const val PROP_ONEUIX_LABS = "persist.tokenx.labs.oneuix"
