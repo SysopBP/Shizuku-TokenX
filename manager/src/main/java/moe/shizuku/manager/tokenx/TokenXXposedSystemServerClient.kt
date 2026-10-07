@@ -50,6 +50,7 @@ object TokenXXposedSystemServerClient {
     private const val ACTION_SET_BINDER = 2
     private const val ACTION_GET_BINDER = 3
     private const val ACTION_SYSTEM_PROBE = 4
+    private const val ACTION_RESOLVE_PACKAGE_UID = 5
 
     /**
      * End-to-end, non-destructive proof of the modern LSPosed system_server route.
@@ -150,6 +151,24 @@ object TokenXXposedSystemServerClient {
             reply.recycle()
         }
     }.getOrNull()
+
+    fun packageUid(packageName: String): Int = runCatching {
+        if (packageName.isBlank()) return -1
+        val activity = ServiceManager.getService("activity") ?: return -1
+        val data = Parcel.obtain()
+        val reply = Parcel.obtain()
+        try {
+            data.writeInterfaceToken(DESCRIPTOR)
+            data.writeInt(ACTION_RESOLVE_PACKAGE_UID)
+            data.writeString(packageName)
+            if (!activity.transact(TRANSACTION, data, reply, 0)) return -1
+            reply.readException()
+            reply.readInt()
+        } finally {
+            data.recycle()
+            reply.recycle()
+        }
+    }.getOrDefault(-1)
 
     fun identity(): TokenXXposedIdentity? = runCatching {
         val activity: IBinder = ServiceManager.getService("activity") ?: return null
