@@ -282,6 +282,12 @@ jobs:
               exit 1
             }
           echo "TokenX explicit rish backend session gate verified"
+          grep -F '"sserver", "system" -> ShizukuManagerProvider.systemBinder()' \
+            manager/src/main/java/moe/shizuku/manager/shell/ShellBinderRequestHandler.kt >/dev/null || {
+              echo "::error::TokenX rish SYSTEM route is not using the dedicated UID-1000 backend"
+              exit 1
+            }
+          echo "TokenX rish SYSTEM dedicated backend route verified"
 
       - name: Collect APK
         id: apk
