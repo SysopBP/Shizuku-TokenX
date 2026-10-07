@@ -794,7 +794,8 @@ fun HomeScreen(bottomPadding: Dp) {
                         TokenXGlassCard(modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text("TOKENX TRANSPORT STATS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("Client: TokenX RISH DEX · Multi-Backend Client")\n                                Text("File: rish_shizuku.dex · TokenXTransportClient")
+                                Text("Client: TokenX RISH DEX · Multi-Backend Client")
+                                Text("File: rish_shizuku.dex · TokenXTransportClient")
                                 Text("Launcher pair: rish + rish_shizuku.dex")
                                 Text("Binder: " + if (transportAlive) "LIVE" else "OFFLINE")
                                 Text("Protocol: v${TokenXBinderProtocol.VERSION}")
