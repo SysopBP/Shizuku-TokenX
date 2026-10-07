@@ -8,7 +8,6 @@ import moe.shizuku.manager.utils.Logger.LOGGER
 import moe.shizuku.manager.ShizukuManagerProvider
 import moe.shizuku.manager.tokenx.TokenXBackend
 import moe.shizuku.manager.tokenx.TokenXSessionRegistry
-import moe.shizuku.manager.tokenx.TokenXXposedSystemServerClient
 import moe.shizuku.manager.tokenx.transport.TokenXRendezvous
 import moe.shizuku.manager.authorization.AuthorizationManager
 import rikka.shizuku.Shizuku
@@ -48,8 +47,8 @@ object ShellBinderRequestHandler {
             else -> null
         }
         val shizukuBinder = when (requestedBackend) {
-            "sserver", "system" -> TokenXXposedSystemServerClient.binder().also {
-                if (it == null) LOGGER.w("TokenX System Server Binder was requested but is not published")
+            "sserver", "system" -> ShizukuManagerProvider.systemBinder().also {
+                if (it == null) LOGGER.w("TokenX System Shizuku Binder was requested but is not published")
             }
             "root" -> ShizukuManagerProvider.rootBinder().also {
                 if (it == null) LOGGER.w("TokenX Root Binder was requested but is not published")
