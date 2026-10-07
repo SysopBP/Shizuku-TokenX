@@ -214,12 +214,13 @@ jobs:
           unzip -l "$FILE" | grep -F 'assets/rish_shizuku.dex'
           RISH_DEX="$(mktemp)"
           unzip -p "$FILE" assets/rish_shizuku.dex > "$RISH_DEX"
+          # Validate literals that are actually emitted by the v3 client. The old
+          # "direct UID" probe was intentionally removed: explicit routes now trust the
+          # manager-classified routed UID returned in the Binder callback.
           for marker in \
             'TOKENX_RISH_PROTOCOL=' \
             'manager-classified route' \
-            'direct UID ' \
-            'routed UID ' \
-            'TokenX System Binder verified: UID '
+            'routed UID '
           do
             strings "$RISH_DEX" | grep -F "$marker" >/dev/null || {
               echo "::error::Bundled rish_shizuku.dex is stale; missing marker: $marker"
