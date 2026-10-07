@@ -252,7 +252,15 @@ class TokenXXposedEntry : XposedModule() {
                 ?: return@runCatching -1
             val systemContext = activityThread.getDeclaredMethod("getSystemContext").invoke(current) as? Context
                 ?: return@runCatching -1
-            systemContext.packageManager.getPackageUidAsUser(packageName, userId)
+            val pm = systemContext.packageManager
+            val getApplicationInfoAsUser = pm.javaClass.methods.firstOrNull {
+                it.name == "getApplicationInfoAsUser" &&
+                    it.parameterTypes.size == 3 &&
+                    it.parameterTypes[0] == String::class.java
+            } ?: return@runCatching -1
+            val appInfo = getApplicationInfoAsUser.invoke(pm, packageName, 0, userId)
+                as? android.content.pm.ApplicationInfo
+            appInfo?.uid ?: -1
         }.onFailure {
             log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID_DIRECT_FAILED package=$packageName user=$userId: ${it.javaClass.name}: ${it.message}")
         }.getOrDefault(-1)
@@ -267,7 +275,7 @@ class TokenXXposedEntry : XposedModule() {
         return runCatching {
             val packageManagerBinder = android.os.ServiceManager.getService("package")
                 ?: return@runCatching -1
-            val stub = Class.forName("android.content.pm.IPackageManager\\$Stub")
+            val stub = Class.forName("android.content.pm.IPackageManager" + "$" + "Stub")
             val asInterface = stub.getDeclaredMethod("asInterface", IBinder::class.java)
             val ipm = asInterface.invoke(null, packageManagerBinder) ?: return@runCatching -1
             val method = ipm.javaClass.methods.firstOrNull {
