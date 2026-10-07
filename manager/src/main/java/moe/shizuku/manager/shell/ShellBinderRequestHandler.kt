@@ -113,6 +113,11 @@ object ShellBinderRequestHandler {
             data.writeString(context.applicationInfo.sourceDir)
             data.writeLong(session?.id ?: 0L)
             data.writeString(session?.backend?.name)
+            // Send the UID of the backend slot that the manager already classified.
+            // Android 17 can reject the shell client's raw IShizukuService getUid
+            // transaction even when the Binder itself is healthy, which previously
+            // surfaced as UID -1 for an otherwise proven ROOT route.
+            data.writeInt(sessionBackend?.uid ?: -1)
             val delivered = binder.transact(1, data, null, IBinder.FLAG_ONEWAY)
 
             if (!delivered && session != null) {
