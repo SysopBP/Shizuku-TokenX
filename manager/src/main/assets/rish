@@ -1,4 +1,6 @@
 #!/system/bin/sh
+# TokenX RISH client format 2 — prerelease
+TOKENX_RISH_CLIENT_VERSION=2
 BASEDIR=$(dirname "$0")
 DEX="$BASEDIR"/rish_shizuku.dex
 
@@ -12,6 +14,7 @@ DEX="$BASEDIR"/rish_shizuku.dex
 # Sserver is deliberately command mode rather than an interactive PTY: Android's persistent
 # system_server must never host an arbitrary interactive shell. The command is handed to the
 # dedicated TokenX Binder worker instead.
+# TOKENX_RISH_BACKEND may also be supplied directly by automation/Termux.
 case "$1" in
   --root)
     shift
@@ -49,5 +52,6 @@ if [ $(getprop ro.build.version.sdk) -ge 34 ]; then
   fi
 fi
 
-[ -z "$RISH_APPLICATION_ID" ] && export RISH_APPLICATION_ID="PKG" && export MANAGER_APPLICATION_ID="MANAGER_PKG"
+[ -z "$RISH_APPLICATION_ID" ] && export RISH_APPLICATION_ID="PKG"
+[ -z "$MANAGER_APPLICATION_ID" ] && export MANAGER_APPLICATION_ID="moe.shizuku.privileged.api"
 /system/bin/app_process -Djava.class.path="$DEX" /system/bin --nice-name=rish rikka.shizuku.shell.ShizukuShellLoader "$@"
