@@ -40,6 +40,26 @@ class ShizukuManagerProvider : ShizukuProvider() {
 
         @Volatile private var tokenXTransportBinder: IBinder? = null
 
+        @Synchronized
+        fun ensureTokenXTransport(context: android.content.Context): IBinder {
+            tokenXTransportBinder?.takeIf { it.isBinderAlive }?.let { return it }
+
+            val appContext = context.applicationContext
+            val authority = TokenXManagerBinderAuthority(appContext) { packageName, uid ->
+                runCatching { AuthorizationManager.granted(packageName, uid) }
+                    .getOrDefault(false)
+            }
+            val transport = TokenXTransportBinder(authority)
+            tokenXTransportBinder = transport
+            val snapshot = TokenXRendezvous.publish(transport)
+            LOGGER.i("TokenX transport ensured protocol=%d generation=%d alive=%s pid=%d uid=%d",
+                TokenXRendezvousContract.PROTOCOL_VERSION, snapshot.generation, snapshot.alive, Process.myPid(), Process.myUid())
+            Log.i("TokenX/Transport", "ensured protocol=" + TokenXRendezvousContract.PROTOCOL_VERSION +
+                " generation=" + snapshot.generation + " alive=" + snapshot.alive +
+                " pid=" + Process.myPid() + " uid=" + Process.myUid())
+            return transport
+        }
+
         @Volatile private var rootBackendBinder: IBinder? = null
         @Volatile private var systemBackendBinder: IBinder? = null
         @Volatile private var shellBackendBinder: IBinder? = null
@@ -63,18 +83,7 @@ class ShizukuManagerProvider : ShizukuProvider() {
         if (created) {
             val appContext = context?.applicationContext
             if (appContext != null) {
-                val authority = TokenXManagerBinderAuthority(appContext) { packageName, uid ->
-                    runCatching { AuthorizationManager.granted(packageName, uid) }
-                        .getOrDefault(false)
-                }
-                val transport = TokenXTransportBinder(authority)
-                tokenXTransportBinder = transport
-                val snapshot = TokenXRendezvous.publish(transport)
-                LOGGER.i("TokenX transport published protocol=%d generation=%d alive=%s pid=%d uid=%d",
-                    TokenXRendezvousContract.PROTOCOL_VERSION, snapshot.generation, snapshot.alive, Process.myPid(), Process.myUid())
-                Log.i("TokenX/Transport", "published protocol=" + TokenXRendezvousContract.PROTOCOL_VERSION +
-                    " generation=" + snapshot.generation + " alive=" + snapshot.alive +
-                    " pid=" + Process.myPid() + " uid=" + Process.myUid())
+                ensureTokenXTransport(appContext)
             }
         }
         return created
