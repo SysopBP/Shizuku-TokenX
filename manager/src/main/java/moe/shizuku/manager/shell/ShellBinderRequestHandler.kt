@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.os.Parcel
+import android.os.SystemClock
 import moe.shizuku.manager.utils.Logger.LOGGER
 import moe.shizuku.manager.ShizukuManagerProvider
 import moe.shizuku.manager.tokenx.TokenXBackend
@@ -12,6 +13,33 @@ import moe.shizuku.manager.tokenx.transport.TokenXRendezvous
 import rikka.shizuku.Shizuku
 
 object ShellBinderRequestHandler {
+
+    /**
+     * SYSTEM is an independent UID-1000 Shizuku worker, not the manager's current
+     * compatibility Binder and not the _TKN system_server rendezvous Binder.
+     * Start it on demand and wait briefly for METHOD_SEND_BINDER to classify/publish it.
+     * ROOT remains untouched and continues using the proven compatibility path.
+     */
+    private fun ensureSystemBinder(context: Context): IBinder? {
+        ShizukuManagerProvider.systemBinder()?.takeIf { it.isBinderAlive }?.let { return it }
+
+        val start = SystemUidProvisioner.prepareAndStartShizukuUid1000(context)
+        if (!start.success) {
+            LOGGER.w("TokenX UID-1000 Shizuku start failed exit=%d output=%s", start.exitCode, start.output.trim())
+            return null
+        }
+
+        val deadline = SystemClock.elapsedRealtime() + 3000L
+        while (SystemClock.elapsedRealtime() < deadline) {
+            ShizukuManagerProvider.systemBinder()?.takeIf { it.isBinderAlive }?.let {
+                LOGGER.i("TokenX SYSTEM Binder published after on-demand UID-1000 start")
+                return it
+            }
+            SystemClock.sleep(50L)
+        }
+        LOGGER.w("TokenX UID-1000 Shizuku started but SYSTEM Binder was not published within 3000ms")
+        return null
+    }
 
     fun isSystemRishConnected(): Boolean = TokenXSessionRegistry.hasSystemSession()
 
@@ -57,8 +85,8 @@ object ShellBinderRequestHandler {
         // Retained Root is preferred, but a missing retained slot must not make an
         // otherwise healthy root Shizuku server unreachable.
         val shizukuBinder = when (requestedBackend) {
-            "sserver", "system" -> ShizukuManagerProvider.systemBinder()?.takeIf { it.isBinderAlive }.also {
-                if (it == null) LOGGER.w("TokenX System Shizuku Binder requested but not published/alive")
+            "sserver", "system" -> ensureSystemBinder(context).also {
+                if (it == null) LOGGER.w("TokenX System Shizuku Binder requested but could not be started/published")
             }
             "root" -> (
                 ShizukuManagerProvider.rootBinder()?.takeIf { it.isBinderAlive }
