@@ -196,7 +196,21 @@ class ShizukuManagerProvider : ShizukuProvider() {
             // Shizuku's global compatibility Binder.
             extras.classLoader = BinderContainer::class.java.classLoader
             val incoming = extras.getParcelable<BinderContainer>(EXTRA_BINDER)?.binder
-            val incomingUid = incoming?.let { probeServerUid(it) } ?: -1
+            val probedUid = incoming?.let { probeServerUid(it) } ?: -1
+            // Android 17 / One UI 9 may reject the raw IShizukuService getUid()
+            // transaction during provider handoff even when the Binder is healthy.
+            // Binder.getCallingUid() is kernel-authenticated for this provider call,
+            // so use it only as a fail-closed fallback for TokenX's known backend UIDs.
+            val callerUid = android.os.Binder.getCallingUid()
+            val incomingUid = when {
+                probedUid == 0 || probedUid == Process.SYSTEM_UID || probedUid == Process.SHELL_UID -> probedUid
+                callerUid == 0 || callerUid == Process.SYSTEM_UID || callerUid == Process.SHELL_UID -> {
+                    LOGGER.i("TokenX backend UID probe=%d; classified handoff from Binder caller uid=%d",
+                        probedUid, callerUid)
+                    callerUid
+                }
+                else -> -1
+            }
 
             when (incomingUid) {
                 0 -> {
