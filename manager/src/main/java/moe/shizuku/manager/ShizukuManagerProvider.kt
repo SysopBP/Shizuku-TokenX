@@ -3,6 +3,7 @@ package moe.shizuku.manager
 import android.os.Bundle
 import android.os.IBinder
 import android.os.Process
+import android.util.Log
 import androidx.core.os.bundleOf
 import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.flow.first
@@ -58,8 +59,11 @@ class ShizukuManagerProvider : ShizukuProvider() {
                 val transport = TokenXTransportBinder(authority)
                 tokenXTransportBinder = transport
                 val snapshot = TokenXRendezvous.publish(transport)
-                LOGGER.i("TokenX transport published protocol=%d generation=%d",
-                    TokenXRendezvousContract.PROTOCOL_VERSION, snapshot.generation)
+                LOGGER.i("TokenX transport published protocol=%d generation=%d alive=%s pid=%d uid=%d",
+                    TokenXRendezvousContract.PROTOCOL_VERSION, snapshot.generation, snapshot.alive, Process.myPid(), Process.myUid())
+                Log.i("TokenX/Transport", "published protocol=" + TokenXRendezvousContract.PROTOCOL_VERSION +
+                    " generation=" + snapshot.generation + " alive=" + snapshot.alive +
+                    " pid=" + Process.myPid() + " uid=" + Process.myUid())
             }
         }
         return created
@@ -80,7 +84,21 @@ class ShizukuManagerProvider : ShizukuProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         if (extras == null) return null
 
-        return if (method == TokenXRendezvousContract.METHOD_GET_TRANSPORT) {
+        return if (method == TokenXRendezvousContract.METHOD_GET_TRANSPORT_STATUS) {
+            val snapshot = TokenXRendezvous.snapshot()
+            val transport = tokenXTransportBinder?.takeIf { it.isBinderAlive }
+                ?: snapshot.binder?.takeIf { it.isBinderAlive }
+            Log.i("TokenX/Transport", "status generation=" + snapshot.generation +
+                " published=" + (transport != null) + " alive=" + (transport?.isBinderAlive == true))
+            Bundle().apply {
+                putInt(TokenXRendezvousContract.EXTRA_PROTOCOL_VERSION, TokenXRendezvousContract.PROTOCOL_VERSION)
+                putLong(TokenXRendezvousContract.EXTRA_GENERATION, snapshot.generation)
+                putBoolean(TokenXRendezvousContract.EXTRA_PUBLISHED, transport != null)
+                putBoolean(TokenXRendezvousContract.EXTRA_BINDER_ALIVE, transport?.isBinderAlive == true)
+                putInt(TokenXRendezvousContract.EXTRA_PROVIDER_PID, Process.myPid())
+                putInt(TokenXRendezvousContract.EXTRA_PROVIDER_UID, Process.myUid())
+            }
+        } else if (method == TokenXRendezvousContract.METHOD_GET_TRANSPORT) {
             val snapshot = TokenXRendezvous.snapshot()
             val transport = tokenXTransportBinder?.takeIf { it.isBinderAlive }
                 ?: snapshot.binder?.takeIf { it.isBinderAlive }
@@ -88,9 +106,16 @@ class ShizukuManagerProvider : ShizukuProvider() {
                     putInt(TokenXRendezvousContract.EXTRA_PROTOCOL_VERSION, TokenXRendezvousContract.PROTOCOL_VERSION)
                     putLong(TokenXRendezvousContract.EXTRA_GENERATION, snapshot.generation)
                 }
+            Log.i("TokenX/Transport", "discovery generation=" + snapshot.generation +
+                " alive=" + transport.isBinderAlive + " callerUid=" + android.os.Binder.getCallingUid() +
+                " callerPid=" + android.os.Binder.getCallingPid())
             Bundle().apply {
                 putInt(TokenXRendezvousContract.EXTRA_PROTOCOL_VERSION, TokenXRendezvousContract.PROTOCOL_VERSION)
                 putLong(TokenXRendezvousContract.EXTRA_GENERATION, snapshot.generation)
+                putBoolean(TokenXRendezvousContract.EXTRA_PUBLISHED, true)
+                putBoolean(TokenXRendezvousContract.EXTRA_BINDER_ALIVE, transport.isBinderAlive)
+                putInt(TokenXRendezvousContract.EXTRA_PROVIDER_PID, Process.myPid())
+                putInt(TokenXRendezvousContract.EXTRA_PROVIDER_UID, Process.myUid())
                 putBinder(TokenXRendezvousContract.EXTRA_BINDER, transport)
             }
         } else if (method == METHOD_GET_BACKEND_ROUTE) {
