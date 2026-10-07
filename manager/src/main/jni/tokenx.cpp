@@ -1,5 +1,5 @@
 #include <android/log.h>
-#include <sys/random.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -30,23 +30,31 @@ void print_status() {
 }
 
 bool make_token(unsigned char* out, size_t size) {
+    const int fd = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
+    if (fd < 0) return false;
+
     size_t done = 0;
     while (done < size) {
-        const ssize_t n = getrandom(out + done, size - done, 0);
+        const ssize_t n = read(fd, out + done, size - done);
         if (n > 0) {
             done += static_cast<size_t>(n);
             continue;
         }
         if (n < 0 && errno == EINTR) continue;
+        const int saved_errno = (n == 0) ? EIO : errno;
+        close(fd);
+        errno = saved_errno;
         return false;
     }
+
+    if (close(fd) != 0) return false;
     return true;
 }
 
 void print_token() {
     unsigned char token[kTokenBytes] = {};
     if (!make_token(token, sizeof(token))) {
-        fprintf(stderr, "tokenx: getrandom failed: %s\n", strerror(errno));
+        fprintf(stderr, "tokenx: entropy read failed: %s\n", strerror(errno));
         _exit(70);
     }
     // Development bootstrap only. Manager-side capability exchange will replace
@@ -108,7 +116,7 @@ int main(int argc, char** argv) {
     }
     if (strcmp(cmd, "doctor") == 0) {
         print_status();
-        puts("entropy=getrandom");
+        puts("entropy=/dev/urandom");
         puts("capability_tokens=bootstrap-only");
         puts("privileged_dispatch=disabled-until-manager-auth");
         return 0;
