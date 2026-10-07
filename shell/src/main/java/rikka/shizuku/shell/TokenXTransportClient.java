@@ -8,6 +8,7 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
+import android.os.Looper;
 import android.system.Os;
 
 import rikka.hidden.compat.PackageManagerApis;
@@ -80,6 +81,9 @@ public final class TokenXTransportClient {
 
     public static void main(String[] args) {
         try {
+            if (Looper.getMainLooper() == null) {
+                Looper.prepareMainLooper();
+            }
             Context context = ActivityThread.systemMain().getSystemContext();
             IBinder remote = discover(context);
             Parcel hello = transact(remote, TX_HELLO, null);
