@@ -11,9 +11,15 @@ import moe.shizuku.manager.utils.ShizukuStateMachine
 
 class BinderRequestReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != "rikka.shizuku.intent.action.REQUEST_BINDER") return
+        val isBinderRequest = intent.action == "rikka.shizuku.intent.action.REQUEST_BINDER"
+        val isTokenXTransportRequest = intent.action == "moe.shizuku.tokenx.intent.action.REQUEST_TRANSPORT"
+        if (!isBinderRequest && !isTokenXTransportRequest) return
 
-        ShellBinderRequestHandler.handleRequest(context, intent)
+        val handled = ShellBinderRequestHandler.handleRequest(context, intent)
+        if (isTokenXTransportRequest) {
+            Log.i(AppConstants.TAG, "TokenX transport request handled=$handled")
+            return
+        }
 
         // Auto wake-up: an app asked for the binder while the server is down.
         // Start it in the background, but only when the user enabled start on
