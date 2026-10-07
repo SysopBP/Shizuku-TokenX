@@ -103,6 +103,8 @@ import moe.shizuku.manager.shell.ShellSession
 import moe.shizuku.manager.shell.ShellBinderRequestHandler
 import moe.shizuku.manager.tokenx.TokenXBackend
 import moe.shizuku.manager.tokenx.TokenXSessionRegistry
+import moe.shizuku.manager.tokenx.transport.TokenXBinderProtocol
+import moe.shizuku.manager.tokenx.transport.TokenXRendezvous
 import moe.shizuku.manager.start.StartFailureKind
 import moe.shizuku.manager.start.StartStatus
 import moe.shizuku.manager.start.StartStatusReporter
@@ -160,6 +162,8 @@ fun HomeScreen(bottomPadding: Dp) {
     var systemClients by remember { mutableStateOf(0) }
     var shellClients by remember { mutableStateOf(0) }
     var heartbeatTick by remember { mutableStateOf(false) }
+    var transportAlive by remember { mutableStateOf(false) }
+    var transportGeneration by remember { mutableStateOf(0L) }
     var developerOptionsOn by remember { mutableStateOf(context.isDeveloperOptionsEnabled()) }
     var selinuxRes by remember { mutableStateOf<Int?>(null) }
     var seccompRes by remember { mutableStateOf<Int?>(null) }
@@ -356,7 +360,10 @@ fun HomeScreen(bottomPadding: Dp) {
                     it.backend == TokenXBackend.NATIVE_UID
             }
             shellClients = sessions.count { it.backend == TokenXBackend.SHELL }
-            if (runCatching { Shizuku.pingBinder() }.getOrDefault(false)) heartbeatTick = !heartbeatTick
+            val transport = TokenXRendezvous.snapshot()
+            transportAlive = transport.alive
+            transportGeneration = transport.generation
+            if (transport.alive) heartbeatTick = !heartbeatTick
             delay(500)
         }
     }
@@ -740,11 +747,22 @@ fun HomeScreen(bottomPadding: Dp) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     GlobalConnectionCard(
+                        icon = Icons.Rounded.Refresh, title = "TokenX Transport", uid = -1,
+                        online = transportAlive, available = true,
+                        clients = rootClients + systemClients + shellClients,
+                        heartbeatTick = heartbeatTick && transportAlive,
+                        detail = "Protocol v${TokenXBinderProtocol.VERSION} • rendezvous generation $transportGeneration • Root $rootClients / System $systemClients / Shell $shellClients",
+                        command = "./rish --system",
+                        actionLabel = if (transportAlive) "Transport live" else "Waiting",
+                        actionEnabled = false,
+                        onAction = {}
+                    )
+                    GlobalConnectionCard(
                         icon = Icons.Rounded.Numbers, title = "Root", uid = 0,
                         online = running && uid == 0, available = rooted, clients = rootClients,
                         heartbeatTick = heartbeatTick && running && uid == 0,
                         detail = if (rooted) "KernelSU / root backend" else "Root unavailable",
-                        command = "TOKENX_RISH_BACKEND=root ./rish",
+                        command = "./rish --root",
                         actionLabel = if (running && uid == 0) "Connected" else "Connect",
                         actionEnabled = rooted && !(running && uid == 0),
                         onAction = { ShizukuReceiverStarter.switchMode(context, ShizukuSettings.StartMethod.ROOT, userInitiated = true) }
@@ -754,7 +772,7 @@ fun HomeScreen(bottomPadding: Dp) {
                         online = (running && uid == 1000) || systemRishActive, available = true, clients = systemClients,
                         heartbeatTick = heartbeatTick && running && uid == 1000,
                         detail = if (systemRishActive) "System transport / rish attached" else "Framework UID 1000 backend",
-                        command = "TOKENX_RISH_BACKEND=system ./rish",
+                        command = "./rish --system",
                         actionLabel = if (running && uid == 1000) "Connected" else "Connect",
                         actionEnabled = !(running && uid == 1000),
                         onAction = { ShizukuReceiverStarter.switchMode(context, ShizukuSettings.StartMethod.SYSTEM, userInitiated = true) }
@@ -772,7 +790,7 @@ fun HomeScreen(bottomPadding: Dp) {
                             (ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS ||
                                 ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK),
                         detail = "Wireless ADB transport • UID 2000 shell backend",
-                        command = "TOKENX_RISH_BACKEND=shell ./rish",
+                        command = "./rish --shell",
                         actionLabel = if (running && uid == 2000 &&
                             (ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS ||
                                 ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK)) "Connected" else "Connect wireless",
@@ -795,7 +813,7 @@ fun HomeScreen(bottomPadding: Dp) {
                         heartbeatTick = heartbeatTick && running && uid == 2000 &&
                             ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB,
                         detail = "USB / TCP ADB transport • UID 2000 shell backend",
-                        command = "TOKENX_RISH_BACKEND=shell ./rish",
+                        command = "./rish --shell",
                         actionLabel = if (running && uid == 2000 &&
                             ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB) "Connected" else "Connect USB",
                         actionEnabled = !(running && uid == 2000 &&
