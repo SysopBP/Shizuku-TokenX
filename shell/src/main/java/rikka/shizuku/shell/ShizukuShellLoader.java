@@ -36,6 +36,12 @@ public class ShizukuShellLoader {
                 IBinder binder = data.readStrongBinder();
 
                 String sourceDir = data.readString();
+                long tokenxSessionId = data.dataAvail() >= 8 ? data.readLong() : 0L;
+                String tokenxSessionBackend = data.dataAvail() > 0 ? data.readString() : null;
+                if (tokenxSessionId > 0) {
+                    System.out.println("TokenX session " + tokenxSessionId + " attached" +
+                            (tokenxSessionBackend != null ? " backend=" + tokenxSessionBackend : ""));
+                }
                 if (binder != null) {
                     handler.post(() -> onBinderReceived(binder, sourceDir));
                 } else {
@@ -62,7 +68,8 @@ public class ShizukuShellLoader {
                 .setPackage(managerApplicationId)
                 .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
                 .putExtra("data", data)
-                .putExtra("tokenx_backend", System.getenv("TOKENX_RISH_BACKEND"));
+                .putExtra("tokenx_backend", System.getenv("TOKENX_RISH_BACKEND"))
+                .putExtra("tokenx_package", callingPackage);
 
         IBinder amBinder = ServiceManager.getService("activity");
         IActivityManager am;
