@@ -3,6 +3,7 @@ package rikka.shizuku.shell;
 import android.app.ActivityManagerNative;
 import android.app.IActivityManager;
 import android.content.Intent;
+import android.content.ComponentName;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
@@ -32,6 +33,8 @@ public final class TokenXTransportClient {
             if (code != 2) return false;
             IBinder transport = data.readStrongBinder();
             int generation = data.readInt();
+            System.out.println("TOKENX_TRANSPORT_CALLBACK generation=" + generation +
+                    " binder=" + (transport != null) + " alive=" + (transport != null && transport.isBinderAlive()));
             handler.post(() -> runTest(transport, generation));
             return true;
         }
@@ -50,12 +53,16 @@ public final class TokenXTransportClient {
         String manager = System.getenv("MANAGER_APPLICATION_ID");
         if (TextUtils.isEmpty(manager) || "MANAGER_PKG".equals(manager)) manager = BuildConfig.MANAGER_APPLICATION_ID;
         Intent intent = new Intent("moe.shizuku.tokenx.intent.action.REQUEST_TRANSPORT")
-                .setPackage(manager).addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
+                .setComponent(new ComponentName(manager, "moe.shizuku.manager.receiver.BinderRequestReceiver"))
+                .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
                 .putExtra("data", bundle).putExtra("tokenx_package", callingPackage);
+        System.out.println("TOKENX_TRANSPORT_REQUEST manager=" + manager +
+                " component=" + intent.getComponent() + " package=" + callingPackage);
         IBinder amBinder = android.os.ServiceManager.getService("activity");
         IActivityManager am = Build.VERSION.SDK_INT >= 26 ? IActivityManager.Stub.asInterface(amBinder)
                 : ActivityManagerNative.asInterface(amBinder);
-        am.broadcastIntent(null, intent, null, null, 0, null, null, null, -1, null, true, false, 0);
+        int result = am.broadcastIntent(null, intent, null, null, 0, null, null, null, -1, null, true, false, 0);
+        System.out.println("TOKENX_TRANSPORT_BROADCAST_SENT result=" + result);
     }
 
     private interface Writer { void write(Parcel p); }
