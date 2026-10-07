@@ -26,15 +26,34 @@ object ShellBinderRequestHandler {
             else -> callingPackage?.let { ShizukuSettings.getBackendRoute(it) } ?: ShizukuSettings.BACKEND_ROOT
         }
 
-        // TokenX keeps both privileged endpoints. A rish session can override the saved
-        // per-app route without mutating that preference.
-        val shizukuBinder = ShizukuManagerProvider.backendBinder(route)
-            ?: if (route == ShizukuSettings.BACKEND_ROOT) Shizuku.getBinder() else null
-        if (shizukuBinder == null) {
-            LOGGER.w("Requested TokenX %s backend is not available", route)
-        } else {
-            LOGGER.i("TokenX rish binder route=%s package=%s", route, callingPackage ?: "unknown")
+        // Keep the legacy/default root path as the known-good transport. The retained
+        // backend registry is preferred for explicit routes, but an explicit Root request
+        // must be able to use the same live binder that an unqualified rish session uses.
+        val retainedBinder = ShizukuManagerProvider.backendBinder(route)
+        val shizukuBinder = when (route) {
+            ShizukuSettings.BACKEND_ROOT -> retainedBinder ?: Shizuku.getBinder()
+            else -> retainedBinder
         }
+
+        if (shizukuBinder == null || !shizukuBinder.isBinderAlive) {
+            LOGGER.w(
+                "TokenX rish route unavailable requested=%s route=%s package=%s",
+                requested ?: "default",
+                route,
+                callingPackage ?: "unknown"
+            )
+            // Do not send a null/dead binder and let rish sit until its generic request
+            // timeout. Returning false keeps the failure local and makes the real backend
+            // availability problem visible in manager logs.
+            return false
+        }
+
+        LOGGER.i(
+            "TokenX rish binder route=%s requested=%s package=%s",
+            route,
+            requested ?: "default",
+            callingPackage ?: "unknown"
+        )
 
         val data = Parcel.obtain()
         return try {
@@ -43,7 +62,7 @@ object ShellBinderRequestHandler {
             binder.transact(1, data, null, IBinder.FLAG_ONEWAY)
             true
         } catch (e: Throwable) {
-            e.printStackTrace()
+            LOGGER.e(e, "TokenX rish binder delivery failed route=%s", route)
             false
         } finally {
             data.recycle()
