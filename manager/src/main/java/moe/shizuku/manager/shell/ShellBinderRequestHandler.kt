@@ -9,6 +9,7 @@ import moe.shizuku.manager.ShizukuManagerProvider
 import moe.shizuku.manager.tokenx.TokenXBackend
 import moe.shizuku.manager.tokenx.TokenXSessionRegistry
 import moe.shizuku.manager.tokenx.TokenXXposedSystemServerClient
+import moe.shizuku.manager.tokenx.transport.TokenXRendezvous
 import rikka.shizuku.Shizuku
 
 object ShellBinderRequestHandler {
@@ -16,11 +17,27 @@ object ShellBinderRequestHandler {
     fun isSystemRishConnected(): Boolean = TokenXSessionRegistry.hasSystemSession()
 
     fun handleRequest(context: Context, intent: Intent): Boolean {
-        if (intent.action != "rikka.shizuku.intent.action.REQUEST_BINDER") {
+        val tokenXTransportRequest = intent.action == "moe.shizuku.tokenx.intent.action.REQUEST_TRANSPORT"
+        if (!tokenXTransportRequest && intent.action != "rikka.shizuku.intent.action.REQUEST_BINDER") {
             return false
         }
 
         val binder = intent.getBundleExtra("data")?.getBinder("binder") ?: return false
+        if (tokenXTransportRequest) {
+            val transport = TokenXRendezvous.current().binder?.takeIf { it.isBinderAlive }
+            val data = Parcel.obtain()
+            return try {
+                data.writeStrongBinder(transport)
+                data.writeInt(TokenXRendezvous.current().generation.toInt())
+                binder.transact(2, data, null, IBinder.FLAG_ONEWAY)
+            } catch (e: Throwable) {
+                LOGGER.w(e, "TokenX transport Binder delivery failed")
+                false
+            } finally {
+                data.recycle()
+            }
+        }
+
         val requestedBackend = intent.getStringExtra("tokenx_backend")
         val sessionBackend = when (requestedBackend) {
             "sserver", "system" -> TokenXBackend.SYSTEM_SERVER
