@@ -749,7 +749,7 @@ fun HomeScreen(bottomPadding: Dp) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     GlobalConnectionCard(
-                        icon = Icons.Rounded.Refresh, title = "TokenX Transport", uid = -1,
+                        icon = Icons.Rounded.Refresh, title = "TokenX Multi-Backend Transport", uid = -1,
                         online = transportAlive, available = true,
                         clients = rootClients + systemClients + shellClients,
                         heartbeatTick = heartbeatTick && transportAlive,
@@ -770,15 +770,15 @@ fun HomeScreen(bottomPadding: Dp) {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(Modifier.weight(1f)) {
-                                    Text("New transport format", fontWeight = FontWeight.SemiBold)
-                                    Text("Legacy Binder → TokenX multi-backend client", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("TokenX transport format", fontWeight = FontWeight.SemiBold)
+                                    Text("rish_shizuku.dex · TokenXTransportClient", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null)
                             }
                             if (transportInfoExpanded) {
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))
                                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                                    Text("The legacy rish path followed the single active Shizuku Binder. The new rish_shizuku.dex client requests a TokenX transport session and explicitly selects Root, System, or Shell.", style = MaterialTheme.typography.bodySmall)
+                                    Text("Replaces the legacy single-Binder rish path. The rebuilt rish_shizuku.dex contains TokenXTransportClient, which requests an authorized TokenX transport session and explicitly selects Root, System, or Shell.", style = MaterialTheme.typography.bodySmall)
                                     Text("New commands: ./rish --root  •  ./rish --system  •  ./rish --shell", style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
                                     Text("Sessions are tied to the client Binder lifetime, so they disappear automatically when the client exits.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
@@ -800,7 +800,7 @@ fun HomeScreen(bottomPadding: Dp) {
                             color = MaterialTheme.colorScheme.surfaceContainerHigh
                         ) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text("TOKENX TRANSPORT STATS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("TOKENX TRANSPORT STATS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)\n                                Text("Client: rish_shizuku.dex · TokenXTransportClient")\n                                Text("Launcher pair: rish + rish_shizuku.dex")
                                 Text("Binder: " + if (transportAlive) "LIVE" else "OFFLINE")
                                 Text("Protocol: v${TokenXBinderProtocol.VERSION}")
                                 Text("Rendezvous generation: $transportGeneration")
