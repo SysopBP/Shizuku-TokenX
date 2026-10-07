@@ -93,10 +93,6 @@ import moe.shizuku.manager.ui.screen.HomeScreen
 import moe.shizuku.manager.ui.screen.AppToggleFeature
 import moe.shizuku.manager.ui.screen.IntentsScreen
 import moe.shizuku.manager.ui.screen.LabsScreen
-import moe.shizuku.manager.ui.screen.OneUIXLabsScreen
-import moe.shizuku.manager.ui.screen.CorePatchLabsScreen
-import moe.shizuku.manager.ui.screen.FlagSecureLabsScreen
-import moe.shizuku.manager.ui.screen.LiquidGlassLabsScreen
 import moe.shizuku.manager.ui.screen.LabsToggleScreen
 import moe.shizuku.manager.ui.screen.ManageScreen
 import moe.shizuku.manager.ui.screen.PermissionsScreen
@@ -122,7 +118,7 @@ import moe.shizuku.manager.ui.theme.ShizukuTheme
  * the bar spent its whole width on five icons while the two screens behind two of them were
  * mostly empty when you arrived.
  */
-enum class Detail { APP_OPS, SHELL, FIREWALL, AUTOSTART, STEALTH, TERMINAL, INTENTS, PERMISSIONS, APPEARANCE, TOKENX, GUIDE, ONEUIX_LABS, COREPATCH_LABS, FLAG_SECURE_LABS, LIQUID_GLASS_LABS }
+enum class Detail { APP_OPS, SHELL, FIREWALL, AUTOSTART, STEALTH, TERMINAL, INTENTS, PERMISSIONS, APPEARANCE, TOKENX, GUIDE }
 
 /**
  * On wide windows (tablets, foldables, desktop mode, mirrored displays) a
@@ -220,10 +216,6 @@ fun ShizukuApp() {
                             Detail.APPEARANCE -> AppearanceStudioScreen()
                             Detail.TOKENX -> TokenXControlCenterScreen(onBack = { detail = null })
                             Detail.GUIDE -> TokenXGuideScreen(onBack = { detail = null })
-                            Detail.ONEUIX_LABS -> OneUIXLabsScreen(onBack = { detail = null })
-                            Detail.COREPATCH_LABS -> CorePatchLabsScreen(onBack = { detail = null })
-                            Detail.FLAG_SECURE_LABS -> FlagSecureLabsScreen(onBack = { detail = null })
-                            Detail.LIQUID_GLASS_LABS -> LiquidGlassLabsScreen(onBack = { detail = null })
                         }
                     }
                 } else {
