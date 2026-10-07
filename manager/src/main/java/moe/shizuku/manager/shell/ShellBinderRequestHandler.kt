@@ -24,11 +24,12 @@ object ShellBinderRequestHandler {
 
         val binder = intent.getBundleExtra("data")?.getBinder("binder") ?: return false
         if (tokenXTransportRequest) {
-            val transport = TokenXRendezvous.current().binder?.takeIf { it.isBinderAlive }
+            val snapshot = TokenXRendezvous.snapshot()
+            val transport = snapshot.binder?.takeIf { it.isBinderAlive }
             val data = Parcel.obtain()
             return try {
                 data.writeStrongBinder(transport)
-                data.writeInt(TokenXRendezvous.current().generation.toInt())
+                data.writeInt(snapshot.generation.toInt())
                 binder.transact(2, data, null, IBinder.FLAG_ONEWAY)
             } catch (e: Throwable) {
                 LOGGER.w(e, "TokenX transport Binder delivery failed")
