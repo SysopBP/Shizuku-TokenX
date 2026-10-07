@@ -1,5 +1,7 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 
+// CI trigger: validate TokenX glass/watchdog integration
+
 package moe.shizuku.manager.ui.screen
 
 import android.app.Activity
