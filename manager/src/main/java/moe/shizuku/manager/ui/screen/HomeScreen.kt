@@ -827,12 +827,12 @@ fun HomeScreen(bottomPadding: Dp) {
                     }
                     GlobalConnectionCard(
                         icon = Icons.Rounded.Numbers, title = "Root", uid = 0,
-                        online = running && uid == 0, available = rooted, clients = rootClients,
-                        heartbeatTick = heartbeatTick && running && uid == 0,
-                        detail = if (rooted) "KernelSU / root backend" else "Root unavailable",
+                        online = rootBackendAlive, available = rooted, clients = rootClients,
+                        heartbeatTick = heartbeatTick && rootBackendAlive,
+                        detail = if (rootBackendAlive) "KernelSU / root backend bound" else if (rooted) "KernelSU / root backend available" else "Root unavailable",
                         command = "./rish --root",
-                        actionLabel = if (running && uid == 0) "Connected" else "Connect",
-                        actionEnabled = rooted && !(running && uid == 0),
+                        actionLabel = if (rootBackendAlive) "Connected" else "Connect",
+                        actionEnabled = rooted && !rootBackendAlive,
                         onAction = { ShizukuReceiverStarter.switchMode(context, ShizukuSettings.StartMethod.ROOT, userInitiated = true) }
                     )
                     GlobalConnectionCard(
