@@ -269,13 +269,15 @@ jobs:
           echo "TokenX LSPosed _TKN system_server backend verified; retired backends absent"
           rm -f "$DEX_STRINGS"
 
-          # Explicit rish backend requests must be session-gated; never regress to
-          # handing a privileged Binder to an unauthorised broadcast requester.
-          grep -F 'AuthorizationManager.granted(packageName, packageUid)' \
-            manager/src/main/java/moe/shizuku/manager/shell/ShellBinderRequestHandler.kt >/dev/null || {
-              echo "::error::TokenX rish authorization/session gate missing"
+          # Explicit rish backend requests stay session-gated, while authorization is
+          # enforced by the selected Shizuku backend Binder itself. Do not restore the
+          # duplicate manager-side AuthorizationManager gate: it drops valid callbacks
+          # before the backend can perform its canonical package/UID permission check.
+          if grep -F 'AuthorizationManager.granted(packageName, packageUid)' \
+            manager/src/main/java/moe/shizuku/manager/shell/ShellBinderRequestHandler.kt >/dev/null; then
+              echo "::error::Duplicate TokenX rish manager authorization gate restored"
               exit 1
-            }
+          fi
           grep -F 'TokenXSessionRegistry.register(binder, packageName, sessionBackend)' \
             manager/src/main/java/moe/shizuku/manager/shell/ShellBinderRequestHandler.kt >/dev/null || {
               echo "::error::TokenX rish session registration missing"
