@@ -21,6 +21,7 @@ import moe.shizuku.manager.tokenx.transport.TokenXRendezvousContract
 import moe.shizuku.manager.tokenx.transport.TokenXTransportBinder
 import moe.shizuku.manager.tokenx.transport.TokenXBinderClient
 import moe.shizuku.manager.tokenx.transport.TokenXBinderProtocol
+import moe.shizuku.manager.tokenx.TokenXXposedSystemServerClient
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuApiConstants.USER_SERVICE_ARG_TOKEN
@@ -44,7 +45,15 @@ class ShizukuManagerProvider : ShizukuProvider() {
         @Volatile private var shellBackendBinder: IBinder? = null
 
         fun rootBinder(): IBinder? = rootBackendBinder?.takeIf { it.isBinderAlive }
-        fun systemBinder(): IBinder? = systemBackendBinder?.takeIf { it.isBinderAlive }
+        fun systemBinder(): IBinder? {
+            systemBackendBinder?.takeIf { it.isBinderAlive }?.let { return it }
+            val xposed = TokenXXposedSystemServerClient.binder()?.takeIf { it.isBinderAlive && it.pingBinder() }
+            if (xposed != null) {
+                systemBackendBinder = xposed
+                Log.i("TokenX/Transport", "adopted live SYSTEM Binder from Xposed rendezvous")
+            }
+            return xposed
+        }
         fun shellBinder(): IBinder? = shellBackendBinder?.takeIf { it.isBinderAlive }
     }
 
