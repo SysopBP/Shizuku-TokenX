@@ -773,11 +773,18 @@ fun HomeScreen(bottomPadding: Dp) {
                             }
                         }
                     )
-                    OutlinedButton(modifier = Modifier.fillMaxWidth(), onClick = { showAdbCommand = true }) {
-                        Icon(Icons.Rounded.Computer, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Computer / ADB command")
-                    }
+                    GlobalConnectionCard(
+                        icon = Icons.Rounded.Computer, title = "PC / ADB", uid = 2000,
+                        online = running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB,
+                        available = true,
+                        clients = if (running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB) shellClients else 0,
+                        heartbeatTick = heartbeatTick && running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB,
+                        detail = "Computer-started ADB transport • UID 2000 shell backend",
+                        command = Starter.adbCommand,
+                        actionLabel = "Show PC command",
+                        actionEnabled = true,
+                        onAction = { showAdbCommand = true }
+                    )
                 }
             }
 
