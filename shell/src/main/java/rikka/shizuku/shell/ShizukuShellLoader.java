@@ -126,22 +126,6 @@ public class ShizukuShellLoader {
         }
     }
 
-    private static int remoteUid(IBinder binder) {
-        Parcel data = Parcel.obtain();
-        Parcel reply = Parcel.obtain();
-        try {
-            data.writeInterfaceToken("moe.shizuku.server.IShizukuService");
-            // IShizukuService.aidl pins getUid() to transaction 3. Do not derive it from\n            // FIRST_CALL_TRANSACTION: transaction 2 is getVersion(), not getUid().\n            if (!binder.transact(3, data, reply, 0)) return -1;
-            reply.readException();
-            return reply.readInt();
-        } catch (Throwable ignored) {
-            return -1;
-        } finally {
-            data.recycle();
-            reply.recycle();
-        }
-    }
-
     private static void onBinderReceived(IBinder binder, String sourceDir, int routedUid) {
         String requested = System.getenv("TOKENX_RISH_BACKEND");
         int expectedUid = -1;
@@ -157,19 +141,17 @@ public class ShizukuShellLoader {
             backendName = "Shell";
         }
         if (expectedUid >= 0) {
-            int uid = remoteUid(binder);
-            // Prefer a successful direct Binder identity probe. On Android 17 the raw
-            // transaction can return -1 even though the manager has already classified
-            // the retained backend using the live Shizuku API. In that case, accept only
-            // the manager's explicit backend-slot UID; never infer privilege from a name.
-            int verifiedUid = uid >= 0 ? uid : routedUid;
-            if (verifiedUid != expectedUid) {
+            // Explicit routes are selected and classified by the manager before this
+            // callback. Trust only that routed UID here. Re-probing IShizukuService with
+            // a raw transaction is redundant and can return -1 on Android 17 even when
+            // the selected backend Binder is healthy and usable.
+            if (routedUid != expectedUid) {
                 abort("TokenX " + backendName + " Binder is not active (expected UID " +
-                        expectedUid + ", direct UID " + uid + ", routed UID " + routedUid + ").");
+                        expectedUid + ", routed UID " + routedUid + ").");
                 return;
             }
-            System.out.println("TokenX " + backendName + " Binder verified: UID " + verifiedUid +
-                    (uid < 0 ? " (manager-classified route)" : ""));
+            System.out.println("TokenX " + backendName + " Binder verified: UID " + routedUid +
+                    " (manager-classified route)");
         }
         var base = sourceDir.substring(0, sourceDir.lastIndexOf('/'));
         String librarySearchPath = base + "/lib/" + VMRuntimeHidden.getRuntime().vmInstructionSet();
