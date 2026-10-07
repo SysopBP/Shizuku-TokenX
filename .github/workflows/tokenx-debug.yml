@@ -193,6 +193,15 @@ jobs:
           test -s manager/src/main/assets/rish_shizuku.dex
           ./gradlew :manager:assembleDebug --stacktrace
 
+      - name: Verify Preview identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'def baseVersionName = "14.2.0-TKN"' build.gradle >/dev/null
+          grep -F '"-preview.1"' build.gradle >/dev/null
+          grep -F 'v14.2.0-TKN-preview.1' README.md >/dev/null
+          echo "TokenX Preview identity verified"
+
       - name: Verify bundled rish pair
         shell: bash
         run: |
@@ -209,7 +218,8 @@ jobs:
             'TOKENX_RISH_PROTOCOL=' \
             'manager-classified route' \
             'direct UID ' \
-            'routed UID '
+            'routed UID ' \
+            'TokenX System Binder verified: UID '
           do
             strings "$RISH_DEX" | grep -F "$marker" >/dev/null || {
               echo "::error::Bundled rish_shizuku.dex is stale; missing marker: $marker"
@@ -222,7 +232,15 @@ jobs:
             echo "::error::Bundled rish launcher is not protocol v3"
             exit 1
           }
-          echo "TokenX rish protocol v3 + routed UID handoff verified in packaged assets"
+          grep -F 'routedUid != expectedUid' shell/src/main/java/rikka/shizuku/shell/ShizukuShellLoader.java >/dev/null || {
+            echo "::error::Explicit route is not validating manager-routed UID"
+            exit 1
+          }
+          if grep -F 'remoteUid(binder)' shell/src/main/java/rikka/shizuku/shell/ShizukuShellLoader.java >/dev/null; then
+            echo "::error::Redundant raw Binder UID probe restored in explicit route"
+            exit 1
+          fi
+          echo "TokenX rish protocol v3 + manager-routed UID handoff verified in packaged assets"
 
       - name: Verify TokenX Xposed packaging
         shell: bash
