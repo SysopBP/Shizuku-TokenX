@@ -80,13 +80,14 @@ class ShizukuManagerProvider : ShizukuProvider() {
             return null
         }
         fun systemBinder(): IBinder? {
-            systemBackendBinder?.takeIf { it.isBinderAlive }?.let { return it }
-            val xposed = TokenXXposedSystemServerClient.binder()?.takeIf { it.isBinderAlive && it.pingBinder() }
-            if (xposed != null) {
-                systemBackendBinder = xposed
-                Log.i("TokenX/Transport", "adopted live SYSTEM Binder from Xposed rendezvous")
+            // SYSTEM must be the independently classified UID-1000 Shizuku Binder.
+            // Do not adopt TokenXXposedSystemServerClient.binder() here: that rendezvous
+            // intentionally carries the manager's current global Shizuku Binder for RPC
+            // round-trip verification and can therefore be the UID-0 ROOT Binder.
+            // Treating it as SYSTEM makes explicit routing lie about its privilege identity.
+            return systemBackendBinder?.takeIf { it.isBinderAlive }?.also {
+                Log.i("TokenX/Transport", "using retained SYSTEM Binder uid=1000")
             }
-            return xposed
         }
         fun shellBinder(): IBinder? {
             shellBackendBinder?.takeIf { it.isBinderAlive }?.let { return it }
