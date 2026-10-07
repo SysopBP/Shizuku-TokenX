@@ -45,6 +45,7 @@ object ShellBinderRequestHandler {
         }
 
         val requestedBackend = intent.getStringExtra("tokenx_backend")
+            ?: intent.getBundleExtra("data")?.getString("tokenx_backend")
         val sessionBackend = when (requestedBackend) {
             "sserver", "system" -> TokenXBackend.SYSTEM_SERVER
             "root" -> TokenXBackend.ROOT
