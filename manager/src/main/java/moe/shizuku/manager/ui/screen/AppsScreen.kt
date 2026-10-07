@@ -50,6 +50,7 @@ import moe.shizuku.manager.ui.component.ExpressiveSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -333,6 +334,7 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
         if (selectionMode) {
             TopAppBar(
                 title = { Text(stringResource(R.string.batch_selected_count, selected.size)) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0f)),
                 windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
                 navigationIcon = {
                     IconButton(onClick = { selected = emptySet() }) {
@@ -354,6 +356,7 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
         } else {
             TopAppBar(
                 title = { Text(stringResource(R.string.tab_apps)) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0f)),
                 windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
                 actions = {
                     // Long-press and Select all exist for picking individual apps; this is
