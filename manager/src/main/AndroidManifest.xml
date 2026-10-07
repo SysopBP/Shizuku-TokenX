@@ -243,6 +243,7 @@
             tools:ignore="ExportedReceiver">
             <intent-filter>
                 <action android:name="rikka.shizuku.intent.action.REQUEST_BINDER" />
+                <action android:name="moe.shizuku.tokenx.intent.action.REQUEST_TRANSPORT" />
             </intent-filter>
         </receiver>
 
