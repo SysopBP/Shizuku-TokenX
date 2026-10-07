@@ -240,28 +240,48 @@ class TokenXXposedEntry : XposedModule() {
 
     private fun resolvePackageUidFromSystem(packageName: String, userId: Int): Int {
         if (packageName.isBlank()) return -1
-        return runCatching {
-            // Run the lookup with system_server's system Context so Android 17 package
-            // visibility filtering in the manager process cannot hide the requesting app.
+
+        // This code already executes inside real system_server. Use the framework
+        // PackageManager API directly instead of reflecting into Samsung's
+        // ApplicationPackageManager implementation. On Android 17 / One UI 9 the
+        // reflected invocation can throw InvocationTargetException even though the
+        // package is installed (observed with com.termux on run 555).
+        val direct = runCatching {
             val activityThread = Class.forName("android.app.ActivityThread")
             val current = activityThread.getDeclaredMethod("currentActivityThread").invoke(null)
                 ?: return@runCatching -1
             val systemContext = activityThread.getDeclaredMethod("getSystemContext").invoke(current) as? Context
                 ?: return@runCatching -1
-            val pm = systemContext.packageManager
-            val method = pm.javaClass.methods.firstOrNull {
-                it.name == "getPackageUidAsUser" &&
-                    it.parameterTypes.size == 2 &&
-                    it.parameterTypes[0] == String::class.java
-            } ?: android.content.pm.PackageManager::class.java.declaredMethods.firstOrNull {
-                it.name == "getPackageUidAsUser" &&
-                    it.parameterTypes.size == 2 &&
+            systemContext.packageManager.getPackageUidAsUser(packageName, userId)
+        }.onFailure {
+            log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID_DIRECT_FAILED package=$packageName user=$userId: ${it.javaClass.name}: ${it.message}")
+        }.getOrDefault(-1)
+
+        if (direct >= 0) {
+            log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID_OK package=$packageName user=$userId uid=$direct source=PackageManager")
+            return direct
+        }
+
+        // Last-resort lookup through PackageManager's binder service. This keeps
+        // authorization fail-closed while avoiding app-process visibility rules.
+        return runCatching {
+            val packageManagerBinder = android.os.ServiceManager.getService("package")
+                ?: return@runCatching -1
+            val stub = Class.forName("android.content.pm.IPackageManager\\$Stub")
+            val asInterface = stub.getDeclaredMethod("asInterface", IBinder::class.java)
+            val ipm = asInterface.invoke(null, packageManagerBinder) ?: return@runCatching -1
+            val method = ipm.javaClass.methods.firstOrNull {
+                it.name == "getPackageUid" &&
+                    it.parameterTypes.size == 3 &&
                     it.parameterTypes[0] == String::class.java
             } ?: return@runCatching -1
-            method.isAccessible = true
-            (method.invoke(pm, packageName, userId) as? Int) ?: -1
+            val uid = (method.invoke(ipm, packageName, 0L, userId) as? Int) ?: -1
+            if (uid >= 0) {
+                log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID_OK package=$packageName user=$userId uid=$uid source=IPackageManager")
+            }
+            uid
         }.onFailure {
-            log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID_FAILED package=$packageName user=$userId: ${it.javaClass.simpleName}: ${it.message}")
+            log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID_FALLBACK_FAILED package=$packageName user=$userId: ${it.javaClass.name}: ${it.message}")
         }.getOrDefault(-1)
     }
 
