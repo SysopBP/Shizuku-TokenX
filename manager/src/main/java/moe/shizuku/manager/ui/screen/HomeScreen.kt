@@ -103,6 +103,8 @@ import moe.shizuku.manager.receiver.ShizukuReceiverStarter
 import moe.shizuku.manager.shell.ShellBackend
 import moe.shizuku.manager.shell.ShellSession
 import moe.shizuku.manager.shell.ShellBinderRequestHandler
+import moe.shizuku.manager.shell.SystemUidProvisioner
+import moe.shizuku.manager.ShizukuManagerProvider
 import moe.shizuku.manager.tokenx.TokenXBackend
 import moe.shizuku.manager.tokenx.TokenXSessionRegistry
 import moe.shizuku.manager.tokenx.transport.TokenXBinderProtocol
@@ -163,6 +165,8 @@ fun HomeScreen(bottomPadding: Dp) {
     var rooted by remember { mutableStateOf(false) }
     var startMethod by remember { mutableStateOf(ShizukuSettings.getStartMethod()) }
     var systemRishActive by remember { mutableStateOf(ShellBinderRequestHandler.isSystemRishConnected()) }
+    var systemBackendAlive by remember { mutableStateOf(ShizukuManagerProvider.systemBinder()?.isBinderAlive == true) }
+    var systemConnectBusy by remember { mutableStateOf(false) }
     var rootClients by remember { mutableStateOf(0) }
     var systemClients by remember { mutableStateOf(0) }
     var shellClients by remember { mutableStateOf(0) }
@@ -362,6 +366,7 @@ fun HomeScreen(bottomPadding: Dp) {
             val health = TokenXWatchdog.probe()
             rootClients = health.root.clients
             systemClients = health.system.clients
+            systemBackendAlive = health.system.binderAlive
             shellClients = health.shell.clients
             transportAlive = health.transport == TokenXWatchdog.State.ONLINE
             transportGeneration = health.generation
@@ -828,13 +833,39 @@ fun HomeScreen(bottomPadding: Dp) {
                     )
                     GlobalConnectionCard(
                         icon = Icons.Rounded.AdminPanelSettings, title = "System", uid = 1000,
-                        online = (running && uid == 1000) || systemRishActive, available = true, clients = systemClients,
-                        heartbeatTick = heartbeatTick && running && uid == 1000,
-                        detail = if (systemRishActive) "System transport / rish attached" else "Framework UID 1000 backend",
+                        online = systemBackendAlive, available = true, clients = systemClients,
+                        heartbeatTick = heartbeatTick && systemBackendAlive,
+                        detail = when {
+                            systemBackendAlive && systemRishActive -> "System transport / rish attached"
+                            systemBackendAlive -> "System UID 1000 Binder attached"
+                            else -> "Framework UID 1000 backend"
+                        },
                         command = "./rish --system",
-                        actionLabel = if (running && uid == 1000) "Connected" else "Connect",
-                        actionEnabled = !(running && uid == 1000),
-                        onAction = { ShizukuReceiverStarter.switchMode(context, ShizukuSettings.StartMethod.SYSTEM, userInitiated = true) }
+                        actionLabel = when {
+                            systemConnectBusy -> "Connecting…"
+                            systemBackendAlive -> "Connected"
+                            else -> "Connect"
+                        },
+                        actionEnabled = !systemBackendAlive && !systemConnectBusy,
+                        onAction = {
+                            // The System card owns the independent UID-1000 backend. Do not
+                            // switch the global Shizuku compatibility Binder away from Root:
+                            // explicit rish --system already proves this dedicated route.
+                            systemConnectBusy = true
+                            scope.launch(Dispatchers.IO) {
+                                val result = SystemUidProvisioner.prepareAndStartShizukuUid1000(context)
+                                if (result.success) {
+                                    val deadline = android.os.SystemClock.elapsedRealtime() + 4_000L
+                                    while (android.os.SystemClock.elapsedRealtime() < deadline) {
+                                        if (ShizukuManagerProvider.systemBinder()?.isBinderAlive == true) break
+                                        delay(50)
+                                    }
+                                }
+                                systemBackendAlive = ShizukuManagerProvider.systemBinder()?.isBinderAlive == true
+                                systemConnectBusy = false
+                                withContext(Dispatchers.Main) { refresh() }
+                            }
+                        }
                     )
                     GlobalConnectionCard(
                         icon = Icons.Rounded.Wifi, title = "Wireless debugging", uid = 2000,
