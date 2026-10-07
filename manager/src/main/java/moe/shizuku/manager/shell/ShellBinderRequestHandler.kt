@@ -25,8 +25,17 @@ object ShellBinderRequestHandler {
 
         val binder = intent.getBundleExtra("data")?.getBinder("binder") ?: return false
         if (tokenXTransportRequest) {
+            // The broadcast receiver can be the first manager component touched after
+            // reboot. Do not assume the provider/rendezvous has already published the
+            // transport; ensure the manager-owned transport exists before replying.
+            val transport = runCatching {
+                ShizukuManagerProvider.ensureTokenXTransport(context)
+            }.onFailure {
+                LOGGER.w(it, "TokenX transport on-demand publication failed")
+            }.getOrNull()?.takeIf { it.isBinderAlive }
             val snapshot = TokenXRendezvous.snapshot()
-            val transport = snapshot.binder?.takeIf { it.isBinderAlive }
+            LOGGER.i("TokenX transport request reply generation=%d published=%s alive=%s",
+                snapshot.generation, transport != null, transport?.isBinderAlive == true)
             val data = Parcel.obtain()
             return try {
                 data.writeStrongBinder(transport)
