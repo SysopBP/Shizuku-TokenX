@@ -1,10 +1,10 @@
 package rikka.shizuku.shell;
 
 import android.app.ActivityThread;
-import android.content.ContentProviderClient;
+import android.app.IActivityManager;
+import android.app.ActivityManagerNative;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -40,17 +40,29 @@ public final class TokenXTransportClient {
     }
 
     private static IBinder discover(Context context) throws Exception {
-        ContentProviderClient provider = context.getContentResolver()
-                .acquireUnstableContentProviderClient(Uri.parse("content://" + AUTHORITY));
-        if (provider == null) throw new IllegalStateException("TokenX manager provider unavailable");
+        // ContentResolver from ActivityThread.systemMain() is attributed to "android"
+        // even when wrapped with a package Context. Avoid that path entirely for
+        // app_process clients: acquire the manager provider through ActivityManager
+        // while explicitly supplying the real caller package.
+        IBinder amBinder = android.os.ServiceManager.getService("activity");
+        IActivityManager am = IActivityManager.Stub.asInterface(amBinder);
+        String pkg = packageName();
+        android.app.ContentProviderHolder holder = am.getContentProvider(
+                null, pkg, AUTHORITY, Os.getuid() / 100000, true);
+        if (holder == null || holder.provider == null) {
+            throw new IllegalStateException("TokenX manager provider unavailable");
+        }
         try {
-            Bundle result = provider.call(METHOD, null, new Bundle());
+            Bundle result = holder.provider.call(
+                    new android.content.AttributionSource.Builder(Os.getuid())
+                            .setPackageName(pkg).build(),
+                    AUTHORITY, METHOD, null, new Bundle());
             if (result == null) throw new IllegalStateException("tokenx.getTransport returned null");
             IBinder binder = result.getBinder(EXTRA_BINDER);
             if (binder == null || !binder.isBinderAlive()) throw new IllegalStateException("TokenX transport Binder unavailable");
             return binder;
         } finally {
-            provider.close();
+            am.removeContentProvider(holder.connection, true);
         }
     }
 
