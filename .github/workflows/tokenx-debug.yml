@@ -203,7 +203,26 @@ jobs:
           test -n "$FILE"
           unzip -l "$FILE" | grep -F 'assets/rish'
           unzip -l "$FILE" | grep -F 'assets/rish_shizuku.dex'
-          echo "TokenX rish + rish_shizuku.dex pair verified"
+          RISH_DEX="$(mktemp)"
+          unzip -p "$FILE" assets/rish_shizuku.dex > "$RISH_DEX"
+          for marker in \
+            'TOKENX_RISH_PROTOCOL=' \
+            'manager-classified route' \
+            'direct UID ' \
+            'routed UID '
+          do
+            strings "$RISH_DEX" | grep -F "$marker" >/dev/null || {
+              echo "::error::Bundled rish_shizuku.dex is stale; missing marker: $marker"
+              rm -f "$RISH_DEX"
+              exit 1
+            }
+          done
+          rm -f "$RISH_DEX"
+          grep -F 'TOKENX_RISH_CLIENT_VERSION=3' manager/src/main/assets/rish >/dev/null || {
+            echo "::error::Bundled rish launcher is not protocol v3"
+            exit 1
+          }
+          echo "TokenX rish protocol v3 + routed UID handoff verified in packaged assets"
 
       - name: Verify TokenX Xposed packaging
         shell: bash

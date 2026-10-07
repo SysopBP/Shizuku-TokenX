@@ -1,6 +1,6 @@
 #!/system/bin/sh
-# TokenX RISH client format 2 — prerelease
-TOKENX_RISH_CLIENT_VERSION=2
+# TokenX RISH client format 3 — routed UID handoff
+TOKENX_RISH_CLIENT_VERSION=3
 BASEDIR=$(dirname "$0")
 DEX="$BASEDIR"/rish_shizuku.dex
 

@@ -24,6 +24,8 @@ import stub.dalvik.system.VMRuntimeHidden;
 
 public class ShizukuShellLoader {
 
+    private static final int TOKENX_RISH_PROTOCOL = 3;
+
     private static String[] args;
     private static String callingPackage;
     private static Handler handler;
@@ -196,6 +198,7 @@ public class ShizukuShellLoader {
 
     public static void main(String[] args) {
         ShizukuShellLoader.args = args;
+        System.out.println("TOKENX_RISH_PROTOCOL=" + TOKENX_RISH_PROTOCOL);
 
         String packageName;
         var pkg = PackageManagerApis.getPackagesForUidNoThrow(Os.getuid());
