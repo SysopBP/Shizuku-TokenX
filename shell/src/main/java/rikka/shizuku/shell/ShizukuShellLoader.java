@@ -127,7 +127,7 @@ public class ShizukuShellLoader {
         Parcel reply = Parcel.obtain();
         try {
             data.writeInterfaceToken("moe.shizuku.server.IShizukuService");
-            if (!binder.transact(IBinder.FIRST_CALL_TRANSACTION + 1, data, reply, 0)) return -1;
+            // IShizukuService.aidl pins getUid() to transaction 3. Do not derive it from\n            // FIRST_CALL_TRANSACTION: transaction 2 is getVersion(), not getUid().\n            if (!binder.transact(3, data, reply, 0)) return -1;
             reply.readException();
             return reply.readInt();
         } catch (Throwable ignored) {
