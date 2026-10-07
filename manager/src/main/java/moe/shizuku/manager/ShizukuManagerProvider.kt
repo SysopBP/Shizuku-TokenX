@@ -13,6 +13,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import moe.shizuku.api.BinderContainer
 import moe.shizuku.manager.utils.Logger.LOGGER
+import moe.shizuku.manager.authorization.AuthorizationManager
+import moe.shizuku.manager.tokenx.transport.TokenXManagerBinderAuthority
+import moe.shizuku.manager.tokenx.transport.TokenXRendezvous
+import moe.shizuku.manager.tokenx.transport.TokenXRendezvousContract
+import moe.shizuku.manager.tokenx.transport.TokenXTransportBinder
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuApiConstants.USER_SERVICE_ARG_TOKEN
@@ -29,6 +34,8 @@ class ShizukuManagerProvider : ShizukuProvider() {
         private const val EXTRA_PACKAGE = "packageName"
         private const val EXTRA_ROUTE = "route"
 
+        @Volatile private var tokenXTransportBinder: IBinder? = null
+
         @Volatile private var rootBackendBinder: IBinder? = null
         @Volatile private var systemBackendBinder: IBinder? = null
         @Volatile private var shellBackendBinder: IBinder? = null
@@ -40,7 +47,22 @@ class ShizukuManagerProvider : ShizukuProvider() {
 
     override fun onCreate(): Boolean {
         disableAutomaticSuiInitialization()
-        return super.onCreate()
+        val created = super.onCreate()
+        if (created) {
+            val appContext = context?.applicationContext
+            if (appContext != null) {
+                val authority = TokenXManagerBinderAuthority(appContext) { packageName, uid ->
+                    runCatching { AuthorizationManager.granted(packageName, uid) }
+                        .getOrDefault(false)
+                }
+                val transport = TokenXTransportBinder(authority)
+                tokenXTransportBinder = transport
+                val snapshot = TokenXRendezvous.publish(transport)
+                LOGGER.i("TokenX transport published protocol=%d generation=%d",
+                    TokenXRendezvousContract.PROTOCOL_VERSION, snapshot.generation)
+            }
+        }
+        return created
     }
 
     private fun probeServerUid(binder: IBinder): Int = runCatching {
@@ -58,7 +80,20 @@ class ShizukuManagerProvider : ShizukuProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         if (extras == null) return null
 
-        return if (method == METHOD_GET_BACKEND_ROUTE) {
+        return if (method == TokenXRendezvousContract.METHOD_GET_TRANSPORT) {
+            val snapshot = TokenXRendezvous.snapshot()
+            val transport = tokenXTransportBinder?.takeIf { it.isBinderAlive }
+                ?: snapshot.binder?.takeIf { it.isBinderAlive }
+                ?: return Bundle().apply {
+                    putInt(TokenXRendezvousContract.EXTRA_PROTOCOL_VERSION, TokenXRendezvousContract.PROTOCOL_VERSION)
+                    putLong(TokenXRendezvousContract.EXTRA_GENERATION, snapshot.generation)
+                }
+            Bundle().apply {
+                putInt(TokenXRendezvousContract.EXTRA_PROTOCOL_VERSION, TokenXRendezvousContract.PROTOCOL_VERSION)
+                putLong(TokenXRendezvousContract.EXTRA_GENERATION, snapshot.generation)
+                putBinder(TokenXRendezvousContract.EXTRA_BINDER, transport)
+            }
+        } else if (method == METHOD_GET_BACKEND_ROUTE) {
             val packageName = extras.getString(EXTRA_PACKAGE) ?: return null
             Bundle().apply { putString(EXTRA_ROUTE, ShizukuSettings.getBackendRoute(packageName)) }
         } else if (method == METHOD_SEND_BINDER) {
