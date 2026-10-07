@@ -269,6 +269,20 @@ jobs:
           echo "TokenX LSPosed _TKN system_server backend verified; retired backends absent"
           rm -f "$DEX_STRINGS"
 
+          # Explicit rish backend requests must be session-gated; never regress to
+          # handing a privileged Binder to an unauthorised broadcast requester.
+          grep -F 'AuthorizationManager.granted(packageName, packageUid)' \
+            manager/src/main/java/moe/shizuku/manager/shell/ShellBinderRequestHandler.kt >/dev/null || {
+              echo "::error::TokenX rish authorization/session gate missing"
+              exit 1
+            }
+          grep -F 'TokenXSessionRegistry.register(binder, packageName, sessionBackend)' \
+            manager/src/main/java/moe/shizuku/manager/shell/ShellBinderRequestHandler.kt >/dev/null || {
+              echo "::error::TokenX rish session registration missing"
+              exit 1
+            }
+          echo "TokenX explicit rish backend session gate verified"
+
       - name: Collect APK
         id: apk
         shell: bash
