@@ -105,6 +105,7 @@ import moe.shizuku.manager.tokenx.TokenXBackend
 import moe.shizuku.manager.tokenx.TokenXSessionRegistry
 import moe.shizuku.manager.tokenx.transport.TokenXBinderProtocol
 import moe.shizuku.manager.tokenx.transport.TokenXRendezvous
+import moe.shizuku.manager.tokenx.transport.TokenXWatchdog
 import moe.shizuku.manager.start.StartFailureKind
 import moe.shizuku.manager.start.StartStatus
 import moe.shizuku.manager.start.StartStatusReporter
@@ -121,6 +122,8 @@ import moe.shizuku.manager.start.startMethodLabelRes
 import moe.shizuku.manager.starter.Starter
 import moe.shizuku.manager.starter.StarterActivity
 import moe.shizuku.manager.ui.component.ExpressiveCard
+import moe.shizuku.manager.ui.component.TokenXGlassCard
+import moe.shizuku.manager.ui.component.TokenXGlassButton
 import moe.shizuku.manager.ui.component.TokenXDashboard
 import moe.shizuku.manager.ui.component.SegmentedColumn
 import moe.shizuku.manager.ui.theme.LocalAmoledTheme
@@ -354,19 +357,14 @@ fun HomeScreen(bottomPadding: Dp) {
     LaunchedEffect(Unit) {
         while (true) {
             systemRishActive = ShellBinderRequestHandler.isSystemRishConnected()
-            val sessions = TokenXSessionRegistry.snapshot()
-            rootClients = sessions.count { it.backend == TokenXBackend.ROOT }
-            systemClients = sessions.count {
-                it.backend == TokenXBackend.SYSTEM_UID ||
-                    it.backend == TokenXBackend.SYSTEM_SERVER ||
-                    it.backend == TokenXBackend.NATIVE_UID
-            }
-            shellClients = sessions.count { it.backend == TokenXBackend.SHELL }
-            val transport = TokenXRendezvous.snapshot()
-            transportAlive = transport.alive
-            transportGeneration = transport.generation
-            if (transport.alive) heartbeatTick = !heartbeatTick
-            delay(500)
+            val health = TokenXWatchdog.probe()
+            rootClients = health.root.clients
+            systemClients = health.system.clients
+            shellClients = health.shell.clients
+            transportAlive = health.transport == TokenXWatchdog.State.ONLINE
+            transportGeneration = health.generation
+            if (health.transport == TokenXWatchdog.State.ONLINE) heartbeatTick = !heartbeatTick
+            delay(1000)
         }
     }
 
@@ -749,7 +747,8 @@ fun HomeScreen(bottomPadding: Dp) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     GlobalConnectionCard(
-                        icon = Icons.Rounded.Refresh, title = "TokenX Multi-Backend Transport", uid = -1,
+                        icon = Icons.Rounded.Refresh, title = "TokenX Multi-Backend Transport", uid = null,
+                        identity = "Protocol v${TokenXBinderProtocol.VERSION} · rish_shizuku.dex",
                         online = transportAlive, available = true,
                         clients = rootClients + systemClients + shellClients,
                         heartbeatTick = heartbeatTick && transportAlive,
@@ -759,11 +758,7 @@ fun HomeScreen(bottomPadding: Dp) {
                         actionEnabled = false,
                         onAction = {}
                     )
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainer
-                    ) {
+                    TokenXGlassCard(modifier = Modifier.fillMaxWidth()) {
                         Column {
                             Row(
                                 modifier = Modifier.fillMaxWidth().clickable { transportInfoExpanded = !transportInfoExpanded }.padding(14.dp),
@@ -785,7 +780,7 @@ fun HomeScreen(bottomPadding: Dp) {
                             }
                         }
                     }
-                    OutlinedButton(
+                    TokenXGlassButton(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { transportStatsExpanded = !transportStatsExpanded }
                     ) {
@@ -794,11 +789,7 @@ fun HomeScreen(bottomPadding: Dp) {
                         Text(if (transportStatsExpanded) "Hide transport stats" else "Check Transport Stats")
                     }
                     if (transportStatsExpanded) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(18.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh
-                        ) {
+                        TokenXGlassCard(modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text("TOKENX TRANSPORT STATS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text("Client: rish_shizuku.dex · TokenXTransportClient")
@@ -1051,9 +1042,10 @@ private fun HomeSectionHeader(title: String, subtitle: String) {
 
 @Composable
 private fun GlobalConnectionCard(
-    icon: ImageVector, title: String, uid: Int, online: Boolean, available: Boolean,
+    icon: ImageVector, title: String, uid: Int?, online: Boolean, available: Boolean,
     clients: Int, heartbeatTick: Boolean, detail: String, command: String,
-    actionLabel: String, actionEnabled: Boolean, onAction: () -> Unit
+    actionLabel: String, actionEnabled: Boolean, onAction: () -> Unit,
+    identity: String? = null,
 ) {
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
@@ -1063,12 +1055,7 @@ private fun GlobalConnectionCard(
         animationSpec = tween(260),
         label = "backend-heartbeat"
     )
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = if (online) 2.dp else 0.dp
-    ) {
+    TokenXGlassCard(modifier = Modifier.fillMaxWidth()) {
         Column {
             Row(
                 modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(16.dp),
@@ -1085,7 +1072,10 @@ private fun GlobalConnectionCard(
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("$title · UID $uid", fontWeight = FontWeight.SemiBold)
+                        Text(if (uid != null) "$title · UID $uid" else title, fontWeight = FontWeight.SemiBold)
+                        if (identity != null) {
+                            Text(identity, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                         Spacer(Modifier.width(8.dp))
                         Surface(
                             modifier = Modifier.size(9.dp).alpha(if (online) pulseAlpha else .28f),
@@ -1120,14 +1110,12 @@ private fun GlobalConnectionCard(
                         else "Binder —  •  heartbeat —  •  $clients active clients",
                         style = MaterialTheme.typography.bodySmall
                     )
-                    Surface(
+                    TokenXGlassCard(
                         modifier = Modifier.fillMaxWidth().clickable {
                             if (ClipboardUtils.put(context, command)) {
                                 Toast.makeText(context, "Termux command copied", Toast.LENGTH_SHORT).show()
                             }
-                        },
-                        shape = RoundedCornerShape(14.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                        }
                     ) {
                         Column(Modifier.padding(12.dp)) {
                             Text("TERMUX / RISH", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1135,7 +1123,7 @@ private fun GlobalConnectionCard(
                             Text("Tap to copy", style = MaterialTheme.typography.labelSmall, color = accent)
                         }
                     }
-                    Button(modifier = Modifier.fillMaxWidth(), enabled = actionEnabled, onClick = onAction) {
+                    TokenXGlassButton(modifier = Modifier.fillMaxWidth(), enabled = actionEnabled, onClick = onAction) {
                         Text(actionLabel)
                     }
                 }

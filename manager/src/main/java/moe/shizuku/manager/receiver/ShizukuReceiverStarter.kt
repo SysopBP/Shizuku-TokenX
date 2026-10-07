@@ -19,6 +19,7 @@ import com.topjohnwu.superuser.Shell
 import moe.shizuku.manager.R
 import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.ShizukuManagerProvider
 import moe.shizuku.manager.start.StartFailureKind
 import moe.shizuku.manager.service.WatchdogGuard
 import moe.shizuku.manager.start.StartStatusReporter
@@ -147,6 +148,19 @@ object ShizukuReceiverStarter {
         if (liveUid == targetUid) {
             ShizukuSettings.setRunningStartMethod(targetMethod)
             Log.i(AppConstants.TAG, "TokenX mode switch already satisfied: UID $targetUid")
+            return
+        }
+
+        // The Xposed/System backend is independently published by TokenX. If it is already
+        // healthy, selecting System is a route selection/rebind operation, not a request to
+        // launch the legacy StarterActivity. This keeps the UID-1000 backend available
+        // without showing the manual escalation window or disturbing a live Root backend.
+        if (targetMethod == ShizukuSettings.StartMethod.SYSTEM &&
+            ShizukuManagerProvider.systemBinder()?.pingBinder() == true
+        ) {
+            ShizukuSettings.setRunningStartMethod(targetMethod)
+            StartStatusReporter.succeeded()
+            Log.i(AppConstants.TAG, "TOKENX_MODE_SWITCH: adopted existing SYSTEM UID 1000 backend silently")
             return
         }
 
