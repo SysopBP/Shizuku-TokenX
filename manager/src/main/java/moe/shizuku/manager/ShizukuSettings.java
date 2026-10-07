@@ -142,19 +142,21 @@ public class ShizukuSettings {
     }
 
     /** Per-client TokenX backend routing. Root remains the fail-safe default. */
+    public static final String BACKEND_DEFAULT = "default";
     public static final String BACKEND_ROOT = "root";
     public static final String BACKEND_SYSTEM = "system";
     public static final String BACKEND_SHELL = "shell";
     private static final String KEY_BACKEND_ROUTE_PREFIX = "backend_route:";
 
     public static String getBackendRoute(@NonNull String packageName) {
-        return getPreferences().getString(KEY_BACKEND_ROUTE_PREFIX + packageName, BACKEND_ROOT);
+        return getPreferences().getString(KEY_BACKEND_ROUTE_PREFIX + packageName, BACKEND_DEFAULT);
     }
 
     public static void setBackendRoute(@NonNull String packageName, @NonNull String route) {
         String safe = BACKEND_SYSTEM.equals(route) ? BACKEND_SYSTEM
                 : BACKEND_SHELL.equals(route) ? BACKEND_SHELL
-                : BACKEND_ROOT;
+                : BACKEND_ROOT.equals(route) ? BACKEND_ROOT
+                : BACKEND_DEFAULT;
         getPreferences().edit().putString(KEY_BACKEND_ROUTE_PREFIX + packageName, safe).apply();
     }
 
