@@ -8,9 +8,7 @@ import moe.shizuku.manager.utils.Logger.LOGGER
 import moe.shizuku.manager.ShizukuManagerProvider
 import moe.shizuku.manager.tokenx.TokenXBackend
 import moe.shizuku.manager.tokenx.TokenXSessionRegistry
-import moe.shizuku.manager.tokenx.TokenXXposedSystemServerClient
 import moe.shizuku.manager.tokenx.transport.TokenXRendezvous
-import moe.shizuku.manager.authorization.AuthorizationManager
 import rikka.shizuku.Shizuku
 
 object ShellBinderRequestHandler {
@@ -90,24 +88,14 @@ object ShellBinderRequestHandler {
                 ?: intent.`package`
                 ?: "rish"
 
-            val localPackageUid = runCatching {
-                context.packageManager.getApplicationInfo(packageName, 0).uid
-            }.getOrDefault(-1)
-            val packageUid = if (localPackageUid >= 0) {
-                localPackageUid
-            } else {
-                TokenXXposedSystemServerClient.packageUid(packageName)
-            }
-            val authorized = sessionBackend == null || (
-                packageUid >= 0 &&
-                    runCatching { AuthorizationManager.granted(packageName, packageUid) }
-                        .getOrDefault(false)
-            )
-            if (sessionBackend != null && !authorized) {
-                LOGGER.w("TokenX rish session denied backend=%s package=%s uid=%d",
-                    sessionBackend.name, packageName, packageUid)
-                return false
-            }
+            // Do not add a second manager-side authorization gate here. The returned
+            // Shizuku backend Binder performs the canonical package/UID permission check
+            // itself. The extra TokenX gate caused valid Termux clients to be dropped
+            // without a callback, which surfaced as a misleading five-second timeout for
+            // --root/--system while the default route remained healthy.
+            //
+            // Explicit routing is still constrained to a live, selected backend above,
+            // and the client verifies the backend UID before opening Shell.
 
             val session = if (shizukuBinder != null && sessionBackend != null) {
                 TokenXSessionRegistry.register(binder, packageName, sessionBackend)
