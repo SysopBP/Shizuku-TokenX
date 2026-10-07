@@ -34,12 +34,14 @@ import moe.shizuku.manager.starter.Starter
 import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.manager.utils.SettingsPage
 import moe.shizuku.manager.utils.ShizukuStateMachine
+import moe.shizuku.manager.tokenx.transport.TokenXWatchdog
 import java.util.concurrent.atomic.AtomicBoolean
 
 class WatchdogService : Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var pendingRestart = false
+    private var tokenXHealthLoopStarted = false
 
     /** Set while the user owes a notification that an outage is over. */
     @Volatile
@@ -214,6 +216,18 @@ class WatchdogService : Service() {
         }
     }
 
+    private fun startTokenXHealthLoop() {
+        if (tokenXHealthLoopStarted) return
+        tokenXHealthLoopStarted = true
+        serviceScope.launch {
+            while (true) {
+                val health = TokenXWatchdog.probe()
+                Log.d(TAG, "TokenX health transport=${health.transport} generation=${health.generation} root=${health.root.state} system=${health.system.state} shell=${health.shell.state}")
+                delay(TOKENX_HEARTBEAT_MS)
+            }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         isRunning.set(true)
@@ -249,6 +263,7 @@ class WatchdogService : Service() {
             )
         }
         checkServerAndRestartIfDead()
+        startTokenXHealthLoop()
         return START_STICKY
     }
 
@@ -395,6 +410,7 @@ class WatchdogService : Service() {
     companion object {
         private const val TAG = "ShizukuWatchdog"
         private const val BINDER_GRACE_MS = 3000L
+        private const val TOKENX_HEARTBEAT_MS = 5_000L
         private const val IN_FLIGHT_GRACE_MS = 90_000L
 
         /** Long enough for a wireless start to have got somewhere, short enough to be news. */
