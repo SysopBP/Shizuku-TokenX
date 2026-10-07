@@ -6,7 +6,7 @@
 
 ### Shizuku-compatible multi-backend privilege engine for Android
 
-**v14.1.0-TKN · Active development**
+**v14.2.0-TKN-preview.1 · Preview**
 
 **System / UID 1000 · Root / UID 0 · Shell / UID 2000**
 
@@ -17,6 +17,10 @@
 
 > [!IMPORTANT]
 > **Read the README before installing or updating Shizuku-TokenX.** Root / UID 0 requires a working root solution. System / UID 1000 uses TokenX's LSPosed `_TKN` system_server RPC and the manager-owned TokenX transport. The current System path does **not** require the legacy Serv.apk/UID-1000 package bridge.
+
+## Preview status
+
+This is a **preview build** intended for device testing before beta/stable. Root, System, and Shell routing are being validated independently; do not treat a successful System route as proof that Root or Shell has also been tested on the same boot. The packaged rish client uses **TokenX RISH protocol v3** with manager-classified backend identity.
 
 ## Shizuku-TokenX at a glance
 
