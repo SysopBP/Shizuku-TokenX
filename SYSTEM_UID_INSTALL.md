@@ -7,7 +7,7 @@ This document describes the current TokenX System Server architecture.
 TokenX uses three distinct privilege paths:
 
 - **Root / UID 0** — Shizuku started through KernelSU/root.
-- **System Server / UID 1000** — the TokenX LSPosed module installs the private **_TKN Binder RPC** inside Android's real `system_server`.
+- **System Server / UID 1000** — the TokenX LSPosed module installs the private **_TKN Binder RPC** inside Android's real `system_server`; the manager-owned TokenX transport exposes authorized UID-1000 sessions to the new packaged client.
 - **Shell / UID 2000** — standard Shizuku ADB/wireless fallback.
 
 The System Server path is considered verified only when the live _TKN RPC reports:
@@ -23,14 +23,14 @@ A package merely having UID 1000 is not sufficient proof of system_server execut
 1. A working TokenX installation.
 2. KernelSU or the compatible root configuration used by the device.
 3. LSPosed with the TokenX module enabled for **system_server**.
-4. Kiosk D2 Guardian and its TokenX D2 module only when the protected D2 startup boundary is desired.
+4. Kiosk D2 Guardian only when the protected D2 startup boundary is desired. D2 is optional to TokenX's System transport.
 
 ## Installation
 
 1. Confirm root is working and grant TokenX superuser access.
 2. Install/update TokenX.
 3. Enable the TokenX LSPosed module for system_server.
-4. If using Kiosk D2 Guardian, install the current TokenX D2 KernelSU module and reboot.
+4. If using Kiosk D2 Guardian, keep its supported D2 gate integration enabled and reboot when that integration requires it.
 5. Open TokenX and run **Check System Integration**.
 6. Verify **System Server RPC** reports the _TKN identity as UID 1000 / system_server.
 7. Verify Root/Shizuku independently reports UID 0 when Root mode is selected.
@@ -39,11 +39,19 @@ A package merely having UID 1000 is not sufficient proof of system_server execut
 
 D2 is optional. When installed, its gate protects TokenX startup so privileged integration does not intentionally race ahead of the D2 lock screen. After reboot, allow the D2 lock screen to appear normally, unlock it, then verify TokenX recovery.
 
-## rish
+## rish and the new TokenX client
 
-Interactive rish is deliberately kept outside Android's persistent system_server process. The _TKN RPC is for narrowly scoped framework integration, not for hosting an interactive terminal.
+`rish_shizuku.dex` contains `rikka.shizuku.shell.TokenXTransportClient`, the current multi-backend TokenX client. The launcher selects the requested backend and the transport verifies the UID returned by the session:
 
-On the tested Android 17 configuration, the isolated system worker may report UID 1000 while remaining outside `u:r:system_server:s0`. This is intentional and distinct from the verified _TKN framework identity.
+```text
+rish --root              -> Root session / UID 0
+rish --system            -> System session / UID 1000
+rish --sserver           -> legacy alias for --system
+rish --shell             -> Shell session / UID 2000
+TOKENX_RISH_BACKEND=...  -> explicit backend selector
+```
+
+The client talks to the manager-owned TokenX transport. Interactive rish remains outside Android's persistent `system_server`; the `_TKN` RPC provides the verified framework rendezvous rather than making the terminal process itself `u:r:system_server:s0`.
 
 ## Verification
 
@@ -54,6 +62,10 @@ Use the in-app **Check System Integration** and **Verify System Server** control
 - System Server identity: UID 1000, process system_server, SELinux u:r:system_server:s0.
 - Root/Shizuku UID 0 available when Root mode is active.
 - Shell UID 2000 available as fallback where configured.
+
+## Backend lifecycle
+
+Root, System and Shell are independent backend slots. Root can use normal process start/stop/restart. System uses safe start/rebind/detach semantics: TokenX must never terminate Android's real `system_server` to implement a System stop. Per-app routing can follow the global/default route or be pinned to Root, System or Shell.
 
 ## Recovery
 
@@ -79,4 +91,4 @@ TokenX authorization
         +-- Shell / ADB ----------- UID 2000
 ```
 
-The execution router chooses the least-privileged working path appropriate for a supported operation while keeping app authorization independent of backend lifecycle.
+The execution router keeps app authorization independent of backend lifecycle. The global/default route is used unless a package is explicitly pinned to Root, System, or Shell; a backend becoming available does not replace the Binder slot for another backend.
