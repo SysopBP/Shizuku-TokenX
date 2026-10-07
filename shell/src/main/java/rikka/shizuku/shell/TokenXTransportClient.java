@@ -91,7 +91,7 @@ public final class TokenXTransportClient {
             Context packageContext = systemContext.createPackageContextAsUser(
                     pkg,
                     Context.CONTEXT_IGNORE_SECURITY,
-                    UserHandle.of(Os.getuid() / 100000)
+                    new UserHandle(Os.getuid() / 100000)
             );
             Context context = new ContextWrapper(packageContext) {
                 @Override public String getOpPackageName() { return pkg; }
