@@ -2,9 +2,11 @@ package moe.shizuku.manager.tokenx.transport
 
 import android.content.Context
 import android.os.IBinder
+import android.util.Log
 import moe.shizuku.manager.ShizukuManagerProvider
 import moe.shizuku.manager.tokenx.TokenXBackend
 import moe.shizuku.manager.tokenx.TokenXSessionRegistry
+import moe.shizuku.manager.tokenx.TokenXXposedSystemServerClient
 
 class TokenXManagerBinderAuthority(
     private val context:Context,
@@ -17,11 +19,15 @@ class TokenXManagerBinderAuthority(
     override fun openSession(lifetime:IBinder,requestedBackend:Int,callerUid:Int,
         callerPid:Int,packageHint:String?):TokenXBinderSession? {
         val packageName=resolvePackage(callerUid,packageHint)?:return null
-        if(!isAuthorized(packageName,callerUid)||!backendAvailable(requestedBackend)) return null
+        val effectiveUid=resolveEffectiveUid(callerUid, packageName)
+        val authorized=isAuthorized(packageName,effectiveUid)
+        val available=backendAvailable(requestedBackend)
+        Log.i("TokenX/Transport", "session request backend=$requestedBackend package=$packageName binderUid=$callerUid effectiveUid=$effectiveUid authorized=$authorized available=$available")
+        if(!authorized||!available) return null
         val backend=requestedBackend.toBackend()?:return null
         val registered=TokenXSessionRegistry.register(lifetime,packageName,backend)?:return null
         val wire=TokenXBinderSession(registered.id,requestedBackend,
-            TokenXBinderProtocol.expectedUid(requestedBackend),callerUid,callerPid,packageName)
+            TokenXBinderProtocol.expectedUid(requestedBackend),effectiveUid,callerPid,packageName)
         synchronized(lock){sessions[wire.id]=Owned(wire,lifetime)}
         return wire
     }
@@ -38,6 +44,12 @@ class TokenXManagerBinderAuthority(
         if(owned.wire.callerUid!=callerUid||owned.wire.callerPid!=callerPid)return false
         synchronized(lock){sessions.remove(sessionId)}
         return TokenXSessionRegistry.remove(owned.lifetime)!=null
+    }
+    private fun resolveEffectiveUid(binderUid:Int, packageName:String):Int {
+        val packages=context.packageManager.getPackagesForUid(binderUid)?.distinct().orEmpty()
+        if(packageName in packages)return binderUid
+        val resolved=TokenXXposedSystemServerClient.packageUid(packageName)
+        return if(resolved>=0)resolved else binderUid
     }
     private fun resolvePackage(uid:Int,hint:String?):String? {
         val packages=context.packageManager.getPackagesForUid(uid)?.distinct().orEmpty()
