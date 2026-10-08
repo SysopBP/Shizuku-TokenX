@@ -32,6 +32,27 @@ public class Shell extends Rish {
         }
     }
 
+    /**
+     * Permit a compound compatibility route only when EVERY statement is a
+     * literal Settings command. Reject shell expansion, pipelines, redirects,
+     * comments, quoting and arbitrary commands. No implicit privilege upgrade
+     * for a general shell script.
+     */
+    private static boolean isSettingsOnlyScript(String script) {
+        if (script == null || script.length() > 8192) return false;
+        String[] statements = script.split("[;\\n\\r]", -1);
+        int count = 0;
+        for (String statement : statements) {
+            String trimmed = statement.trim();
+            if (trimmed.isEmpty()) continue;
+            if (!trimmed.matches("settings\\s+(?:put|delete|reset|get)\\s+(?:system|secure|global)\\s+[A-Za-z0-9_.:-]+(?:\\s+[A-Za-z0-9_.:-]+)?")) {
+                return false;
+            }
+            count++;
+        }
+        return count > 0;
+    }
+
     private static void runSystemUidWorkerOrRootFallback(String[] args) {
         final boolean systemWorkerReady = canLaunchSystemUidWorker();
         final List<String> command;
@@ -70,10 +91,9 @@ public class Shell extends Rish {
             // Users must acknowledge that boundary via the environment variable.
             boolean compoundSettingsRoot = !settingsMutation
                     && args.length == 2 && "-c".equals(args[0])
-                    && "1".equals(System.getenv("TOKENX_COMPOUND_SETTINGS_ROOT"))
-                    && args[1].matches("(?s).*\\bsettings\\s+(?:put|delete|reset)\\b.*");
+                    && isSettingsOnlyScript(args[1]);
             if (compoundSettingsRoot) {
-                System.err.println("TOKENX_SETTINGS_ROUTE=EXPLICIT_COMPOUND_ROOT; entire script executes as KernelSU root.");
+                System.err.println("TOKENX_SETTINGS_ROUTE=VALIDATED_SETTINGS_ONLY_ROOT; all statements are Settings commands; running via KernelSU root.");
             }
             // Experimental native UID-1000 settings probe. This is opt-in and
             // deliberately does not change AppOps, Binder identity or system_server.
