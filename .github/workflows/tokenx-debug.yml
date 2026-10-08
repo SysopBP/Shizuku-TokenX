@@ -8,6 +8,7 @@ on:
       - tokenx-recovery
       - tokenx-uid1000-cleanup
       - tokenx-native-uid1000-settings-test
+      - tokenx-build632-routing-audit
       - main
     paths:
       - 'manager/**'
