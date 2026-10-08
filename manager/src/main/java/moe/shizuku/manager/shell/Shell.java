@@ -62,7 +62,7 @@ public class Shell extends Rish {
             // the routing decision visible so a successful UID-1000 Binder
             // connection is not mistaken for successful SettingsProvider writes.
             if (!settingsMutation && args.length == 2 && "-c".equals(args[0])
-                    && args[1].matches("(?s).*\\\\bsettings\\\\s+(?:put|delete|reset)\\\\b.*")) {
+                    && args[1].matches("(?s).*\\bsettings\\s+(?:put|delete|reset)\\b.*")) {
                 System.err.println("TOKENX_SETTINGS_ROUTE=UID1000_COMPOUND_SCRIPT; individual settings mutations require separate rish -c invocations for root compatibility routing.");
             }
             // Experimental native UID-1000 settings probe. This is opt-in and
