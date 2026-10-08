@@ -65,13 +65,23 @@ public class Shell extends Rish {
                     && args[1].matches("(?s).*\\bsettings\\s+(?:put|delete|reset)\\b.*")) {
                 System.err.println("TOKENX_SETTINGS_ROUTE=UID1000_COMPOUND_SCRIPT; individual settings mutations require separate rish -c invocations for root compatibility routing.");
             }
+            // Explicit opt-in for compound scripts. Never silently escalate a
+            // general-purpose UID-1000 script: the entire script would run as root.
+            // Users must acknowledge that boundary via the environment variable.
+            boolean compoundSettingsRoot = !settingsMutation
+                    && args.length == 2 && "-c".equals(args[0])
+                    && "1".equals(System.getenv("TOKENX_COMPOUND_SETTINGS_ROOT"))
+                    && args[1].matches("(?s).*\\bsettings\\s+(?:put|delete|reset)\\b.*");
+            if (compoundSettingsRoot) {
+                System.err.println("TOKENX_SETTINGS_ROUTE=EXPLICIT_COMPOUND_ROOT; entire script executes as KernelSU root.");
+            }
             // Experimental native UID-1000 settings probe. This is opt-in and
             // deliberately does not change AppOps, Binder identity or system_server.
             // If SettingsProvider rejects the caller, the command fails as UID 1000
             // rather than silently escalating to root.
             boolean nativeSettingsProbe = settingsMutation
                     && "1".equals(System.getenv("TOKENX_NATIVE_SETTINGS_TEST"));
-            if (settingsMutation && !nativeSettingsProbe) {
+            if ((settingsMutation && !nativeSettingsProbe) || compoundSettingsRoot) {
                 command.add("su");
                 System.err.println("TokenX: Android 17 Settings mutation -> KernelSU root compatibility route.");
             } else {
