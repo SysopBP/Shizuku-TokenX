@@ -6,7 +6,7 @@
 
 ### Shizuku-compatible unified multi-backend privilege engine for Android
 
-**v14.2.0-TKN-preview.2 · Preview**
+**v14.2.0-TKN-preview.3 · Preview**
 
 **System / UID 1000 · Root / UID 0 · Shell / UID 2000 · RISH Protocol v3 · System Server RPC**
 
@@ -565,7 +565,7 @@ For System Server RPC, validation is kept separate from the interactive UID-1000
 
 ## Project status
 
-**v14.2.0-TKN-preview.2** represents the transition from a modified Shizuku manager into the TokenX multi-backend architecture. The preview line is intentionally focused on validating backend independence, persistence, transport identity, safe System lifecycle, D2-aware startup and the user-facing controls that explain those states.
+**v14.2.0-TKN-preview.3** represents the transition from a modified Shizuku manager into the TokenX multi-backend architecture. The preview line is intentionally focused on validating backend independence, persistence, transport identity, safe System lifecycle, D2-aware startup and the user-facing controls that explain those states.
 
 The project remains preview software. Device/OEM Android changes, SELinux policy, root implementation and LSPosed behavior can affect what a given backend is allowed to do.
 
