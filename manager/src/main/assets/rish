@@ -1,36 +1,6 @@
 #!/system/bin/sh
-# TokenX RISH client format 3 — routed UID handoff
-TOKENX_RISH_CLIENT_VERSION=3
 BASEDIR=$(dirname "$0")
 DEX="$BASEDIR"/rish_shizuku.dex
-
-# TokenX rish backend selector.
-#   ./rish                 -> normal/default Shizuku route
-#   ./rish --system [CMD]  -> TokenX System Server bridge (uid 1000)
-#   ./rish --sserver [CMD] -> legacy alias for --system
-#   ./rish --root [CMD]    -> TokenX/Shizuku Root backend (uid 0)
-#   ./rish --shell [CMD]   -> Shizuku Shell backend (uid 2000)
-#
-# Sserver is deliberately command mode rather than an interactive PTY: Android's persistent
-# system_server must never host an arbitrary interactive shell. The command is handed to the
-# dedicated TokenX Binder worker instead.
-# TOKENX_RISH_BACKEND may also be supplied directly by automation/Termux.
-case "$1" in
-  --root)
-    shift
-    export TOKENX_RISH_BACKEND=root
-    ;;
-  --system|--sserver)
-    shift
-    # Selector consumed here; empty argv opens the interactive remote shell.
-    # The exported rish dex contains the TokenX multi-backend transport client.
-    export TOKENX_RISH_BACKEND=system
-    ;;
-  --shell|--shizuku)
-    shift
-    export TOKENX_RISH_BACKEND=shell
-    ;;
-esac
 
 if [ ! -f "$DEX" ]; then
   echo "Cannot find $DEX, please check the tutorial in Shizuku app"
@@ -38,13 +8,13 @@ if [ ! -f "$DEX" ]; then
 fi
 
 if [ $(getprop ro.build.version.sdk) -ge 34 ]; then
-  if [ -w "$DEX" ]; then
+  if [ -w $DEX ]; then
     echo "On Android 14+, app_process cannot load writable dex."
     echo "Attempting to remove the write permission..."
-    chmod 400 "$DEX"
-    if [ -w "$DEX" ]; then
+    chmod 400 $DEX
+    if [ -w $DEX ]; then
       echo "Cannot remove the write permission of $DEX."
-      echo "Copy it to the terminal app's private directory so write permission can be removed."
+      echo "You can copy to file to terminal app's private directory (/data/data/<package>, so that remove write permission is possible"
       exit 1
     else
       echo "Write permission was removed successfully."
@@ -52,6 +22,22 @@ if [ $(getprop ro.build.version.sdk) -ge 34 ]; then
   fi
 fi
 
-[ -z "$RISH_APPLICATION_ID" ] && export RISH_APPLICATION_ID="com.termux"
-[ -z "$MANAGER_APPLICATION_ID" ] && export MANAGER_APPLICATION_ID="moe.shizuku.privileged.api"
+# Replace "PKG" with the application id of your terminal app and "MANAGER_PKG" with the application id of Shizuku
+[ -z "$RISH_APPLICATION_ID" ] && export RISH_APPLICATION_ID="PKG" && export MANAGER_APPLICATION_ID="MANAGER_PKG"
+# TokenX per-session backend override. Consume the selector here so it never reaches /system/bin/sh.
+case "$1" in
+  --system)
+    export TOKENX_RISH_BACKEND="system"
+    shift
+    ;;
+  --root)
+    export TOKENX_RISH_BACKEND="root"
+    shift
+    ;;
+  --shell)
+    export TOKENX_RISH_BACKEND="shell"
+    shift
+    ;;
+esac
+
 /system/bin/app_process -Djava.class.path="$DEX" /system/bin --nice-name=rish rikka.shizuku.shell.ShizukuShellLoader "$@"
