@@ -54,14 +54,14 @@ A package running as UID 1000 is not, by itself, proof that code is executing in
 
 The optional KernelSU module provides the current System / UID 1000 path.
 
-The bridge provisions and verifies the TokenX system companion, tracks boot and migration state, and exposes health information to the manager. The current bridge design uses `Serv.apk` as the system companion and keeps legacy DEX handling isolated from the active path.
+The current v0.25.4 bridge uses `TokenX-BridgeTest.apk` (`com.tokenx.bridgetest`) and `IdentityService`. The earlier `Serv.apk` / `com.vikram.exp` companion belongs to the legacy architecture and is **not bundled or uninstalled** by this module. The current module also removes FOTA entirely: no FOTA payload, mount, provisioning, boot gate, verification, or uninstall action. Existing FOTA installations on the device are left unchanged.
 
 Current bridge behavior includes:
 
 - UID 1000 provisioning and verification.
 - System-server bridge health reporting.
 - D2-safe startup gating.
-- Legacy `com.vikram.shell` guard/migration.
+- Legacy `Serv.apk` / `com.vikram.exp` architecture documented separately; no legacy service removal by this module.
 - Module-local boot, provisioning, migration, and verification diagnostics.
 - Safe recovery when the privileged backend is temporarily unavailable.
 
@@ -108,7 +108,7 @@ The exact operations available still depend on Android's permission and SELinux 
 
 ## Systemless mounting
 
-The current **TokenX System Server Bridge** setup uses [Meta Magic Mount RS](https://github.com/Tools-cx-app/meta-magic_mount-rs) as its systemless mount layer with KernelSU.
+The current **TokenX BridgeTest System Server Bridge (v0.25.4, FOTA-free)** setup uses [Meta Magic Mount RS](https://github.com/Tools-cx-app/meta-magic_mount-rs) as its systemless mount layer with KernelSU.
 
 Meta Magic Mount RS is a separate project and is not bundled as TokenX source. Install and maintain the required metamodule according to its own documentation.
 
@@ -153,9 +153,19 @@ The manager keeps the Shizuku package/API compatibility expected by Shizuku clie
 
 ### System UID backend
 
-The System Server Bridge is a separate privileged/root component. See [SYSTEM_UID_INSTALL.md](SYSTEM_UID_INSTALL.md) for the repository's System UID installation and verification notes.
+The System Server Bridge is a separate privileged/root component. For installation, flash the matching KernelSU BridgeTest module through KernelSU Manager, reboot, allow D2 Guardian to unlock if installed, and verify the module's `state`, `tokenx-verify.log`, and live TokenX IdentityService connection. Package UID 1000 alone does not establish live `system_server` RPC attachment.
 
 Do not treat the manager APK alone as the System Server Bridge.
+
+## Bridge services and safe recovery
+
+- `service.sh` waits for boot completion and the optional fail-closed D2 unlock gate before provisioning.
+- `bin/provision-all.sh` registers the BridgeTest system companion if missing.
+- `bin/verify.sh` checks appId 1000 and `android.uid.system/1000`; this proves package identity, not in-process execution.
+- `IdentityService` and the TokenX client must independently verify the live framework-side PID, UID, SELinux domain, and process identity.
+- One delayed reprovision attempt is permitted if the bridge package disappears. Never kill Android's persistent `system_server` as part of normal start/stop.
+- The TKN DEX fallback is considered only after strict package verification fails.
+- FOTA is not required or managed by the current module.
 
 ## Diagnostics
 
@@ -215,6 +225,7 @@ TokenX stands on several projects and contributions:
 - **[thedjchi](https://github.com/thedjchi/Shizuku)** — the Shizuku fork this project was originally based on and the features inherited from it.
 - **[@Vikramaditya015](https://github.com/Vikramaditya015)** — **System Server contribution** used in the development of TokenX's System Server work.
 - **[Meta Magic Mount RS](https://github.com/Tools-cx-app/meta-magic_mount-rs)** — systemless Magic Mount layer used by the current TokenX System Server Bridge setup.
+- **wreckless** and **rackah** — testing and feedback.
 - Everyone who contributed to upstream Shizuku and its forks, plus the translators and testers who continue to help validate TokenX.
 
 ## License
