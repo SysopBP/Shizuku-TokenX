@@ -34,6 +34,10 @@ case "$1" in
     export TOKENX_RISH_BACKEND="root"
     shift
     ;;
+  --shell)
+    export TOKENX_RISH_BACKEND="shell"
+    shift
+    ;;
 esac
 
 /system/bin/app_process -Djava.class.path="$DEX" /system/bin --nice-name=rish rikka.shizuku.shell.ShizukuShellLoader "$@"
