@@ -1,6 +1,6 @@
 # Changelog
 
-## 14.2.0-TKN-preview.1
+## 14.2.0-TKN-preview.2
 
 ### Preview highlights
 
@@ -24,7 +24,7 @@
 
 ### Known preview validation
 
-The System route has previously demonstrated UID-1000 execution through the default direct-binder path. The explicit `--system` protocol-v3 handoff has now been corrected to consume the manager-classified routed UID and requires final physical-device confirmation before publishing the GitHub Preview release.
+The explicit `--system` TokenX RISH protocol-v3 route has now been physically verified on the Android 17 test device: the request is classified as `backend=system`, attaches to the `SYSTEM_SERVER` backend, and returns UID 1000 with `SYSTEM_OK`. The explicit `--root` route has also been physically verified to return UID 0 with `ROOT_OK`, while Root and System remain independent backends.
 
 Root, System, and Shell are independent routes. A pass on one backend does not imply the others are active or tested on the same boot.
 
