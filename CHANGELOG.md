@@ -12,7 +12,7 @@
 - D2-aware startup boundary when Kiosk D2 Guardian is installed.
 - Independent backend lifecycle model: Root can start/stop/restart; System uses safe start/rebind/detach semantics and must never terminate `system_server`.
 - Persistent app authorization and per-app backend routing.
-- TokenX Control Center, diagnostics, Root Console, Shell, App Ops, Firewall, Autostart, appearance controls, and glass UI work.
+- TokenX Control Center, diagnostics, Root Console, Shell, App Ops, Firewall, Autostart, and the new **MIUIX + Material theme capability**, alongside TokenX glass/floating appearance controls.
 - Protocol/client packaging checks and retired-backend guards in CI.
 
 ### Preview safeguards
