@@ -46,9 +46,18 @@ public class Shell extends Rish {
              * route for those mutations; keep every other command on the build-173
              * UID-1000 worker.
              */
+            // RISH normally passes shell commands as ["-c", "settings put ..."].
+            // Match that form as well as direct argv. Never treat a general shell
+            // script as safe to rewrite: only a single, leading settings command
+            // is eligible for the documented Root compatibility route.
             boolean settingsMutation = args.length > 1
                     && "settings".equals(args[0])
                     && ("put".equals(args[1]) || "delete".equals(args[1]) || "reset".equals(args[1]));
+            if (!settingsMutation && args.length == 2 && "-c".equals(args[0])) {
+                String shellCommand = args[1].trim();
+                settingsMutation = shellCommand.matches(
+                        "(?s)^settings\\s+(?:put|delete|reset)\\s+[^;\\n\\r&|]+$");
+            }
             if (settingsMutation) {
                 command.add("su");
                 System.err.println("TokenX: Android 17 Settings mutation -> KernelSU root compatibility route.");
