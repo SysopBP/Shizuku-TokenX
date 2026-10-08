@@ -69,6 +69,7 @@ public class Shell extends Rish {
                 && !args[1].matches("(?s).*\\bsettings\\s+(?:put|delete|reset)\\b.*");
         final boolean nativeProbe = settingsMutation
                 && "1".equals(System.getenv("TOKENX_NATIVE_SETTINGS_TEST"));
+        // Build 633 compatibility audit: explicit opt-in is required for UID-0 settings writes.
         final boolean rootMutation = settingsMutation && !nativeProbe
                 && "1".equals(System.getenv("TOKENX_ALLOW_ROOT_SETTINGS_COMPAT"));
         // Only explicitly classified settings mutations may use the root compatibility
