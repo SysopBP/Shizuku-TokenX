@@ -16,8 +16,10 @@ if [ "$action" != put ] && [ "$#" -ne 3 ]; then echo "Unexpected value" >&2; exi
 echo "TOKENX_SETTINGS_ROUTE=EXPLICIT_ROOT_COMPAT" >&2
 echo "TOKENX_NATIVE_UID1000_SETTINGS_WRITE=false" >&2
 if [ "$action" = put ]; then
-  # Avoid shell interpolation of caller-controlled values.
-  su -c 'exec settings put "$1" "$2" "$3"' -- "$namespace" "$key" "$4"
+  case "$4" in
+    ''|*[!a-zA-Z0-9_.-]*) echo "Value must be a simple diagnostic token" >&2; exit 64;;
+  esac
+  su -c "settings put $namespace $key $4"
 else
-  su -c 'exec settings "$1" "$2" "$3"' -- "$action" "$namespace" "$key"
+  su -c "settings $action $namespace $key"
 fi
