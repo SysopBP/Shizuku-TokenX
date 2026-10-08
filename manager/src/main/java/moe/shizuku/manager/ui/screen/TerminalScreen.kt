@@ -1,6 +1,7 @@
 package moe.shizuku.manager.ui.screen
 
 import android.content.Context
+import android.widget.Toast
 import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -43,7 +44,7 @@ fun TerminalScreen(onBack: () -> Unit) {
     val context = LocalContext.current
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { tree ->
-        if (tree != null) writeRish(context, tree)
+        if (tree != null) Toast.makeText(context, writeRish(context, tree), Toast.LENGTH_LONG).show()
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -61,6 +62,7 @@ fun TerminalScreen(onBack: () -> Unit) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
+            // The export action uses the matching launcher and DEX bundled in the installed APK.
             // What rish is lives on the settings row; the screen goes straight to
             // the steps.
             item {
@@ -145,7 +147,12 @@ fun TerminalScreen(onBack: () -> Unit) {
     }
 }
 
-private fun writeRish(context: Context, tree: Uri) {
+private fun writeRish(context: Context, tree: Uri): String {
+    // Confirm the installed APK has both matching assets before touching exported files.
+    val available = listOf(SH_NAME, DEX_NAME).all { name ->
+        runCatching { context.assets.open(name).use { it.read() >= 0 } }.getOrDefault(false)
+    }
+    if (!available) return "Export unavailable: matching RISH or DEX missing from this APK"
     val cr = context.contentResolver
     val doc = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
     val child = DocumentsContract.buildChildDocumentsUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
@@ -174,6 +181,7 @@ private fun writeRish(context: Context, tree: Uri) {
         }
     }
 
+    var exported = 0
     fun writeToDocument(name: String) {
         runCatching {
             val created = DocumentsContract.createDocument(cr, doc, "application/octet-stream", name) ?: return
@@ -188,9 +196,11 @@ private fun writeRish(context: Context, tree: Uri) {
                     }
                 }
             }
+            exported++
         }
     }
 
     writeToDocument(SH_NAME)
     writeToDocument(DEX_NAME)
+    return if (exported == 2) "Exported matching rish and rish_shizuku.dex from installed TokenX" else "Export incomplete: $exported of 2 files written"
 }
