@@ -9,6 +9,7 @@ on:
       - tokenx-uid1000-cleanup
       - tokenx-native-uid1000-settings-test
       - tokenx-build632-routing-audit
+      - tokenx-build633-settings-attribution
       - main
     paths:
       - 'manager/**'
