@@ -17,6 +17,7 @@ import rikka.shizuku.ShizukuApiConstants;
 public class Shell extends Rish {
 
     private static final int SYSTEM_UID = 1000;
+    private static final String BUILD_ROUTE_VERSION = "634";
     private static boolean canLaunchSystemUidWorker() {
         try {
             ProcessBuilder probe = new ProcessBuilder("su", "1000", "-c", "id -u");
@@ -67,6 +68,10 @@ public class Shell extends Rish {
                 && isSettingsOnlyScript(args[1]);
         final boolean readOnlySettings = compoundSettings
                 && !args[1].matches("(?s).*\\bsettings\\s+(?:put|delete|reset)\\b.*");
+        // Build 634: a compound -c script is not a single settings mutation.
+        // Report this explicitly so tests do not mistake UID 1000 for an
+        // AppOps-authorized SettingsProvider write.
+        final boolean compoundMutation = compoundSettings && !readOnlySettings;
         final boolean nativeProbe = settingsMutation
                 && "1".equals(System.getenv("TOKENX_NATIVE_SETTINGS_TEST"));
         // Build 633 compatibility audit: explicit opt-in is required for UID-0 settings writes.
@@ -94,9 +99,17 @@ public class Shell extends Rish {
             System.err.println("TOKENX_SETTINGS_ROUTE=" + (readOnlySettings
                     ? "UID1000_READ_ONLY" : (nativeProbe ? "UID1000_NATIVE_PROBE" : "UID1000")));
         }
+        System.err.println("TOKENX_ROUTE_BUILD=" + BUILD_ROUTE_VERSION);
+        if (compoundMutation) {
+            System.err.println("TOKENX_SETTINGS_COMPOUND=UID1000_NO_ROOT_FALLBACK");
+            System.err.println("TOKENX_SETTINGS_ATTRIBUTION=UNVERIFIED");
+        }
         System.err.println("TOKENX_SELECTED_BACKEND=SYSTEM_SERVER");
         System.err.println("TOKENX_EXECUTION_UID=" + (rootMutation ? "0" : "1000"));
-        if (!rootMutation && settingsMutation) System.err.println("TOKENX_NATIVE_UID1000_SETTINGS_WRITE=UNVERIFIED");
+        if (!rootMutation && (settingsMutation || compoundMutation)) {
+            System.err.println("TOKENX_NATIVE_UID1000_SETTINGS_WRITE=UNVERIFIED");
+            System.err.println("TOKENX_SETTINGS_WARNING=UID1000_DOES_NOT_GUARANTEE_APPOPS_ATTRIBUTION");
+        }
         System.err.println("TokenX: launching isolated shell worker outside system_server.");
         command.addAll(Arrays.asList(args));
         System.err.flush();
