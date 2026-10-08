@@ -7,6 +7,7 @@ on:
       - tokenx-dev
       - tokenx-recovery
       - tokenx-uid1000-cleanup
+      - tokenx-native-uid1000-settings-test
       - main
     paths:
       - 'manager/**'
