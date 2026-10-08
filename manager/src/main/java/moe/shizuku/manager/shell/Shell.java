@@ -17,7 +17,7 @@ import rikka.shizuku.ShizukuApiConstants;
 public class Shell extends Rish {
 
     private static final int SYSTEM_UID = 1000;
-    private static final String BUILD_ROUTE_VERSION = "634";
+    private static final String BUILD_ROUTE_VERSION = "637";
     private static boolean canLaunchSystemUidWorker() {
         try {
             ProcessBuilder probe = new ProcessBuilder("su", "1000", "-c", "id -u");
@@ -68,13 +68,13 @@ public class Shell extends Rish {
                 && isSettingsOnlyScript(args[1]);
         final boolean readOnlySettings = compoundSettings
                 && !args[1].matches("(?s).*\\bsettings\\s+(?:put|delete|reset)\\b.*");
-        // Build 634: a compound -c script is not a single settings mutation.
+        // Build 637: a compound -c script is not a single settings mutation.
         // Report this explicitly so tests do not mistake UID 1000 for an
         // AppOps-authorized SettingsProvider write.
         final boolean compoundMutation = compoundSettings && !readOnlySettings;
         final boolean nativeProbe = settingsMutation
                 && "1".equals(System.getenv("TOKENX_NATIVE_SETTINGS_TEST"));
-        // Build 633 compatibility audit: explicit opt-in is required for UID-0 settings writes.
+        // Build 637 compatibility audit: explicit opt-in is required for UID-0 settings writes.
         final boolean rootMutation = settingsMutation && !nativeProbe
                 && "1".equals(System.getenv("TOKENX_ALLOW_ROOT_SETTINGS_COMPAT"));
         // Only explicitly classified settings mutations may use the root compatibility
@@ -103,6 +103,7 @@ public class Shell extends Rish {
         if (compoundMutation) {
             System.err.println("TOKENX_SETTINGS_COMPOUND=UID1000_NO_ROOT_FALLBACK");
             System.err.println("TOKENX_SETTINGS_ATTRIBUTION=UNVERIFIED");
+            System.err.println("TOKENX_SETTINGS_DIAGNOSTIC=APPOPS_CHECKPACKAGE_NULL_CALLER_POSSIBLE");
         }
         System.err.println("TOKENX_SELECTED_BACKEND=SYSTEM_SERVER");
         System.err.println("TOKENX_EXECUTION_UID=" + (rootMutation ? "0" : "1000"));
