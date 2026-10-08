@@ -1,6 +1,10 @@
 package moe.shizuku.manager.ui.screen
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
+import java.security.MessageDigest
+import android.widget.Toast
 import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -15,6 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,6 +28,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -41,9 +49,14 @@ private const val DEX_NAME = "rish_shizuku.dex"
 @Composable
 fun TerminalScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val status = remember { mutableStateOf("Export both files from this installed APK.") }
+    val build = remember { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "unknown" }
+    val assetHashes = remember { listOf(SH_NAME, DEX_NAME).map { name ->
+        runCatching { name + " SHA-256: " + MessageDigest.getInstance("SHA-256").digest(context.assets.open(name).use { it.readBytes() }).joinToString("") { "%02x".format(it) } }.getOrElse { "$name missing" }
+    } }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { tree ->
-        if (tree != null) writeRish(context, tree)
+        if (tree != null) { status.value = writeRish(context, tree); Toast.makeText(context, status.value, Toast.LENGTH_LONG).show() }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -61,6 +74,36 @@ fun TerminalScreen(onBack: () -> Unit) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
+            item {
+                SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
+                    item {
+                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("RISH v3 Export", style = MaterialTheme.typography.titleMedium)
+                            Text("Installed TokenX: $build", style = MaterialTheme.typography.bodyMedium)
+                            assetHashes.forEach { Text(it, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace) }
+                            Text(status.value, style = MaterialTheme.typography.bodySmall)
+                            Button(onClick = { picker.launch(null) }) { Text("Export matching RISH + DEX") }
+                            OutlinedButton(onClick = {
+                                val commands = listOf(
+                                    "termux-setup-storage",
+                                    "cd ~",
+                                    "cp /sdcard/Download/rish /sdcard/Download/rish_shizuku.dex ~/",
+                                    "chmod 700 ~/rish",
+                                    "chmod 400 ~/rish_shizuku.dex",
+                                    "export RISH_APPLICATION_ID=com.termux",
+                                    "./rish --root -c 'id; echo ROOT_OK'",
+                                    "./rish --system -c 'id; echo SYSTEM_OK'",
+                                    "./rish --shell -c 'id; echo SHELL_OK'"
+                                ).joinToString("\n")
+                                (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+                                    .setPrimaryClip(ClipData.newPlainText("TokenX Termux commands", commands))
+                                Toast.makeText(context, "Termux commands copied. Export to Download first.", Toast.LENGTH_LONG).show()
+                            }) { Text("Copy Termux setup and tests") }
+                        }
+                    }
+                }
+            }
+            // The export action uses the matching launcher and DEX bundled in the installed APK.
             // What rish is lives on the settings row; the screen goes straight to
             // the steps.
             item {
@@ -145,7 +188,12 @@ fun TerminalScreen(onBack: () -> Unit) {
     }
 }
 
-private fun writeRish(context: Context, tree: Uri) {
+private fun writeRish(context: Context, tree: Uri): String {
+    // Confirm the installed APK has both matching assets before touching exported files.
+    val available = listOf(SH_NAME, DEX_NAME).all { name ->
+        runCatching { context.assets.open(name).use { it.read() >= 0 } }.getOrDefault(false)
+    }
+    if (!available) return "Export unavailable: matching RISH or DEX missing from this APK"
     val cr = context.contentResolver
     val doc = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
     val child = DocumentsContract.buildChildDocumentsUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
@@ -174,6 +222,7 @@ private fun writeRish(context: Context, tree: Uri) {
         }
     }
 
+    var exported = 0
     fun writeToDocument(name: String) {
         runCatching {
             val created = DocumentsContract.createDocument(cr, doc, "application/octet-stream", name) ?: return
@@ -188,9 +237,11 @@ private fun writeRish(context: Context, tree: Uri) {
                     }
                 }
             }
+            exported++
         }
     }
 
     writeToDocument(SH_NAME)
     writeToDocument(DEX_NAME)
+    return if (exported == 2) "Exported matching rish and rish_shizuku.dex from installed TokenX" else "Export incomplete: $exported of 2 files written"
 }
