@@ -55,80 +55,51 @@ public class Shell extends Rish {
 
     private static void runSystemUidWorkerOrRootFallback(String[] args) {
         final boolean systemWorkerReady = canLaunchSystemUidWorker();
-        final List<String> command;
-
-        System.err.println("TokenX: DIRECT BINDER connected to System Server backend (UID 1000).");
-        if (systemWorkerReady) {
-            command = new ArrayList<>();
-            /*
-             * Android 17 SettingsProvider accepts UID-1000 reads but rejects mutating
-             * settings shell calls because the isolated worker has no ContentProvider
-             * calling-package attribution. Root is the verified safe compatibility
-             * route for those mutations; keep every other command on the build-173
-             * UID-1000 worker.
-             */
-            // RISH normally passes shell commands as ["-c", "settings put ..."].
-            // Match that form as well as direct argv. Never treat a general shell
-            // script as safe to rewrite: only a single, leading settings command
-            // is eligible for the documented Root compatibility route.
-            boolean settingsMutation = args.length > 1
-                    && "settings".equals(args[0])
-                    && ("put".equals(args[1]) || "delete".equals(args[1]) || "reset".equals(args[1]));
-            if (!settingsMutation && args.length == 2 && "-c".equals(args[0])) {
-                String shellCommand = args[1].trim();
-                settingsMutation = shellCommand.matches(
-                        "(?s)^settings\\s+(?:put|delete|reset)\\s+[^;\\n\\r&|]+$");
-            }
-            // A compound -c script is intentionally NOT rewritten to root. Make
-            // the routing decision visible so a successful UID-1000 Binder
-            // connection is not mistaken for successful SettingsProvider writes.
-            if (!settingsMutation && args.length == 2 && "-c".equals(args[0])
-                    && args[1].matches("(?s).*\\bsettings\\s+(?:put|delete|reset)\\b.*")) {
-                System.err.println("TOKENX_SETTINGS_ROUTE=UID1000_COMPOUND_SCRIPT; individual settings mutations require separate rish -c invocations for root compatibility routing.");
-            }
-            // Explicit opt-in for compound scripts. Never silently escalate a
-            // general-purpose UID-1000 script: the entire script would run as root.
-            // Users must acknowledge that boundary via the environment variable.
-            boolean compoundSettingsRoot = !settingsMutation
-                    && args.length == 2 && "-c".equals(args[0])
-                    && isSettingsOnlyScript(args[1]);
-            if (compoundSettingsRoot) {
-                System.err.println("TOKENX_SETTINGS_ROUTE=VALIDATED_SETTINGS_ONLY_ROOT; all statements are Settings commands; running via KernelSU root.");
-            }
-            // Experimental native UID-1000 settings probe. This is opt-in and
-            // deliberately does not change AppOps, Binder identity or system_server.
-            // If SettingsProvider rejects the caller, the command fails as UID 1000
-            // rather than silently escalating to root.
-            boolean nativeSettingsProbe = settingsMutation
-                    && "1".equals(System.getenv("TOKENX_NATIVE_SETTINGS_TEST"));
-            if ((settingsMutation && !nativeSettingsProbe) || compoundSettingsRoot) {
-                command.add("su");
-                System.err.println("TokenX: Android 17 Settings mutation -> KernelSU root compatibility route.");
-            } else {
-                command.add("su");
-                command.add("1000");
-                if (nativeSettingsProbe) {
-                    System.err.println("TokenX: EXPERIMENTAL native UID-1000 settings test (no root fallback); AppOps may reject the mutation.");
-                }
-                System.err.println("TokenX: launching isolated UID-1000 shell worker outside system_server.");
-            }
-            command.addAll(Arrays.asList(args));
-        } else {
-            command = new ArrayList<>();
-            command.add("su");
-            command.addAll(Arrays.asList(args));
-            System.err.println("TokenX: UID-1000 worker preflight failed; using KernelSU ROOT fallback.");
+        final List<String> command = new ArrayList<>();
+        boolean settingsMutation = args.length >= 2
+                && "settings".equals(args[0])
+                && ("put".equals(args[1]) || "delete".equals(args[1]) || "reset".equals(args[1]));
+        if (!settingsMutation && args.length == 2 && "-c".equals(args[0])) {
+            settingsMutation = args[1].trim().matches(
+                    "(?s)^settings\\s+(?:put|delete|reset)\\s+[^;\\n\\r&|]+$");
         }
+        final boolean compoundSettings = args.length == 2 && "-c".equals(args[0])
+                && isSettingsOnlyScript(args[1]);
+        final boolean readOnlySettings = compoundSettings
+                && !args[1].matches("(?s).*\\bsettings\\s+(?:put|delete|reset)\\b.*");
+        final boolean nativeProbe = settingsMutation
+                && "1".equals(System.getenv("TOKENX_NATIVE_SETTINGS_TEST"));
+        final boolean rootMutation = settingsMutation && !nativeProbe;
+        // Only explicitly classified settings mutations may use the root compatibility
+        // path. Never elevate a read-only compound script or an arbitrary command.
+        if (rootMutation) {
+            command.add("su");
+            System.err.println("TOKENX_SETTINGS_ROUTE=ROOT_MUTATION_COMPAT");
+        } else {
+            if (!systemWorkerReady) {
+                System.err.println("TOKENX_SETTINGS_ROUTE=SYSTEM_WORKER_UNAVAILABLE");
+                System.err.println("TokenX: UID-1000 worker unavailable; refusing implicit root escalation.");
+                System.err.flush();
+                System.exit(1);
+                return;
+            }
+            command.add("su");
+            command.add("1000");
+            System.err.println("TOKENX_SETTINGS_ROUTE=" + (readOnlySettings
+                    ? "UID1000_READ_ONLY" : (nativeProbe ? "UID1000_NATIVE_PROBE" : "UID1000")));
+        }
+        System.err.println("TOKENX_SELECTED_BACKEND=SYSTEM_SERVER");
+        System.err.println("TOKENX_EXECUTION_UID=" + (rootMutation ? "0" : "1000"));
+        System.err.println("TokenX: launching isolated shell worker outside system_server.");
+        command.addAll(Arrays.asList(args));
         System.err.flush();
-
         try {
             ProcessBuilder builder = new ProcessBuilder(command);
             builder.redirectInput(ProcessBuilder.Redirect.INHERIT);
             builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
             builder.redirectError(ProcessBuilder.Redirect.INHERIT);
             java.lang.Process process = builder.start();
-            int exitCode = process.waitFor();
-            System.exit(exitCode);
+            System.exit(process.waitFor());
         } catch (Throwable tr) {
             System.err.println("TokenX: shell worker failed: " + tr.getClass().getSimpleName() + ": " + tr.getMessage());
             tr.printStackTrace(System.err);
