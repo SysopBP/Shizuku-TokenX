@@ -121,6 +121,14 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
             }
             item {
                 LabTile(
+                    icon = Icons.Outlined.Terminal,
+                    label = "RISH v3 Export",
+                    badge = "ROOT · SYSTEM · SHELL",
+                    onClick = { onOpenDetail(Detail.TERMINAL) }
+                )
+            }
+            item {
+                LabTile(
                     icon = Icons.Outlined.Key,
                     label = "Root Console",
                     badge = "UID 0",
