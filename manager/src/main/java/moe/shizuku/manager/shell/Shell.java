@@ -69,12 +69,14 @@ public class Shell extends Rish {
                 && !args[1].matches("(?s).*\\bsettings\\s+(?:put|delete|reset)\\b.*");
         final boolean nativeProbe = settingsMutation
                 && "1".equals(System.getenv("TOKENX_NATIVE_SETTINGS_TEST"));
-        final boolean rootMutation = settingsMutation && !nativeProbe;
+        final boolean rootMutation = settingsMutation && !nativeProbe
+                && "1".equals(System.getenv("TOKENX_ALLOW_ROOT_SETTINGS_COMPAT"));
         // Only explicitly classified settings mutations may use the root compatibility
         // path. Never elevate a read-only compound script or an arbitrary command.
         if (rootMutation) {
             command.add("su");
-            System.err.println("TOKENX_SETTINGS_ROUTE=ROOT_MUTATION_COMPAT");
+            System.err.println("TOKENX_SETTINGS_ROUTE=ROOT_MUTATION_COMPAT_EXPLICIT");
+            System.err.println("TOKENX_NATIVE_UID1000_SETTINGS_WRITE=false");
         } else {
             if (!systemWorkerReady) {
                 System.err.println("TOKENX_SETTINGS_ROUTE=SYSTEM_WORKER_UNAVAILABLE");
@@ -85,11 +87,15 @@ public class Shell extends Rish {
             }
             command.add("su");
             command.add("1000");
+            if (settingsMutation && !nativeProbe) {
+                System.err.println("TOKENX_SETTINGS_COMPAT=NOT_OPTED_IN; set TOKENX_ALLOW_ROOT_SETTINGS_COMPAT=1 for explicit root compatibility");
+            }
             System.err.println("TOKENX_SETTINGS_ROUTE=" + (readOnlySettings
                     ? "UID1000_READ_ONLY" : (nativeProbe ? "UID1000_NATIVE_PROBE" : "UID1000")));
         }
         System.err.println("TOKENX_SELECTED_BACKEND=SYSTEM_SERVER");
         System.err.println("TOKENX_EXECUTION_UID=" + (rootMutation ? "0" : "1000"));
+        if (!rootMutation && settingsMutation) System.err.println("TOKENX_NATIVE_UID1000_SETTINGS_WRITE=UNVERIFIED");
         System.err.println("TokenX: launching isolated shell worker outside system_server.");
         command.addAll(Arrays.asList(args));
         System.err.flush();
