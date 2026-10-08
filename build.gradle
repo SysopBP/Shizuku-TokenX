@@ -32,5 +32,5 @@ def isPreview = project.hasProperty("preview")
 def isBeta = project.hasProperty("beta")
 ext {
     versionCode = gitCommitCount
-    versionName = "${baseVersionName}${if (isPreview) "-preview.2" else if (isBeta) "-beta" else ""}"
+    versionName = "${baseVersionName}${if (isPreview) "-preview.3" else if (isBeta) "-beta" else ""}"
 }
