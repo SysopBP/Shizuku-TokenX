@@ -322,9 +322,15 @@ The expandable Device & Runtime section exists to make debugging reproducible. T
 
 This same philosophy drives TokenX's exported diagnostics and logs: record the route, identity, Binder state and gate/lifecycle evidence needed to explain a failure.
 
-## MIUIX and Material UI support
+## New theme capability — MIUIX + Material
 
-TokenX now includes **MIUIX and Material UI/theme support** while retaining its TokenX glass/floating presentation where configured. The theme layer is separate from the privilege engine so changing presentation does not change backend behavior.
+TokenX now includes a **new theme capability with MIUIX + Material support**. This is a first-class TokenX appearance feature, not just a glass-style refresh: users can choose the UI design system while the same multi-backend engine, routing, authorization and diagnostics remain underneath.
+
+- **MIUIX** — TokenX's MIUIX presentation option.
+- **Material** — the Material-based presentation option.
+- **TokenX glass/floating surfaces** — retained where configured by the selected appearance options.
+
+Theme selection is intentionally isolated from privilege state: changing the UI style does not reconnect, replace or otherwise alter Root, System or Shell backends.
 
 The current interface also includes:
 
@@ -569,7 +575,9 @@ TokenX stands on several projects and contributions:
 
 - **[RikkaW / RikkaApps](https://github.com/RikkaApps/Shizuku)** — original Shizuku server, API, shell, and foundation.
 - **[thedjchi](https://github.com/thedjchi/Shizuku)** — the Shizuku fork this project was originally based on and the features inherited from it.
-- **@wr3cckl3ss, @Vikramaditya015, and @reckaH2281** — special thanks for always being willing to help, share knowledge, test ideas, and support the continued learning and development behind TokenX.
+- **@wr3cckl3ss (Wreckless)** — special thanks for always being willing to help, share knowledge, test ideas, and support the continued learning and development behind TokenX.
+- **@reckaH2281 (Rackah)** — special thanks for the continued help, testing, feedback, and support throughout TokenX development.
+- **@Vikramaditya015** — special thanks for the continued help, knowledge, and support throughout TokenX development.
 - **[@Vikramaditya015](https://github.com/Vikramaditya015)** — additional credit for work that helped inform TokenX's System Server development.
 - **[Meta Magic Mount RS](https://github.com/Tools-cx-app/meta-magic_mount-rs)** — systemless Magic Mount layer used by the current TokenX System Server Integration setup.
 - Everyone who contributed to upstream Shizuku and its forks, plus the translators and testers who continue to help validate TokenX.
