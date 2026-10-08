@@ -58,6 +58,13 @@ public class Shell extends Rish {
                 settingsMutation = shellCommand.matches(
                         "(?s)^settings\\s+(?:put|delete|reset)\\s+[^;\\n\\r&|]+$");
             }
+            // A compound -c script is intentionally NOT rewritten to root. Make
+            // the routing decision visible so a successful UID-1000 Binder
+            // connection is not mistaken for successful SettingsProvider writes.
+            if (!settingsMutation && args.length == 2 && "-c".equals(args[0])
+                    && args[1].matches("(?s).*\\\\bsettings\\\\s+(?:put|delete|reset)\\\\b.*")) {
+                System.err.println("TOKENX_SETTINGS_ROUTE=UID1000_COMPOUND_SCRIPT; individual settings mutations require separate rish -c invocations for root compatibility routing.");
+            }
             // Experimental native UID-1000 settings probe. This is opt-in and
             // deliberately does not change AppOps, Binder identity or system_server.
             // If SettingsProvider rejects the caller, the command fails as UID 1000
