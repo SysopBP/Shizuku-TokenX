@@ -58,12 +58,21 @@ public class Shell extends Rish {
                 settingsMutation = shellCommand.matches(
                         "(?s)^settings\\s+(?:put|delete|reset)\\s+[^;\\n\\r&|]+$");
             }
-            if (settingsMutation) {
+            // Experimental native UID-1000 settings probe. This is opt-in and
+            // deliberately does not change AppOps, Binder identity or system_server.
+            // If SettingsProvider rejects the caller, the command fails as UID 1000
+            // rather than silently escalating to root.
+            boolean nativeSettingsProbe = settingsMutation
+                    && "1".equals(System.getenv("TOKENX_NATIVE_SETTINGS_TEST"));
+            if (settingsMutation && !nativeSettingsProbe) {
                 command.add("su");
                 System.err.println("TokenX: Android 17 Settings mutation -> KernelSU root compatibility route.");
             } else {
                 command.add("su");
                 command.add("1000");
+                if (nativeSettingsProbe) {
+                    System.err.println("TokenX: EXPERIMENTAL native UID-1000 settings test (no root fallback); AppOps may reject the mutation.");
+                }
                 System.err.println("TokenX: launching isolated UID-1000 shell worker outside system_server.");
             }
             command.addAll(Arrays.asList(args));
