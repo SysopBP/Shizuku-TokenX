@@ -711,76 +711,42 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
         ) {
             FilterChip(
                 selected = backend == ShellBackend.SHIZUKU,
-                onClick = { backend = ShellBackend.SHIZUKU },
-                enabled = shizukuRunning,
-                label = { Text(stringResource(R.string.shell_backend_shizuku)) }
+                onClick = {
+                    if (running) return@FilterChip
+                    if (backendAvailability[ShellBackend.SHIZUKU] == true) {
+                        backend = ShellBackend.SHIZUKU
+                        feed(ShellLine("Shell selected • UID 2000 backend online", ShellLine.Kind.INFO))
+                    } else {
+                        feed(ShellLine("Shell UID 2000 backend is not connected.", ShellLine.Kind.ERROR))
+                    }
+                },
+                label = { Text("Shell") }
             )
             FilterChip(
                 selected = backend == ShellBackend.SSERVER,
                 onClick = {
                     if (running) return@FilterChip
-                    running = true
-                    scope.launch {
-                        val start = withContext(Dispatchers.IO) {
-                            SystemUidProvisioner.prepareAndStartShizukuUid1000(context)
-                        }
-                        if (!start.success) {
-                            feed(ShellLine(
-                                "Sserver start failed (exit ${start.exitCode}): ${start.output.trim()}",
-                                ShellLine.Kind.ERROR
-                            ))
-                            running = false
-                            return@launch
-                        }
-
-                        // The starter returning only means app_process was launched. Binder
-                        // receipt is the authoritative handoff signal.
-                        var verifiedUid = -1
-                        repeat(30) {
-                            ShizukuStateMachine.update()
-                            verifiedUid = runCatching {
-                                if (Shizuku.pingBinder()) Shizuku.getUid() else -1
-                            }.getOrDefault(-1)
-                            if (verifiedUid == 1000) return@repeat
-                            delay(250)
-                        }
-                        uid = verifiedUid
-                        if (verifiedUid == 1000) {
-                            backend = ShellBackend.SSERVER
-                            feed(ShellLine("Sserver ready • live Shizuku Binder UID 1000", ShellLine.Kind.INFO))
-                        } else {
-                            feed(ShellLine(
-                                "Sserver started but UID-1000 Binder was not received.",
-                                ShellLine.Kind.ERROR
-                            ))
-                        }
-                        running = false
+                    if (backendAvailability[ShellBackend.SSERVER] == true) {
+                        backend = ShellBackend.SSERVER
+                        feed(ShellLine("System selected • UID 1000 backend online", ShellLine.Kind.INFO))
+                    } else {
+                        feed(ShellLine("System UID 1000 backend is not connected.", ShellLine.Kind.ERROR))
                     }
                 },
-                label = { Text(stringResource(R.string.shell_backend_sserver)) }
+                label = { Text("System") }
             )
-            // Never disabled: a chip that cannot be pressed is also a chip that cannot ask
-            // for root, and asking is what makes the root manager offer the grant.
             FilterChip(
                 selected = backend == ShellBackend.ROOT,
                 onClick = {
-                    backend = ShellBackend.ROOT
-                    if (rootAvailable != true) {
-                        scope.launch {
-                            val granted = withContext(Dispatchers.IO) {
-                                runCatching { EnvironmentUtils.isRooted() }.getOrDefault(false)
-                            }
-                            rootAvailable = granted
-                            if (granted) {
-                                feed(ShellLine(context.getString(R.string.shell_root_granted), ShellLine.Kind.INFO))
-                            } else {
-                                feed(ShellLine(context.getString(R.string.shell_root_refused), ShellLine.Kind.ERROR))
-                                backend = ShellBackend.SHIZUKU
-                            }
-                        }
+                    if (running) return@FilterChip
+                    if (backendAvailability[ShellBackend.ROOT] == true) {
+                        backend = ShellBackend.ROOT
+                        feed(ShellLine("Root selected • UID 0 backend online", ShellLine.Kind.INFO))
+                    } else {
+                        feed(ShellLine("Root UID 0 backend is not connected.", ShellLine.Kind.ERROR))
                     }
                 },
-                label = { Text(stringResource(R.string.shell_backend_root)) }
+                label = { Text("Root") }
             )
             Text(
                 // The tail is the part that says where you are, so a long path keeps its
