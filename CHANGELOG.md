@@ -15,6 +15,17 @@
 - TokenX Control Center, diagnostics, Root Console, Shell, App Ops, Firewall, Autostart, and the new **MIUIX + Material theme capability**, alongside TokenX glass/floating appearance controls.
 - Protocol/client packaging checks and retired-backend guards in CI.
 
+
+### Reboot & backend recovery
+
+- Preview 3 retains TokenX's reboot-recovery architecture. After device startup, TokenX restores its privilege environment using the configured startup method.
+- On D2-protected devices, privileged recovery remains gated until the D2 unlock boundary opens; TokenX does not intentionally bypass D2 during boot.
+- Root and System are recovered independently rather than treating one backend as a replacement for the other.
+- Persisted client authorization and routing state can be reapplied as the corresponding backend Binder becomes available again.
+- The watchdog resumes independent transport/backend health monitoring after recovery.
+- System recovery is limited to safe bind/rebind/reattach behavior and must never terminate or restart Android's persistent `system_server` process.
+- Final Preview 3 validation should include a cold reboot followed by D2 unlock where applicable, then explicit Root/System route tests to confirm both backends recover correctly.
+
 ### Preview safeguards
 
 - Unfinished OneUIX, CorePatch, FLAG_SECURE, and Liquid Glass experimental screens are not exposed through Preview navigation.
