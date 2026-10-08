@@ -198,8 +198,8 @@ jobs:
         run: |
           set -euo pipefail
           grep -F 'def baseVersionName = "14.2.0-TKN"' build.gradle >/dev/null
-          grep -F '"-preview.1"' build.gradle >/dev/null
-          grep -F 'v14.2.0-TKN-preview.1' README.md >/dev/null
+          grep -F '"-preview.3"' build.gradle >/dev/null
+          grep -F 'v14.2.0-TKN-preview.3' README.md >/dev/null
           echo "TokenX Preview identity verified"
 
       - name: Verify bundled rish pair
