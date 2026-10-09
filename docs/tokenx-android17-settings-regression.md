@@ -29,3 +29,27 @@ done
 
 ## Release gate
 Do not label native UID1000 Settings writes as fixed; do not publish a new release before CI and device regressions pass.
+
+
+## Build 640 device regression — 2026-10-09
+
+Device: Samsung SM-S948U1, Android 17 / One UI 9. Termux caller: `com.termux`, `RISH_APPLICATION_ID=com.termux`.
+
+### Observed route behavior
+- `./rish --root`: binder verified UID 0, shell `uid=0(root)` / `u:r:ksu:s0`. Compound `settings put system tokenx_640_compare test640` returned 0; readback was `test640`; deletion returned 0.
+- `./rish --system`: binder verified UID 1000, isolated shell `uid=1000(system)` / `u:r:ksu:s0`. Compound `settings put system tokenx_640_compare test640` returned 255; deletion returned 255; both raised `NullPointerException`.
+- System namespace, Secure namespace and Global namespace: compound put/delete all returned 255; readback was `null`.
+- System route read `screen_off_timeout=600000`, and `cmd appops get com.termux RUN_IN_BACKGROUND` reported `allow`.
+- System connection banner printed `TOKENX_ROUTE_BUILD=637` although the installed test target was Build 640; shell environment variables of the same names were empty. The marker's source must be traced before claiming stale binaries.
+
+### Stack trace and interpretation
+`SettingsProvider.getCallingPackage -> AppOpsManager.checkPackage -> AppOpsService.checkPackage -> NullPointerException`. `TokenXXposedEntry.kt:132` also appears in the Binder interception stack; this alone does not prove the hook is the cause. UID 1000 identity does not establish valid calling-package attribution or native Settings mutation capability.
+
+### Build 641 acceptance criteria
+1. Preserve Root UID 0, System UID 1000, Shell UID 2000, D2 gate, reboot recovery, and UI themes.
+2. Explicitly classify a command as native-System, root-compatibility, or unsupported. Never silently elevate a compound script.
+3. For explicitly authorized, narrowly scoped Settings compatibility commands, preserve exact exit status, stdout and stderr and show the effective route.
+4. Cover standalone and compound commands across system/secure/global; verify writes by readback and successful cleanup.
+5. Cover Root unavailable, unauthorized caller, shell backend, and post-reboot behavior.
+6. Resolve the Build 637 banner marker and report launcher, runtime and APK versions separately.
+7. Do not claim native UID 1000 Settings writes are fixed until verified on-device.
