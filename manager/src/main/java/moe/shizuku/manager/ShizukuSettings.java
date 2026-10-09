@@ -1,5 +1,7 @@
 package moe.shizuku.manager;
 
+// TokenX Build 640: rebuild diagnostic baseline; no runtime behavior changes.
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.ContextWrapper;
