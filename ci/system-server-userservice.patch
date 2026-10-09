@@ -9,7 +9,7 @@ diff --git a/server-shared/src/main/java/rikka/shizuku/server/UserServiceManager
  import android.text.format.DateUtils;
  import android.util.ArrayMap;
  
-@@ -176,20 +177,37 @@ public abstract class UserServiceManager {
+@@ -176,18 +177,30 @@ public abstract class UserServiceManager {
  
          String cmd = getUserServiceStartCmd(record, key, token, packageName, classname, processNameSuffix, callingUid, use32Bits && AbiUtil.has32Bit(), debug);
 +
