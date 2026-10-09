@@ -1,6 +1,10 @@
 name: Build App
 
 on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/app.yml'
   workflow_dispatch:
     inputs:
       version:
