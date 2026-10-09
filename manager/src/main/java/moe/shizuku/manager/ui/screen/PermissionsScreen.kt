@@ -288,7 +288,7 @@ fun PermissionsScreen(onBack: () -> Unit) {
                 PrivilegedAccessRow(
                     icon = Icons.Rounded.Memory,
                     headline = "System UID",
-                    reason = "Serv.apk provisioning and Android system identity.",
+                    reason = "Direct Binder transport with Android System UID 1000.",
                     state = when {
                         tokenxRuntime.systemServerBridgeActive -> "Active · UID 1000"
                         tokenxRuntime.systemServerBridgeAttached -> "Attached · UID 1000"
