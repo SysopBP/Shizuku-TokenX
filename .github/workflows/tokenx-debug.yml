@@ -1,58 +1,353 @@
 name: TokenX Debug Build
 
 on:
+  workflow_dispatch:
   push:
-    branches: [master]
+    branches:
+      - master
     paths:
       - '.github/workflows/tokenx-debug.yml'
       - 'manager/**'
-      - 'shell/**'
-      - 'server/**'
-      - 'server-shared/**'
       - 'xposed/**'
-      - 'ci/**'
+      - 'common/**'
+      - 'server/**'
+      - 'shell/**'
+      - 'starter/**'
+      - 'api'
       - 'build.gradle'
+      - 'build.gradle.compileSdk36'
       - 'settings.gradle'
-  workflow_dispatch:
+      - 'gradle.properties'
+      - 'gradle/**'
+      - '.github/workflows/tokenx-debug.yml'
 
 permissions:
   contents: read
+  packages: read
+
+concurrency:
+  group: tokenx-debug-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  debug-apk:
+  debug:
+    name: Build TokenX Debug APK
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+      - name: Checkout TokenX
+        uses: actions/checkout@v6
         with:
           submodules: recursive
           fetch-depth: 0
+          ref: a977aa4548c11bfc4366460ea7e696efb35b351f
+
+      - name: Patch rish for Android 17 system_server fork safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="api/rish/src/main/cpp/rikka_rish_RishHost.cpp"
+          python3 - "$FILE" <<'PY'
+          from pathlib import Path
+          import sys
+
+          p = Path(sys.argv[1])
+          s = p.read_text()
+          old = '        if (setsid() < 0) {\n            PLOGE("setsid");\n            exit(1);\n        }'
+          new = '        if (setsid() < 0) {\n            _exit(126);\n        }'
+          if old not in s:
+              raise SystemExit("setsid anchor not found")
+          s = s.replace(old, new, 1)
+
+          replacements = {
+              '                PLOGE("ptsname_r");\n                exit(1);':
+                  '                _exit(126);',
+              '                PLOGE("execv");\n                exit(1);':
+                  '                _exit(127);',
+          }
+          for old_text, new_text in replacements.items():
+              if old_text not in s:
+                  raise SystemExit("expected rish child anchor not found")
+              s = s.replace(old_text, new_text)
+
+          # Logging in the post-fork child can indirectly touch inherited Android
+          # runtime state. Remove LOG/PLOG calls only from the child branch.
+          marker = "    } else {\n        if (setsid() < 0)"
+          child_start = s.index(marker)
+          child_end = s.index("\n    }\n}\n\nstatic void RishHost_setWindowSize", child_start)
+          child = s[child_start:child_end]
+          lines = []
+          for line in child.splitlines():
+              if "LOGD(" in line or "PLOGE(" in line:
+                  continue
+              lines.append(line)
+          s = s[:child_start] + "\n".join(lines) + s[child_end:]
+          p.write_text(s)
+          print("TokenX post-fork logging/exit hardening applied")
+          PY
+          grep -nE 'fork\(\)|setsid\(\)|_exit\(' "$FILE"
+
+      - name: Apply TokenX system_server UserService crash guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="api/server-shared/src/main/java/rikka/shizuku/server/UserServiceManager.java"
+          python3 - "$FILE" <<'PY'
+          from pathlib import Path
+          import sys
+
+          p = Path(sys.argv[1])
+          s = p.read_text()
+
+          if "import android.os.Process;" not in s:
+              anchor = "import android.os.IBinder;\n"
+              if anchor not in s:
+                  raise SystemExit("UserServiceManager Process import anchor not found")
+              s = s.replace(anchor, anchor + "import android.os.Process;\n", 1)
+
+          guard = "Refusing UserService shell launch from system uid"
+          if guard not in s:
+              begin_marker = "        String cmd = getUserServiceStartCmd("
+              end_marker = '            throw new IllegalStateException("sh exited with " + exitCode);\n        }'
+              begin = s.find(begin_marker)
+              end = s.find(end_marker, begin)
+              if begin < 0 or end < 0:
+                  raise SystemExit("UserServiceManager launch range not found")
+              end += len(end_marker)
+
+              new_lines = [
+                  "        String cmd = getUserServiceStartCmd(record, key, token, packageName, classname, processNameSuffix, callingUid, use32Bits && AbiUtil.has32Bit(), debug);",
+                  "",
+                  "        // TokenX system_server must never exec a shell; SELinux denies it and",
+                  "        // an uncaught exception here would restart the Android framework.",
+                  "        if (Process.myUid() == Process.SYSTEM_UID) {",
+                  '            LOGGER.w("Refusing UserService shell launch from system uid for %s (%s); keeping system_server alive", key, token);',
+                  "            record.removeSelf();",
+                  "            return;",
+                  "        }",
+                  "",
+                  "        int exitCode;",
+                  "        try {",
+                  '            java.lang.Process process = Runtime.getRuntime().exec("/system/bin/sh");',
+                  "            try (OutputStream os = process.getOutputStream()) {",
+                  "                os.write(cmd.getBytes());",
+                  "                os.flush();",
+                  "            }",
+                  "            exitCode = process.waitFor();",
+                  "        } catch (Throwable e) {",
+                  '            LOGGER.w("Unable to start UserService %s (%s): %s", key, token, e);',
+                  "            record.removeSelf();",
+                  "            return;",
+                  "        }",
+                  "        if (exitCode != 0) {",
+                  '            LOGGER.w("UserService shell exited with %d for %s (%s)", exitCode, key, token);',
+                  "            record.removeSelf();",
+                  "        }",
+              ]
+              s = s[:begin] + "\n".join(new_lines) + s[end:]
+
+          p.write_text(s)
+          print("TokenX UserService system_server crash guard applied")
+          PY
+          grep -nE 'SYSTEM_UID|/system/bin/sh|Unable to start UserService|keeping system_server alive' "$FILE"
+
       - name: Setup Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
-      - name: Configure Android SDK
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
-          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-      - name: Validate and apply system-server safety patch
-        shell: bash
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - name: Build debug APK
+        env:
+          # tribalfs SESL is hosted in another GitHub owner namespace. A repository
+          # GITHUB_TOKEN cannot reliably read that package, so prefer a read-only PAT.
+          # Add SESL_GITHUB_USERNAME and SESL_GITHUB_TOKEN in repository Actions secrets.
+          # The token should be a classic PAT with read:packages only.
+          GITHUB_ACTOR: ${{ secrets.SESL_GITHUB_USERNAME }}
+          GITHUB_TOKEN: ${{ secrets.SESL_GITHUB_TOKEN }}
         run: |
-          if git -C api apply --check ../ci/system-server-userservice.patch; then
-            git -C api apply ../ci/system-server-userservice.patch
-          else
-            echo "::error::System-server safety patch cannot apply cleanly. Refusing to build an unguarded APK."
+          # Retired helper-backend classes must never survive from Gradle's remote/local
+          # build cache after their source files are deleted.
+          ./gradlew clean
+
+          # Fail before compilation if a retired live-backend package is present in
+          # packaged app/Xposed source. Historical docs and this CI guard are excluded.
+          if grep -RInE 'com\.tokenx\.bridgetest|com\.sdet\.fotaagent|TokenXSystemServerBridge|BRIDGE_AUTOCONNECT_START|MAIN_ACTIVITY_AUTOCONNECT_START' \
+              manager/src/main xposed/src/main \
+              --exclude='tokenx-debug.yml' 2>/dev/null; then
+            echo "::error::Retired TokenX backend remnant found in packaged source"
             exit 1
           fi
-      - name: Build TokenX debug APK
-        run: ./gradlew :manager:assembleDebug --stacktrace
-      - name: Upload TokenX APK
-        uses: actions/upload-artifact@v4
+
+          # Build the rish shell first. shell/build.gradle extracts its classes.dex
+          # into manager assets as rish_shizuku.dex, guaranteeing rish + dex match.
+          ./gradlew :shell:assembleDebug
+          test -s manager/src/main/assets/rish_shizuku.dex
+          ./gradlew :manager:assembleDebug --stacktrace
+
+      - name: Verify Preview identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'def baseVersionName = "14.2.0-TKN"' build.gradle >/dev/null
+          grep -F '"-preview.3"' build.gradle >/dev/null
+          grep -F 'v14.2.0-TKN-preview.3' README.md >/dev/null
+          echo "TokenX Preview identity verified"
+
+      - name: Verify bundled rish pair
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s manager/src/main/assets/rish
+          test -s manager/src/main/assets/rish_shizuku.dex
+          FILE="$(find manager/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          test -n "$FILE"
+          unzip -l "$FILE" | grep -F 'assets/rish'
+          unzip -l "$FILE" | grep -F 'assets/rish_shizuku.dex'
+          RISH_DEX="$(mktemp)"
+          unzip -p "$FILE" assets/rish_shizuku.dex > "$RISH_DEX"
+          # Validate literals that are actually emitted by the v3 client. The old
+          # "direct UID" probe was intentionally removed: explicit routes now trust the
+          # manager-classified routed UID returned in the Binder callback.
+          for marker in \
+            'TOKENX_RISH_PROTOCOL=' \
+            'manager-classified route' \
+            'routed UID '
+          do
+            strings "$RISH_DEX" | grep -F "$marker" >/dev/null || {
+              echo "::error::Bundled rish_shizuku.dex is stale; missing marker: $marker"
+              rm -f "$RISH_DEX"
+              exit 1
+            }
+          done
+          rm -f "$RISH_DEX"
+          grep -F 'TOKENX_RISH_CLIENT_VERSION=3' manager/src/main/assets/rish >/dev/null || {
+            echo "::error::Bundled rish launcher is not protocol v3"
+            exit 1
+          }
+          grep -F 'routedUid != expectedUid' shell/src/main/java/rikka/shizuku/shell/ShizukuShellLoader.java >/dev/null || {
+            echo "::error::Explicit route is not validating manager-routed UID"
+            exit 1
+          }
+          if grep -F 'remoteUid(binder)' shell/src/main/java/rikka/shizuku/shell/ShizukuShellLoader.java >/dev/null; then
+            echo "::error::Redundant raw Binder UID probe restored in explicit route"
+            exit 1
+          fi
+          echo "TokenX rish protocol v3 + manager-routed UID handoff verified in packaged assets"
+
+      - name: Verify TokenX Xposed packaging
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="$(find manager/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          test -n "$FILE"
+          unzip -l "$FILE" | grep -F 'META-INF/xposed/java_init.list'
+          unzip -l "$FILE" | grep -F 'META-INF/xposed/scope.list'
+          unzip -l "$FILE" | grep -F 'META-INF/xposed/module.prop'
+          unzip -p "$FILE" META-INF/xposed/java_init.list | grep -Fx 'moe.shizuku.tokenx.xposed.TokenXXposedEntry'
+          unzip -p "$FILE" META-INF/xposed/scope.list | grep -Fx 'system'
+          unzip -p "$FILE" 'classes*.dex' | strings | grep -F 'TokenXXposedEntry' >/dev/null
+          echo "TokenX modern Xposed descriptors + entry class verified in manager APK"
+
+      - name: Verify TokenX Xposed system_server backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="$(find manager/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          test -n "$FILE"
+          echo "APK=$FILE"
+          echo "HEAD=$(git rev-parse HEAD)"
+          sha256sum "$FILE"
+
+          # Retired helper packages are forbidden. The live backend is the private _TKN
+          # rendezvous intercepted by the TokenX LSPosed hook at Binder.execTransact.
+          DEX_STRINGS="$(mktemp)"
+          unzip -p "$FILE" 'classes*.dex' | strings > "$DEX_STRINGS"
+
+          for marker in \
+            SYSTEM_SERVER_RPC_READY \
+            SYSTEM_SERVER_RPC_IDENTITY \
+            SYSTEM_SERVER_IDENTITY_OK \
+            XPOSED_SYSTEM_SERVER
+          do
+            grep -F "$marker" "$DEX_STRINGS" >/dev/null || {
+              echo "::error::Missing TokenX Xposed backend marker in packaged DEX: $marker"
+              exit 1
+            }
+            echo "FOUND $marker"
+          done
+
+          grep -F 'moe/shizuku/manager/tokenx/TokenXXposedSystemServerClient' "$DEX_STRINGS" >/dev/null || {
+            echo "::error::TokenXXposedSystemServerClient missing from packaged DEX"
+            exit 1
+          }
+
+          # Guard against accidentally restoring any retired application-side backend.
+          for retired in \
+            MAIN_ACTIVITY_AUTOCONNECT_START \
+            BRIDGE_AUTOCONNECT_START \
+            com.tokenx.bridgetest \
+            com.sdet.fotaagent \
+            moe/shizuku/manager/tokenx/TokenXSystemServerBridge
+          do
+            if grep -F "$retired" "$DEX_STRINGS" >/dev/null; then
+              echo "::error::Retired TokenX backend remnant still packaged: $retired"
+              exit 1
+            fi
+          done
+
+          echo "TokenX LSPosed _TKN system_server backend verified; retired backends absent"
+          rm -f "$DEX_STRINGS"
+
+          # Explicit rish backend requests stay session-gated, while authorization is
+          # enforced by the selected Shizuku backend Binder itself. Do not restore the
+          # duplicate manager-side AuthorizationManager gate: it drops valid callbacks
+          # before the backend can perform its canonical package/UID permission check.
+          if grep -F 'AuthorizationManager.granted(packageName, packageUid)' \
+            manager/src/main/java/moe/shizuku/manager/shell/ShellBinderRequestHandler.kt >/dev/null; then
+              echo "::error::Duplicate TokenX rish manager authorization gate restored"
+              exit 1
+          fi
+          grep -F 'TokenXSessionRegistry.register(binder, packageName, sessionBackend)' \
+            manager/src/main/java/moe/shizuku/manager/shell/ShellBinderRequestHandler.kt >/dev/null || {
+              echo "::error::TokenX rish session registration missing"
+              exit 1
+            }
+          echo "TokenX explicit rish backend session gate verified"
+          grep -F '"sserver", "system" -> ensureSystemBinder(context)' \
+            manager/src/main/java/moe/shizuku/manager/shell/ShellBinderRequestHandler.kt >/dev/null || {
+              echo "::error::TokenX rish SYSTEM route is not using the on-demand dedicated UID-1000 backend"
+              exit 1
+            }
+          grep -F 'SystemUidProvisioner.prepareAndStartShizukuUid1000(context)' \
+            manager/src/main/java/moe/shizuku/manager/shell/ShellBinderRequestHandler.kt >/dev/null || {
+              echo "::error::TokenX rish SYSTEM on-demand UID-1000 starter missing"
+              exit 1
+            }
+          echo "TokenX rish SYSTEM dedicated on-demand backend route verified"
+
+      - name: Collect APK
+        id: apk
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="$(find manager/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          test -n "$FILE"
+          mkdir -p tokenx-artifacts
+          cp "$FILE" tokenx-artifacts/Shizuku-TokenX-debug.apk
+          echo "apk=tokenx-artifacts/Shizuku-TokenX-debug.apk" >> "$GITHUB_OUTPUT"
+
+      - name: Upload TokenX debug APK
+        uses: actions/upload-artifact@v6
         with:
-          name: TokenX-debug-apk
-          path: manager/build/outputs/apk/debug/*.apk
+          name: Shizuku-TokenX-debug
+          path: ${{ steps.apk.outputs.apk }}
           if-no-files-found: error
+          retention-days: 14
