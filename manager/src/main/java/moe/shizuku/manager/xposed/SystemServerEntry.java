@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
-import rikka.shizuku.server.ShizukuService;
 
 /**
  * LSPosed entry point for the TokenX System Server backend.
@@ -58,7 +57,10 @@ public final class SystemServerEntry implements IXposedHookLoadPackage {
                 for (int attempt = 1; attempt <= START_ATTEMPTS; attempt++) {
                     try {
                         checkpoint("TOKENX_START_ATTEMPT " + attempt + "/" + START_ATTEMPTS);
-                        ShizukuService.startEmbeddedSystemServer();
+                        Class<?> serviceClass = Class.forName("rikka.shizuku.server.ShizukuService");
+                        java.lang.reflect.Method startMethod = serviceClass.getDeclaredMethod("startEmbeddedSystemServer");
+                        startMethod.setAccessible(true);
+                        startMethod.invoke(null);
                         checkpoint("TOKENX_SERVICE_REGISTERED uid=" + Process.myUid()
                                 + " pid=" + Process.myPid());
                         return;
