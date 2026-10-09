@@ -239,14 +239,28 @@ jobs:
         run: |
           set -euo pipefail
           FILE="$(find manager/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
-          test -n "$FILE"
-          unzip -l "$FILE" | grep -F 'META-INF/xposed/java_init.list'
-          unzip -l "$FILE" | grep -F 'META-INF/xposed/scope.list'
-          unzip -l "$FILE" | grep -F 'META-INF/xposed/module.prop'
-          unzip -p "$FILE" META-INF/xposed/java_init.list | grep -Fx 'moe.shizuku.tokenx.xposed.TokenXXposedEntry'
-          unzip -p "$FILE" META-INF/xposed/scope.list | grep -Fx 'system'
-          unzip -p "$FILE" 'classes*.dex' | strings | grep -F 'TokenXXposedEntry' >/dev/null
-          echo "TokenX modern Xposed descriptors + entry class verified in manager APK"
+          test -n "$FILE" && test -s "$FILE"
+          echo "Xposed metadata found in APK:"
+          unzip -Z1 "$FILE" | grep -E '(^assets/xposed_init$|^META-INF/xposed/)' || true
+          # Support the actual legacy Xposed entry shipped by this source tree.
+          # Do not require a modern descriptor for an entry class not in this revision.
+          unzip -p "$FILE" assets/xposed_init | grep -Fx 'moe.shizuku.manager.xposed.SystemServerEntry' || {
+            echo "::error::TokenX Xposed system_server entry is missing from packaged assets"
+            exit 1
+          }
+          # Inspect each DEX independently; never pipe unzip into grep under
+          # pipefail, where a successful early grep can trigger SIGPIPE.
+          DEX_STRINGS="$(mktemp)"
+          for dex in $(unzip -Z1 "$FILE" | grep -E '^classes[0-9]*[.]dex$'); do
+            unzip -p "$FILE" "$dex" | strings >> "$DEX_STRINGS"
+          done
+          grep -F 'SystemServerEntry' "$DEX_STRINGS" >/dev/null || {
+            echo "::error::Packaged DEX lacks the declared Xposed entry class"
+            rm -f "$DEX_STRINGS"
+            exit 1
+          }
+          rm -f "$DEX_STRINGS"
+          echo "TokenX packaged Xposed entry and class verified"
 
       - name: Verify TokenX Xposed system_server backend
         shell: bash
