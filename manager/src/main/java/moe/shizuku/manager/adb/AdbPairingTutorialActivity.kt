@@ -70,12 +70,10 @@ class AdbPairingTutorialActivity : AppBarActivity() {
     }
 
     private fun addManualPairingButton() {
-        val content = binding.root.getChildAt(0) as? LinearLayout ?: return
-        val button = Button(this).apply {
-            text = "Pair manually (IP, port and code)"
-            setOnClickListener { showManualPairingDialog() }
-        }
-        content.addView(button, 1)
+        // The button is declared in the layout so it cannot disappear when
+        // the scroll view's child hierarchy differs across devices/themes.
+        findViewById<Button>(moe.shizuku.manager.R.id.manual_pair_button)
+            .setOnClickListener { showManualPairingDialog() }
     }
 
     private fun showManualPairingDialog() {
