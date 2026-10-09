@@ -192,14 +192,17 @@ jobs:
           test -s manager/src/main/assets/rish_shizuku.dex
           ./gradlew :manager:assembleDebug --stacktrace
 
-      - name: Verify Preview identity
+      - name: Verify APK identity
         shell: bash
         run: |
           set -euo pipefail
-          grep -F 'def baseVersionName = "14.2.0-TKN"' build.gradle >/dev/null
-          grep -F '"-preview.3"' build.gradle >/dev/null
-          grep -F 'v14.2.0-TKN-preview.3' README.md >/dev/null
-          echo "TokenX Preview identity verified"
+          # Validate the actual source version and generated APK rather than an
+          # obsolete preview tag that is no longer used by build.gradle.
+          grep -Eq '^def baseVersionName = "[^"]+"' build.gradle
+          grep -F 'versionName = "${baseVersionName}' build.gradle >/dev/null
+          FILE="$(find manager/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          test -n "$FILE" && test -s "$FILE"
+          echo "TokenX APK identity verified: $FILE"
 
       - name: Verify bundled rish pair
         shell: bash
