@@ -102,9 +102,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** The agent a system uid start goes through, checked for when it is not running yet. */
-private const val FOTA_AGENT_PACKAGE = "com.sdet.fotaagent"
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
@@ -141,28 +138,12 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
     }
     var adbWithoutDeveloperOptionsPrompt by remember { mutableStateOf(false) }
 
-    /**
-     * Whether the persistent ADB port can be written here at all.
-     *
-     * The property belongs to adbd, so root or a server running as the system uid is the
-     * only thing allowed to write it, and on a shell-only server the platform refuses it
-     * outright. Offering a switch that can only fail is worse than not offering it, so the
-     * row appears when one of those is running, or when the device has what it takes to
-     * reach one: root as the chosen start method, or the agent a system start goes through.
-     *
-     * Nothing here prompts for root the way checking for a root shell would, and the row
-     * stays visible while the setting is on, so it can always be turned off again.
-     */
-    val canPersistAdbPort = remember {
+    /** ADB persistence is offered only for an authorized root/system start method. */
+    val canPersistAdbPort = remember(startMethod) {
         val running = ShizukuSettings.getRunningStartMethod()
-        val agent = runCatching {
-            context.packageManager.getPackageInfo(FOTA_AGENT_PACKAGE, 0)
-        }.isSuccess
-
         startMethod == ShizukuSettings.StartMethod.ROOT ||
             running == ShizukuSettings.StartMethod.ROOT ||
-            running == ShizukuSettings.StartMethod.SYSTEM ||
-            agent
+            running == ShizukuSettings.StartMethod.SYSTEM
     }
 
     /**
