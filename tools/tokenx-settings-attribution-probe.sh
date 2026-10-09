@@ -1,13 +1,37 @@
 #!/system/bin/sh
-# TokenX Build 633: non-destructive UID-1000 Settings attribution regression probe.
-# Run in Termux: sh tools/tokenx-settings-attribution-probe.sh
+# TokenX Build 640: capture UID-1000 SettingsProvider attribution failures.
+# No AppOps bypass or persistent settings modifications.
 set -u
 export RISH_APPLICATION_ID="${RISH_APPLICATION_ID:-com.termux}"
 RISH="${RISH:-./rish}"
-KEY="tokenx_633_probe_$$"
-VALUE="tokenx_probe_633"
-echo "TOKENX_SETTINGS_ATTRIBUTION_PROBE=1"
-echo "RISH_APPLICATION_ID=$RISH_APPLICATION_ID"
-"$RISH" --system -c "echo IDENTITY; id; echo PACKAGE_MAPPING; cmd package list packages --uid 1000; echo SETTINGS_READ; settings get system screen_brightness; echo SETTINGS_PUT; settings put system $KEY $VALUE; echo PUT_EXIT=\$?; echo SETTINGS_GET; settings get system $KEY; echo SETTINGS_DELETE; settings delete system $KEY; echo DELETE_EXIT=\$?"
-echo "NOTE: A UID 1000 identity is not proof of valid Binder package attribution."
-echo "NOTE: No privileged policy or AppOps bypass is performed by this probe."
+OUT="${OUT:-$HOME/TokenX_640_Attribution_Probe.txt}"
+KEY="tokenx_640_probe_$$"
+{
+  echo "TOKENX_ATTRIBUTION_PROBE=640"
+  date
+  echo "RISH_APPLICATION_ID=$RISH_APPLICATION_ID"
+  for ROUTE in root system; do
+    echo "===== ROUTE=$ROUTE ====="
+    "$RISH" --"$ROUTE" -c "
+      echo '[IDENTITY]'
+      id
+      echo '[PROCESS SELINUX]'
+      cat /proc/self/attr/current
+      echo '[PACKAGE UID LOOKUP]'
+      cmd package list packages --uid 1000 | head -15
+      echo '[SETTINGS READ]'
+      settings get system screen_off_timeout
+      echo '[SETTINGS PUT]'
+      settings put system '$KEY' probe640
+      echo PUT_EXIT=\$?
+      echo '[SETTINGS GET]'
+      settings get system '$KEY'
+      echo '[SETTINGS DELETE]'
+      settings delete system '$KEY'
+      echo DELETE_EXIT=\$?
+    " 2>&1
+  done
+  echo "NOTE: SettingsProvider caller attribution is checked independently of process UID."
+  echo "NOTE: Failures are captured, not bypassed."
+} 2>&1 | tee "$OUT"
+echo "REPORT=$OUT"
