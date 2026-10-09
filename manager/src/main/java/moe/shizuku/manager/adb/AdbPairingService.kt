@@ -36,6 +36,8 @@ class AdbPairingService : Service() {
         private const val launchRequestId = 4
         private const val startRequestId = 5
         private const val startAction = "start"
+        private const val manualAction = "manual_pair"
+        private const val manualCodeKey = "manual_pairing_code"
         private const val stopAction = "stop"
         private const val replyAction = "reply"
         private const val remoteInputResultKey = "paring_code"
@@ -45,6 +47,11 @@ class AdbPairingService : Service() {
         fun startIntent(context: Context): Intent {
             return Intent(context, AdbPairingService::class.java).setAction(startAction)
         }
+
+        fun manualPairIntent(context: Context, host: String, port: Int, code: String): Intent =
+            Intent(context, AdbPairingService::class.java).setAction(manualAction)
+                .putExtra(hostKey, host).putExtra(portKey, port)
+                .putExtra(manualCodeKey, code)
 
         fun stopIntent(context: Context): Intent {
             return Intent(context, AdbPairingService::class.java).setAction(stopAction)
@@ -90,6 +97,17 @@ class AdbPairingService : Service() {
         val notification = when (intent?.action) {
             startAction -> {
                 onStart()
+            }
+            manualAction -> {
+                val host = intent.getStringExtra(hostKey).orEmpty()
+                val port = intent.getIntExtra(portKey, -1)
+                val code = intent.getStringExtra(manualCodeKey).orEmpty()
+                if (host.isNotBlank() && port in 1..65535 && code.matches(Regex("[0-9]{6}"))) {
+                    onInput(code, host, port)
+                } else {
+                    Log.w(tag, "Invalid manual pairing parameters")
+                    onStart()
+                }
             }
             replyAction -> {
                 val code = RemoteInput.getResultsFromIntent(intent)?.getCharSequence(remoteInputResultKey) ?: ""
