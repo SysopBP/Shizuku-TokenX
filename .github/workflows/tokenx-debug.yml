@@ -41,7 +41,7 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-          ref: a977aa4548c11bfc4366460ea7e696efb35b351f
+          ref: 3a9deb2
 
       - name: Patch rish for Android 17 system_server fork safety
         shell: bash
