@@ -1,0 +1,55 @@
+name: TokenX Debug Build
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/tokenx-debug.yml'
+      - 'manager/**'
+      - 'shell/**'
+      - 'server/**'
+      - 'server-shared/**'
+      - 'xposed/**'
+      - 'ci/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  debug-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Validate and apply system-server safety patch
+        shell: bash
+        run: |
+          if git -C api apply --check ../ci/system-server-userservice.patch; then
+            git -C api apply ../ci/system-server-userservice.patch
+          else
+            echo "::error::System-server safety patch cannot apply cleanly. Refusing to build an unguarded APK."
+            exit 1
+          fi
+      - name: Build TokenX debug APK
+        run: ./gradlew :manager:assembleDebug --stacktrace
+      - name: Upload TokenX APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TokenX-debug-apk
+          path: manager/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
