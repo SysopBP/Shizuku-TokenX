@@ -483,6 +483,7 @@ private fun PrivilegedAccessRow(
             Spacer(Modifier.width(12.dp))
             Text(
                 state,
+                modifier = Modifier.weight(0.8f),
                 style = MaterialTheme.typography.labelMedium,
                 color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
