@@ -1,6 +1,11 @@
 package moe.shizuku.manager.adb
 
 import android.Manifest
+import android.app.AlertDialog
+import android.text.InputType
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.Button
 import android.app.AppOpsManager
 import android.app.ForegroundServiceStartNotAllowedException
 import android.app.NotificationManager
@@ -45,6 +50,8 @@ class AdbPairingTutorialActivity : AppBarActivity() {
             startPairingService()
         }
 
+        addManualPairingButton()
+
         binding.apply {
             syncNotificationEnabled()
 
@@ -60,6 +67,70 @@ class AdbPairingTutorialActivity : AppBarActivity() {
                 SettingsPage.Notifications.NotificationSettings.launch(context)
             }
         }
+    }
+
+    private fun addManualPairingButton() {
+        val content = binding.root.getChildAt(0) as? LinearLayout ?: return
+        val button = Button(this).apply {
+            text = "Pair manually (IP, port and code)"
+            setOnClickListener { showManualPairingDialog() }
+        }
+        content.addView(button, 1)
+    }
+
+    private fun showManualPairingDialog() {
+        val density = resources.displayMetrics.density
+        val fields = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val pad = (20 * density).toInt()
+            setPadding(pad, pad / 2, pad, 0)
+        }
+        val host = EditText(this).apply {
+            hint = "Pairing IP (e.g. 192.168.1.239)"
+            setSingleLine(true)
+            inputType = InputType.TYPE_CLASS_TEXT
+        }
+        val port = EditText(this).apply {
+            hint = "Pairing port (not debugging port)"
+            setSingleLine(true)
+            inputType = InputType.TYPE_CLASS_NUMBER
+        }
+        val code = EditText(this).apply {
+            hint = "Six-digit pairing code"
+            setSingleLine(true)
+            inputType = InputType.TYPE_CLASS_NUMBER
+        }
+        fields.addView(host)
+        fields.addView(port)
+        fields.addView(code)
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Manual wireless pairing")
+            .setMessage("Open Wireless debugging → Pair device with pairing code. Enter the IP and port shown in that pairing dialog, not the main debugging port.")
+            .setView(fields)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton("Pair", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val hostname = host.text.toString().trim()
+                val portNumber = port.text.toString().toIntOrNull()
+                val pairingCode = code.text.toString().trim()
+                if (hostname.isEmpty() || portNumber == null || portNumber !in 1..65535 ||
+                    !pairingCode.matches(Regex("[0-9]{6}"))) {
+                    Toast.makeText(this, "Enter a valid IP, pairing port and six-digit code", Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
+                }
+                try {
+                    startForegroundService(AdbPairingService.manualPairIntent(this, hostname, portNumber, pairingCode))
+                    dialog.dismiss()
+                    Toast.makeText(this, "Pairing started; check result notification", Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    Log.e(AppConstants.TAG, "Manual pairing start failed", e)
+                    Toast.makeText(this, "Unable to start pairing: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        dialog.show()
     }
 
     private fun syncNotificationEnabled() {
