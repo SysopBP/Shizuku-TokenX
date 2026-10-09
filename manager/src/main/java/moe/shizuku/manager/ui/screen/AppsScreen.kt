@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -371,6 +372,17 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
                             }
                         }) { Text(stringResource(R.string.app_management_toggle_all)) }
                     }
+                    IconButton(
+                        enabled = !refreshing,
+                        onClick = {
+                            refreshing = true
+                            derivedFor = null
+                            loadedFor = null
+                            refreshKey++
+                        }
+                    ) {
+                        Icon(Icons.Filled.Refresh, contentDescription = "Refresh app bindings and permissions")
+                    }
                     IconButton(onClick = { sortMenu = true }) {
                         Icon(Icons.Filled.Sort, contentDescription = null)
                     }
@@ -504,11 +516,11 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
         ) {
             items(shown, key = { it.packageName }) { pi ->
                 val uid = pi.applicationInfo!!.uid
-                val granted = remember(pi.packageName, version) {
+                val granted = remember(pi.packageName, version, refreshKey) {
                     runCatching { AuthorizationManager.granted(pi.packageName, uid) }.getOrDefault(false)
                 }
                 val isSelected = pi.packageName in selected
-                val backendRoute = remember(pi.packageName, version) {
+                val backendRoute = remember(pi.packageName, version, refreshKey) {
                     ShizukuSettings.getBackendRoute(pi.packageName)
                 }
 
