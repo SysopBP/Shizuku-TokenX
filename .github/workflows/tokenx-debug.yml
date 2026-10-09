@@ -10,6 +10,7 @@ on:
       - tokenx-native-uid1000-settings-test
       - tokenx-build632-routing-audit
       - tokenx-build633-settings-attribution
+      - integration/37885383867-updates
       - main
     paths:
       - 'manager/**'
@@ -46,6 +47,7 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+          ref: ${{ github.sha }}
 
       - name: Patch rish for Android 17 system_server fork safety
         shell: bash
