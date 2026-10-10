@@ -41,7 +41,7 @@ class AdbPairingService : Service() {
         private const val stopAction = "stop"
         private const val replyAction = "reply"
         private const val remoteInputResultKey = "paring_code"
-        private const val portKey = "paring_code"
+        private const val portKey = "port"
         private const val hostKey = "pairing_host"
 
         fun startIntent(context: Context): Intent {
@@ -322,46 +322,23 @@ class AdbPairingService : Service() {
             .build()
     }
 
-    private val replyNotificationAction by unsafeLazy {
-        val remoteInput = RemoteInput.Builder(remoteInputResultKey).run {
-            setLabel(getString(R.string.dialog_adb_pairing_paring_code))
-            build()
-        }
-
+    private fun replyNotificationAction(host: String, port: Int): Notification.Action {
+        // Build the RemoteInput action against the actual discovered endpoint.
+        // Do not cache an action created with placeholder host/port.
+        val remoteInput = RemoteInput.Builder(remoteInputResultKey)
+            .setLabel("Enter code")
+            .build()
         val pendingIntent = PendingIntent.getForegroundService(
             this,
             replyRequestId,
-            replyIntent(this, "127.0.0.1", -1),
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            else
-                PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        Notification.Action.Builder(
-            null,
-            getString(R.string.notification_adb_pairing_input_paring_code),
-            pendingIntent
-        )
-            .addRemoteInput(remoteInput)
-            .build()
-    }
-
-    private fun replyNotificationAction(host: String, port: Int): Notification.Action {
-        // Ensure pending intent is created
-        val action = replyNotificationAction
-
-        PendingIntent.getForegroundService(
-            this,
-            replyRequestId,
             replyIntent(this, host, port),
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            else
-                PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-
-        return action
+        return Notification.Action.Builder(
+            null,
+            "Enter code",
+            pendingIntent
+        ).addRemoteInput(remoteInput).build()
     }
 
     private val searchingNotification by unsafeLazy {
@@ -376,7 +353,10 @@ class AdbPairingService : Service() {
     private fun createInputNotification(host: String, port: Int): Notification {
         return Notification.Builder(this, NOTIFICATION_CHANNEL)
             .setColor(getColor(R.color.notification))
-            .setContentTitle(getString(R.string.notification_adb_pairing_service_found_title))
+            .setContentTitle("Wireless pairing • Enter code")
+            .setContentText("Tap Enter code to enter the six-digit pairing code")
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setSmallIcon(R.drawable.ic_system_icon)
             .addAction(replyNotificationAction(host, port))
             .build()
