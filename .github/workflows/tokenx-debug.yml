@@ -200,6 +200,9 @@ jobs:
           ./gradlew :manager:assembleDebug --stacktrace
 
       - name: Run manager unit tests
+        env:
+          GITHUB_ACTOR: ${{ secrets.SESL_GITHUB_USERNAME }}
+          GITHUB_TOKEN: ${{ secrets.SESL_GITHUB_TOKEN }}
         run: ./gradlew :manager:testDebugUnitTest
 
       - name: Verify Preview identity
