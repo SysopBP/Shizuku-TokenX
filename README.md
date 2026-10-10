@@ -223,6 +223,7 @@ TokenX stands on several projects and contributions:
 
 - **[RikkaW / RikkaApps](https://github.com/RikkaApps/Shizuku)** — original Shizuku server, API, shell, and foundation.
 - **[thedjchi](https://github.com/thedjchi/Shizuku)** — the Shizuku fork this project was originally based on and the features inherited from it.
+- **[rushiranpise](https://github.com/rushiranpise)** — maintainer of [Shizuku-Next](https://github.com/rushiranpise/Shizuku-Next), the direct parent fork this project is built on. Shizuku-Next carries the Shizuku compatibility layer, wireless debugging/pairing flows, root and ADB start methods, watchdog, automation intents, and extensive Android 17 compatibility work that TokenX inherits.
 - **[@Vikramaditya015](https://github.com/Vikramaditya015)** — **System Server contribution** used in the development of TokenX's System Server work.
 - **[Meta Magic Mount RS](https://github.com/Tools-cx-app/meta-magic_mount-rs)** — systemless Magic Mount layer used by the current TokenX System Server Bridge setup.
 - **wreckless** and **rackah** — testing and feedback.
