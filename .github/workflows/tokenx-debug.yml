@@ -199,6 +199,9 @@ jobs:
           test -s manager/src/main/assets/rish_shizuku.dex
           ./gradlew :manager:assembleDebug --stacktrace
 
+      - name: Run manager unit tests
+        run: ./gradlew :manager:testDebugUnitTest
+
       - name: Verify Preview identity
         shell: bash
         run: |
