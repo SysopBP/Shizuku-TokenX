@@ -106,9 +106,25 @@ object ShellBinderRequestHandler {
         // a precise manager-side routing error instead of letting the client wait for the
         // generic Shizuku request timeout.
         if (sessionBackend != null && shizukuBinder == null) {
-            LOGGER.w("TokenX explicit rish route unavailable backend=%s requested=%s",
+            LOGGER.w("TokenX explicit rish route unavailable backend=%s requested=%s; replying with null Binder instead of allowing client timeout",
                 sessionBackend.name, requestedBackend ?: "default")
-            return false
+            // The rish client understands a null Binder as an immediate unavailable
+            // backend response. A silent return leaves it waiting five seconds and
+            // misleadingly suggests a manager package or battery optimization issue.
+            val unavailableReply = Parcel.obtain()
+            return try {
+                unavailableReply.writeStrongBinder(null)
+                unavailableReply.writeString(context.applicationInfo.sourceDir)
+                unavailableReply.writeLong(0L)
+                unavailableReply.writeString(sessionBackend.name)
+                unavailableReply.writeInt(-1)
+                binder.transact(1, unavailableReply, null, IBinder.FLAG_ONEWAY)
+            } catch (e: Throwable) {
+                LOGGER.w(e, "TokenX unavailable-backend reply failed backend=%s", sessionBackend.name)
+                false
+            } finally {
+                unavailableReply.recycle()
+            }
         }
 
         val data = Parcel.obtain()
