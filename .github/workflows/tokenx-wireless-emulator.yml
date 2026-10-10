@@ -49,7 +49,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           script: |
-            set -uo pipefail
+            set -u
             mkdir -p diagnostics
             APK="$(find apk -name '*.apk' | head -1)"
             adb install -r "$APK" > diagnostics/install.txt 2>&1
