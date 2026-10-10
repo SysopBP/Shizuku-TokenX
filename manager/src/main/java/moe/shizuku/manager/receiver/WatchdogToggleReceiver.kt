@@ -6,8 +6,8 @@ import android.content.Intent
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.ShizukuSettings
 
-class WatchdogToggleReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
+class WatchdogToggleReceiver : AuthenticatedReceiver() {
+    override fun onAuthenticated(context: Context, intent: Intent) {
         val id = BuildConfig.APPLICATION_ID
         val enable = when (intent.action) {
             "$id.WATCHDOG_ON" -> true
