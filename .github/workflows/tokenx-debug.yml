@@ -13,6 +13,7 @@ on:
       - integration/37885383867-updates
       - codex/tokenx-666-pairing-fixes
       - main
+      - feature/670-system-bridge-recovery
     paths:
       - 'manager/**'
       - 'xposed/**'
