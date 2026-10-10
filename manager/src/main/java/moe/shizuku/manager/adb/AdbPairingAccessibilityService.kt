@@ -219,8 +219,7 @@ class AdbPairingAccessibilityService : AccessibilityService() {
                 return@launch
             }
 
-            AdbPairingClient(host, port, dialog.code, key)
-                .runCatching { start() }
+            runCatching { AdbPairingClient(host, port, dialog.code, key).use { it.start() } }
                 .onFailure { e ->
                     Log.w(TAG, "Pair failed", e)
                     finish(

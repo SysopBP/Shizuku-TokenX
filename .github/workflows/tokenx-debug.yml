@@ -11,6 +11,7 @@ on:
       - tokenx-build632-routing-audit
       - tokenx-build633-settings-attribution
       - integration/37885383867-updates
+      - codex/tokenx-666-pairing-fixes
       - main
     paths:
       - 'manager/**'
