@@ -1,0 +1,53 @@
+name: Prepare TokenX Preview 4
+on:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/tokenx-preview4.yml', 'docs/releases/tokenx-preview4.md', 'docs/releases/tokenx-preview4-setup.md']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: tokenx-preview4
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      SOURCE_SHA: 3ff7e39cba7941e4df1d2572b2136233012261a4
+      RELEASE_TAG: v14.2.0-TKN-preview.4
+    steps:
+      - uses: actions/checkout@v6
+      - name: Package verified APK and matching clients
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api repos/$GH_REPO/actions/runs/38032634537 > run.json
+          jq -e --arg sha "$SOURCE_SHA" '.head_sha == $sha and .status == "completed" and .conclusion == "success"' run.json
+          mkdir -p dist rish
+          gh run download 38032634537 -n Shizuku-TokenX-debug -D dist
+          mv dist/Shizuku-TokenX-debug.apk dist/TokenX-Preview4-Build670-debug.apk
+          unzip -p dist/TokenX-Preview4-Build670-debug.apk assets/rish > rish/rish
+          unzip -p dist/TokenX-Preview4-Build670-debug.apk assets/rish_shizuku.dex > rish/rish_shizuku.dex
+          test -s rish/rish && test -s rish/rish_shizuku.dex
+          chmod 700 rish/rish
+          chmod 400 rish/rish_shizuku.dex
+          (cd rish && zip ../dist/TokenX-Preview4-Build670-RISH.zip rish rish_shizuku.dex)
+          grep -Fx 'version=1.1.0' kernelsu-debug/module.prop
+          for script in kernelsu-debug/*.sh; do bash -n "$script"; done
+          chmod 755 kernelsu-debug/*.sh
+          (cd kernelsu-debug && zip ../dist/TokenX-KernelSU-Diagnostics-v1.1.0.zip module.prop *.sh)
+          cp docs/releases/tokenx-preview4.md dist/TokenX-Preview4-Release-Notes.md
+          cp docs/releases/tokenx-preview4-setup.md dist/TokenX-Preview4-Setup.md
+          (cd dist && sha256sum *.apk *.zip *.md > SHA256SUMS.txt)
+      - name: Create unpublished candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Existing release preserved"
+            exit 0
+          fi
+          gh release create "$RELEASE_TAG" dist/* --target "$SOURCE_SHA" --title "TokenX 14.2.0 — Preview 4 | Android 17 Pairing" --notes-file docs/releases/tokenx-preview4.md --draft --prerelease
