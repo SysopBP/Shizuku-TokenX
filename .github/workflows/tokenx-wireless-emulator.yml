@@ -2,6 +2,11 @@ name: TokenX Wireless ADB Emulator Probe
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - integration/37885383867-updates
+    paths:
+      - '.github/workflows/tokenx-wireless-emulator.yml'
   workflow_run:
     workflows: ["TokenX Debug Build"]
     types: [completed]
@@ -12,7 +17,7 @@ permissions:
 
 jobs:
   wireless-emulator:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'integration/37885383867-updates') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'integration/37885383867-updates') }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
