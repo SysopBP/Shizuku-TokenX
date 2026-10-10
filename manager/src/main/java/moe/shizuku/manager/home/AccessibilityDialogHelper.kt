@@ -30,7 +30,7 @@ import moe.shizuku.manager.utils.SettingsPage
  * something of a user who may be about to choose the way that doesn't need it at all.
  */
 fun Context.showAccessibilityDialog() {
-    showNavigateDialog()
+    startActivity(Intent(this, AdbPairingTutorialActivity::class.java))
 }
 
 /** True when the system makes this install's "restricted settings" a obstacle. */

@@ -11,7 +11,9 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.Observer
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import moe.shizuku.manager.MainActivity
 import moe.shizuku.manager.R
@@ -67,15 +69,24 @@ class AdbPairingService : Service() {
 
     private val observer = Observer<Pair<String, Int>> { (host, port) ->
         Log.i(tag, "Pairing service host: $host, port: $port")
-        if (port <= 0) return@Observer
+        if (pairing) return@Observer
+        if (port <= 0) {
+            inputNotification = null
+            getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, searchingNotification)
+            return@Observer
+        }
 
         // Since the service could be killed before user finishing input,
         // we need to put the host and port into Intent
         val notification = createInputNotification(host, port)
+        inputNotification = notification
 
         getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification)
     }
 
+    private val pairingScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var inputNotification: Notification? = null
+    @Volatile private var pairing = false
     private var started = false
 
     override fun onCreate() {
@@ -165,24 +176,30 @@ class AdbPairingService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         stopSearch()
+        pairingScope.cancel()
     }
 
     private fun onStart(): Notification {
+        if (pairing) return workingNotification
+        stopSearch()
         startSearch()
-        return searchingNotification
+        return inputNotification ?: searchingNotification
     }
 
     private fun onInput(code: String, host: String, port: Int): Notification {
-        GlobalScope.launch(Dispatchers.IO) {
+        if (pairing) return workingNotification
+        pairing = true
+        stopSearch()
+        pairingScope.launch {
             val key = try {
                 AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shizuku")
             } catch (e: Throwable) {
-                e.printStackTrace()
+                handleResult(false, AdbKeyException(e))
                 return@launch
             }
 
-            AdbPairingClient(host, port, code, key).runCatching {
-                start()
+            runCatching {
+                AdbPairingClient(host, port, code, key).use { it.start() }
             }.onFailure {
                 handleResult(false, it)
             }.onSuccess {

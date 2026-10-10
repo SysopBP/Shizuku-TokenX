@@ -188,8 +188,8 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
 
-            AdbPairingClient(host, port, password, key).runCatching {
-                start()
+            runCatching {
+                AdbPairingClient(host, port, password, key).use { it.start() }
             }.onFailure {
                 _result.postValue(it)
                 it.printStackTrace()

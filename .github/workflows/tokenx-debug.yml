@@ -11,6 +11,7 @@ on:
       - tokenx-build632-routing-audit
       - tokenx-build633-settings-attribution
       - integration/37885383867-updates
+      - codex/tokenx-666-pairing-fixes
       - main
     paths:
       - 'manager/**'
@@ -197,6 +198,12 @@ jobs:
           ./gradlew :shell:assembleDebug
           test -s manager/src/main/assets/rish_shizuku.dex
           ./gradlew :manager:assembleDebug --stacktrace
+
+      - name: Run manager unit tests
+        env:
+          GITHUB_ACTOR: ${{ secrets.SESL_GITHUB_USERNAME }}
+          GITHUB_TOKEN: ${{ secrets.SESL_GITHUB_TOKEN }}
+        run: ./gradlew :manager:testDebugUnitTest
 
       - name: Verify Preview identity
         shell: bash

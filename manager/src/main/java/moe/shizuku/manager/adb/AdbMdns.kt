@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.Observer
@@ -18,6 +20,8 @@ class AdbMdns(
     private val observer: Observer<Pair<String, Int>>
 ) {
 
+    private val handler = Handler(Looper.getMainLooper())
+    private val resolveRetries = mutableMapOf<String, Int>()
     private var registered = false
     private var running = false
     private var serviceName: String? = null
@@ -27,6 +31,7 @@ class AdbMdns(
     fun start() {
         if (running) return
         running = true
+        resolveRetries.clear()
         if (!registered) {
             nsdManager.discoverServices(serviceType, NsdManager.PROTOCOL_DNS_SD, listener)
         }
@@ -35,6 +40,7 @@ class AdbMdns(
     fun stop() {
         if (!running) return
         running = false
+        handler.removeCallbacksAndMessages(null)
         if (registered) {
             nsdManager.stopServiceDiscovery(listener)
         }
@@ -42,6 +48,7 @@ class AdbMdns(
 
     private fun onDiscoveryStart() {
         registered = true
+        if (!running) nsdManager.stopServiceDiscovery(listener)
     }
 
     private fun onDiscoveryStop() {
@@ -49,7 +56,12 @@ class AdbMdns(
     }
 
     private fun onServiceFound(info: NsdServiceInfo) {
-        nsdManager.resolveService(info, ResolveListener(this))
+        if (!running) return
+        try {
+            nsdManager.resolveService(info, ResolveListener(this))
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "Could not resolve service", e)
+        }
     }
 
     private fun onServiceLost(info: NsdServiceInfo) {
@@ -89,7 +101,10 @@ class AdbMdns(
         }
 
         override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
-            Log.v(TAG, "onStartDiscoveryFailed: $serviceType, $errorCode")
+            Log.w(TAG, "onStartDiscoveryFailed: $serviceType, $errorCode")
+            adbMdns.running = false
+            adbMdns.registered = false
+            adbMdns.observer.onChanged("" to -1)
         }
 
         override fun onDiscoveryStopped(serviceType: String) {
@@ -116,7 +131,15 @@ class AdbMdns(
     }
 
     internal class ResolveListener(private val adbMdns: AdbMdns) : NsdManager.ResolveListener {
-        override fun onResolveFailed(nsdServiceInfo: NsdServiceInfo, i: Int) {}
+        override fun onResolveFailed(nsdServiceInfo: NsdServiceInfo, i: Int) {
+            Log.w(TAG, "Resolve failed: ${nsdServiceInfo.serviceName}, $i")
+            val attempts = (adbMdns.resolveRetries[nsdServiceInfo.serviceName] ?: 0) + 1
+            adbMdns.resolveRetries[nsdServiceInfo.serviceName] = attempts
+            if (attempts > 3) return
+            adbMdns.handler.postDelayed({
+                if (adbMdns.running) adbMdns.onServiceFound(nsdServiceInfo)
+            }, 1000)
+        }
 
         override fun onServiceResolved(nsdServiceInfo: NsdServiceInfo) {
             adbMdns.onServiceResolved(nsdServiceInfo)
