@@ -765,9 +765,9 @@ fun HomeScreen(bottomPadding: Dp) {
                         heartbeatTick = heartbeatTick && transportAlive,
                         detail = "Protocol v${TokenXBinderProtocol.VERSION} • rendezvous generation $transportGeneration • Root $rootClients / System $systemClients / Shell $shellClients",
                         command = "./rish --system",
-                        actionLabel = if (transportAlive) "Transport live" else "Waiting",
-                        actionEnabled = false,
-                        onAction = {}
+                        actionLabel = if (transportStatsExpanded) "Hide transport stats" else "Transport live",
+                        actionEnabled = true,
+                        onAction = { transportStatsExpanded = !transportStatsExpanded }
                     )
                     TokenXGlassCard(modifier = Modifier.fillMaxWidth()) {
                         Column {
