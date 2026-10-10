@@ -1,0 +1,90 @@
+name: TokenX Wireless ADB Emulator Probe
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["TokenX Debug Build"]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  wireless-emulator:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'integration/37885383867-updates') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Download APK from the successful TokenX build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$RUN_ID" ]; then
+            RUN_ID="$(gh api "repos/$REPO/actions/workflows/tokenx-debug.yml/runs?branch=integration%2F37885383867-updates&status=success&per_page=1" --jq '.workflow_runs[0].id')"
+          fi
+          test -n "$RUN_ID" && test "$RUN_ID" != null
+          mkdir -p apk diagnostics
+          gh run download "$RUN_ID" -R "$REPO" -n Shizuku-TokenX-debug -D apk
+          find apk -name '*.apk' -size +0c -print | tee diagnostics/apk-paths.txt
+          test -s "$(find apk -name '*.apk' | head -1)"
+          echo "SOURCE_RUN=$RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Emulate Android and probe real wireless pairing availability
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            set -uo pipefail
+            mkdir -p diagnostics
+            APK="$(find apk -name '*.apk' | head -1)"
+            adb install -r "$APK" > diagnostics/install.txt 2>&1
+            adb shell am start -n moe.shizuku.privileged.api/moe.shizuku.manager.MainActivity > diagnostics/launch.txt 2>&1 || true
+            sleep 8
+            adb shell dumpsys activity activities > diagnostics/activity.txt
+            adb shell dumpsys package moe.shizuku.privileged.api > diagnostics/package.txt
+            adb shell settings put global development_settings_enabled 1 || true
+            adb shell settings put global adb_wifi_enabled 1 || true
+            sleep 5
+            adb shell getprop > diagnostics/properties.txt
+            adb shell dumpsys adb > diagnostics/adb-service.txt 2>&1 || true
+            adb shell ss -ltn > diagnostics/tcp-listeners.txt 2>&1 || true
+            adb shell dumpsys notification --noredact > diagnostics/notifications.txt 2>&1 || true
+            adb shell am start -n moe.shizuku.privileged.api/moe.shizuku.manager.adb.AdbPairingTutorialActivity > diagnostics/pairing-screen.txt 2>&1 || true
+            sleep 4
+            adb shell uiautomator dump /sdcard/tokenx-ui.xml > diagnostics/uiautomator.txt 2>&1 || true
+            adb pull /sdcard/tokenx-ui.xml diagnostics/tokenx-ui.xml || true
+            adb shell screencap -p /sdcard/tokenx-pairing.png || true
+            adb pull /sdcard/tokenx-pairing.png diagnostics/tokenx-pairing.png || true
+            adb logcat -d -v threadtime > diagnostics/logcat.txt || true
+            echo "=== Pairing UI button ===" | tee diagnostics/summary.txt
+            if grep -q 'Pair manually' diagnostics/tokenx-ui.xml; then
+              echo "PASS: manual pairing button visible" | tee -a diagnostics/summary.txt
+            else
+              echo "FAIL: manual pairing button not visible" | tee -a diagnostics/summary.txt
+            fi
+            echo "=== Android wireless pairing server ===" | tee -a diagnostics/summary.txt
+            if grep -Eiq 'pairing.*(port|server)|_adb-tls-pairing' diagnostics/adb-service.txt diagnostics/logcat.txt; then
+              echo "INFO: pairing-related evidence found; inspect logs for actual availability" | tee -a diagnostics/summary.txt
+            else
+              echo "UNSUPPORTED/UNVERIFIED: emulator did not expose a pairing server" | tee -a diagnostics/summary.txt
+            fi
+            echo "NOT TESTED: six-digit pairing authentication, UID 2000 execution, and reconnect unless pairing server and test harness are available." | tee -a diagnostics/summary.txt
+
+      - name: Upload wireless diagnostics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: TokenX-Wireless-Emulator-Diagnostics
+          path: diagnostics/
+          if-no-files-found: warn
+          retention-days: 14
