@@ -39,15 +39,18 @@ jobs:
           for script in kernelsu-debug/*.sh; do bash -n "$script"; done
           chmod 755 kernelsu-debug/*.sh
           (cd kernelsu-debug && zip ../dist/TokenX-KernelSU-Diagnostics-v1.1.0.zip module.prop *.sh)
+          cp docs/TokenX_Commands_Guide.pdf dist/TokenX_Commands_Guide.pdf
+          echo 'd7594de02775864a62b85f2a2c675bd28ac66d5d60cc09c60e90ae7344635479  dist/TokenX_Commands_Guide.pdf' | sha256sum --check
           cp docs/releases/tokenx-preview4.md dist/TokenX-Preview4-Release-Notes.md
           cp docs/releases/tokenx-preview4-setup.md dist/TokenX-Preview4-Setup.md
-          (cd dist && sha256sum *.apk *.zip *.md > SHA256SUMS.txt)
+          (cd dist && sha256sum *.apk *.zip *.md *.pdf > SHA256SUMS.txt)
       - name: Create unpublished candidate
         shell: bash
         run: |
           set -euo pipefail
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "Existing release preserved"
+            gh release upload "$RELEASE_TAG" dist/TokenX_Commands_Guide.pdf dist/TokenX-Preview4-Release-Notes.md dist/SHA256SUMS.txt --clobber
+            gh release edit "$RELEASE_TAG" --notes-file docs/releases/tokenx-preview4.md
             exit 0
           fi
           gh release create "$RELEASE_TAG" dist/* --target "$SOURCE_SHA" --title "TokenX 14.2.0 — Preview 4 | Android 17 Pairing" --notes-file docs/releases/tokenx-preview4.md --draft --prerelease

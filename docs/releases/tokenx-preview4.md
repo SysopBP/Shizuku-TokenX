@@ -23,6 +23,7 @@ System recovery must rebind/detach without killing `system_server`. Historical s
 - **TokenX-Preview4-Build670-RISH.zip** — matching rish and rish_shizuku.dex extracted from that APK.
 - **TokenX-KernelSU-Diagnostics-v1.1.0.zip** — optional boot timeline tracing module. Diagnostic only; does not provision a privileged backend.
 - **TokenX-Preview4-Setup.md** and these release notes.
+- **TokenX_Commands_Guide.pdf** — supplied commands reference, included unchanged. 
 - **SHA256SUMS.txt** — checksums of packaged assets.
 
 The older Preview 3 KSU bridge installer is deliberately excluded: this candidate's packaging rejects retired companion backends. Do not assume an old bridge module is required by this bundle.
@@ -36,3 +37,6 @@ Compilation and packaging checks cannot certify runtime Binder acquisition or OE
 Special thanks to **@wr3cckl3ss**, **@reckaH2281**, and **@Vikramaditya015**.
 Thanks to **RikkaW / RikkaApps and Shizuku contributors**, **thedjchi**, **KernelSU**, and **LSPosed** for the foundations and tools used by TokenX.
 TokenX is an independent project. Original licensing and upstream attribution remain applicable.
+ 
+## Commands reference
+Download **TokenX_Commands_Guide.pdf** from this release's assets. The supplied guide is included unchanged; commands and backend availability must be checked against this candidate's setup guide and validation notes.
