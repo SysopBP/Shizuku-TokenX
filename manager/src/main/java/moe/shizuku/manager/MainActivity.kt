@@ -2,6 +2,7 @@ package moe.shizuku.manager
 
 import android.Manifest
 import android.app.NotificationManager
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -14,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import moe.shizuku.manager.adb.AdbPairingService
 import moe.shizuku.manager.home.showAccessibilityDialog
 import moe.shizuku.manager.receiver.ShizukuReceiverStarter
+import moe.shizuku.manager.receiver.SystemBridgeRecoveryReceiver
 import moe.shizuku.manager.ui.ShizukuApp
 
 class MainActivity : ComponentActivity() {
@@ -40,9 +42,27 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         handleIntent(intent)
         requestNotificationPermission()
+        offerBridgeRecoveryReminder()
         setContent {
             ShizukuApp()
         }
+    }
+
+    private fun offerBridgeRecoveryReminder() {
+        val prefs = getSharedPreferences("tokenx_bridge_recovery", Context.MODE_PRIVATE)
+        if (prefs.getBoolean("asked", false)) return
+        AlertDialog.Builder(this)
+            .setTitle("TokenX System Bridge recovery")
+            .setMessage("Show a reminder after reboot to review the UID 1000 bridge? This never injects or soft-reboots automatically.")
+            .setPositiveButton("Enable reminder") { _, _ ->
+                prefs.edit().putBoolean("asked", true).apply()
+                sendBroadcast(Intent(this, SystemBridgeRecoveryReceiver::class.java)
+                    .setAction(SystemBridgeRecoveryReceiver.ACTION_ENABLE))
+            }
+            .setNegativeButton("Not now") { _, _ ->
+                prefs.edit().putBoolean("asked", true).apply()
+            }
+            .show()
     }
 
     override fun onNewIntent(intent: Intent) {
