@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - feature/system-bridge-provisioning-poc
     paths:
       - '.github/workflows/tokenx-debug.yml'
       - 'manager/**'
