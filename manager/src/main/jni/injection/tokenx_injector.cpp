@@ -16,7 +16,8 @@
 
 namespace {
 constexpr uint32_t MAGIC = 0x544b4e34;
-constexpr uint32_t MAX_DEX = 16;
+// Keep aligned with SystemServerModuleArchive.MAX_DEX.
+constexpr uint32_t MAX_DEX = 32;
 constexpr uint32_t MAX_BYTES = 128 * 1024 * 1024;
 constexpr const char *DIR = "/data/adb/modules/tokenx_system_server/payload";
 void logError(const char *message) { __android_log_write(ANDROID_LOG_ERROR, "TokenX/Injection", message); }
@@ -185,3 +186,4 @@ public:
 }
 REGISTER_ZYGISK_MODULE(TokenXInjector)
 REGISTER_ZYGISK_COMPANION(companion)
+
