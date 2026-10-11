@@ -87,8 +87,11 @@ object SystemUidProvisioner {
                 if '$KSUD' module install ${q(archive.path)}; then
                     echo TOKENX_MODULE_INSTALL_SUCCESS
                 else
-                    result=$?
-                    echo "TOKENX_MODULE_INSTALL_FAILED_EXIT=${'
+                    echo TOKENX_MODULE_INSTALL_FAILED
+                    echo 'KernelSU module install failed; no reboot requested.'
+                    exit 3
+                fi
+                staged='/data/adb/modules_update/$MODULE_ID'
                 test -d "${'$'}staged" || staged='$MODULE_DIR'
                 test ! -L "${'$'}staged" || exit 3
                 [ "$(sha256sum "${'$'}staged/payload.sha256" | cut -d ' ' -f 1)" = '$rootManifestHash' ] || { echo 'Installed manifest mismatch'; exit 3; }
