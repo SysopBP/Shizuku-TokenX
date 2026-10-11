@@ -38,9 +38,23 @@ rollback() {
 }
 [ "$(id -u)" = 0 ] || exit 2
 [ ! -L "$D" ] && [ "$(stat -c %u "$D")" = 0 ] || exit 2
+trap 'if [ -d /storage/emulated/0/Download ]; then { cat "$D/migration.log" 2>/dev/null; printf "\nMigration status: "; cat "$D/status" 2>/dev/null; } > /storage/emulated/0/Download/TokenX_Manager_UID_Migration.txt; chmod 644 /storage/emulated/0/Download/TokenX_Manager_UID_Migration.txt; fi' 0
 [ "$(sha256sum "$D/ordinary.apk" | cut -d ' ' -f 1)" = "$ORDINARY_HASH" ] || exit 2
 [ "$(sha256sum "$D/system.apk" | cut -d ' ' -f 1)" = "$SYSTEM_HASH" ] || exit 2
 [ "$(uid)" = "$OLD_UID" ] || { status identity_changed; exit 2; }
+# setsid isolates the session, but Android also kills app cgroups. Leave any
+# old-manager UID group BEFORE stopping or uninstalling that package.
+if grep -Eq "uid[_-]?${OLD_UID}(/|$)" "/proc/$$/cgroup"; then
+    for group in /sys/fs/cgroup/cgroup.procs /dev/memcg/apps/cgroup.procs /dev/memcg/cgroup.procs; do
+        [ -w "$group" ] || continue
+        echo $$ > "$group" 2>/dev/null || true
+    done
+fi
+if grep -Eq "uid[_-]?${OLD_UID}(/|$)" "/proc/$$/cgroup"; then
+    status detach_failed
+    echo 'Detached worker is still in the manager app cgroup; no uninstall attempted'
+    exit 2
+fi
 status backing_up
 # Stop before snapshotting SQLite databases and preferences.
 am force-stop --user 0 "$PKG" || { status stop_failed; exit 2; }

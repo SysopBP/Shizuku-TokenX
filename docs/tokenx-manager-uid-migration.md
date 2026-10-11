@@ -23,13 +23,14 @@ The signing action only accepts the installed manager's Binder UID and targets
 the fixed manager package. It preserves existing shared-user signing history and
 records recovery before enrollment. Root stages checked APKs under
 `/data/system/tokenx_manager_migration`. A detached shell stops the manager,
-backs up its CE/DE data, reinstalls the same package as UID 1000, restores app data
+verifies it has left the old app UID cgroup, backs up CE/DE data, reinstalls the same package as UID 1000, restores app data
 with the new owner, applies SELinux file labels, and reopens TokenX. Failed system
 installation or restoration attempts rollback to the ordinary APK and data.
 Signing trust is retained on rollback until the ordinary manager explicitly
 runs Restore signing after rollback; it is never removed while system-UID apps
 still depend on the certificate. Recovery files are retained and never silently
-overwritten. Logs: `/data/system/tokenx_manager_migration/migration.log`.
+overwritten. Logs: `/data/system/tokenx_manager_migration/migration.log`, also copied to
+`/storage/emulated/0/Download/TokenX_Manager_UID_Migration.txt` when available.
 
 Android Keystore entries belong to the old UID and are not migrated by restoring
 files. Root authorization and LSPosed state must be checked after reinstall. No

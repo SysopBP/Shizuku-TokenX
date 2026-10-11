@@ -9,7 +9,7 @@ import unittest
 SOURCE = pathlib.Path("manager/src/main/assets/tokenx-manager/migrate.sh").read_text()
 
 class MigrationTests(unittest.TestCase):
-    def run_case(self, failure="", symlink=False):
+    def run_case(self, failure="", symlink=False, app_cgroup=False):
         with tempfile.TemporaryDirectory() as temporary:
             base = pathlib.Path(temporary)
             stage, ce, de, commands = [base / name for name in ("stage", "ce", "de", "commands")]
@@ -18,7 +18,9 @@ class MigrationTests(unittest.TestCase):
             (de / "preference").write_text("preserve DE")
             for name in ("ordinary", "system"): (stage / (name + ".apk")).write_text(name)
             state = base / "uid"; state.write_text("10123")
-            script = SOURCE.replace("/data/system/tokenx_manager_migration", str(stage))
+            cgroup = base / "cgroup"; cgroup.write_text("0::/uid_10123/pid_123\n" if app_cgroup else "0::/root\n")
+            script = SOURCE.replace("/proc/$$/cgroup", str(cgroup)).replace("/storage/emulated/0/Download", str(base / "downloads"))
+            script = script.replace("/data/system/tokenx_manager_migration", str(stage))
             script = script.replace("/data/user/0/$PKG", str(ce)).replace("/data/user_de/0/$PKG", str(de))
             script = script.replace("/data/user/0/moe.shizuku.privileged.api", str(ce))
             script = script.replace("/data/user_de/0/moe.shizuku.privileged.api", str(de))
@@ -69,6 +71,11 @@ mkdir -p "$CE" "$DE"; echo Success
     def test_rollback_failure_is_not_reported_as_success(self):
         code, status, uid, data = self.run_case("rollback")
         self.assertEqual((code,status,uid), (3,"rollback_failed",""))
+
+    def test_worker_remaining_in_app_cgroup_cannot_uninstall(self):
+        code, status, uid, data = self.run_case(app_cgroup=True)
+        self.assertEqual((code,status,uid), (2,"detach_failed","10123"))
+        self.assertEqual(data, ["preserve CE", "preserve DE"])
 
     def test_symlink_backup_is_rejected_before_uninstall(self):
         code, status, uid, data = self.run_case(symlink=True)
