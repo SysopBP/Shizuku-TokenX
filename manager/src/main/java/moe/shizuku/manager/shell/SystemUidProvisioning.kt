@@ -134,7 +134,12 @@ class SystemUidProvisionWorker(context: Context, parameters: WorkerParameters) :
                 }
                 delay(1000)
             } while (android.os.SystemClock.elapsedRealtime() < deadline)
-            fail("Live injection did not verify within 2 minutes. No retry or soft reboot was requested. Check TokenX/DirectInjection and TokenX/Injection logs for the exact failure.")
+            val diagnostics = SystemUidProvisioner.runRoot(
+                "logcat -d -v threadtime -s 'TokenX/DirectInjection:*' 'TokenX/Injection:*' | tail -n 60"
+            ).output.trim()
+            fail("Live injection did not verify within 2 minutes. No retry or soft reboot was requested." +
+                if (diagnostics.isBlank()) "\nNo payload logs were captured; check native loading and SELinux denials."
+                else "\nRecent payload diagnostics:\n$diagnostics")
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {

@@ -21,13 +21,12 @@ import rikka.hidden.compat.ActivityManagerApis;
 import rikka.shizuku.server.api.IContentProviderUtils;
 
 /**
- * Loaded by TokenX's Zygisk module only after system_server specialization.
+ * Loaded by the live native injector or Zygisk after system_server specialization.
  * The endpoint is independent of Root and isolated UID-1000 Shizuku workers.
  * It exposes bounded, read-only framework operations and the existing _TKN rendezvous.
  */
 public final class TokenXSystemServerInjection {
     private static final String TAG = "TokenX/Injection";
-    private static final AtomicBoolean STARTED = new AtomicBoolean();
     private static volatile Endpoint endpoint;
     private static volatile IBinder managerLifetime;
     private static final AtomicBoolean PUBLISHING = new AtomicBoolean();
@@ -46,7 +45,8 @@ public final class TokenXSystemServerInjection {
             Log.e(TAG, "SYSTEM_SERVER_INJECTION_IDENTITY_REJECTED");
             return;
         }
-        if (STARTED.compareAndSet(false, true)) publishAsync();
+        // A failed handoff must remain retryable in the same loaded class.
+        if (managerLifetime == null || !managerLifetime.isBinderAlive()) publishAsync();
     }
 
     private static void publishAsync() {
@@ -93,12 +93,18 @@ public final class TokenXSystemServerInjection {
         IContentProvider provider = null;
         try {
             provider = ActivityManagerApis.getContentProviderExternal(name, 0, null, name);
-            if (provider == null || !provider.asBinder().isBinderAlive()) return false;
+            if (provider == null || !provider.asBinder().isBinderAlive()) {
+                Log.w(TAG, "SYSTEM_SERVER_INJECTION_PROVIDER_UNAVAILABLE authority=" + name);
+                return false;
+            }
             Bundle extra = new Bundle();
             extra.putBinder("binder", endpoint);
-            Bundle reply = IContentProviderUtils.callCompat(provider, null, name, "tokenx.injectedBackend", null, extra);
+            Bundle reply = IContentProviderUtils.callCompat(provider, "android", name, "tokenx.injectedBackend", null, extra);
             IBinder lifetime = reply == null ? null : reply.getBinder("managerLifetime");
-            if (lifetime == null) return false;
+            if (lifetime == null) {
+                Log.w(TAG, "SYSTEM_SERVER_INJECTION_HANDOFF_REJECTED authority=" + name);
+                return false;
+            }
             if (managerLifetime != lifetime) {
                 managerLifetime = lifetime;
                 lifetime.linkToDeath(() -> {
@@ -111,7 +117,7 @@ public final class TokenXSystemServerInjection {
             Log.i(TAG, "SYSTEM_SERVER_INJECTION_BINDER_READY uid=" + Process.myUid() + " pid=" + Process.myPid());
             return true;
         } catch (Throwable e) {
-            Log.w(TAG, "Injection Binder publication unavailable: " + e.getClass().getSimpleName());
+            Log.w(TAG, "SYSTEM_SERVER_INJECTION_PUBLICATION_FAILED authority=" + name, e);
             return false;
         } finally {
             if (provider != null) {

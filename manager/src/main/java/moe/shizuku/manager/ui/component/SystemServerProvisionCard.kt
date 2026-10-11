@@ -19,7 +19,7 @@ fun SystemServerProvisionCard() {
     TokenXGlassCard {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("System Server injection", style = MaterialTheme.typography.titleMedium)
-            Text("Load TokenX inside Android's System Server using KernelSU and a Zygisk API v4 runtime.",
+            Text("Load TokenX inside Android's running System Server using root and the JBCompanion native injector.",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (status.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             if (status.detail.isNotBlank()) Text(status.detail,
