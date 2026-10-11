@@ -49,11 +49,12 @@ object TokenXXposedSystemServerClient {
         ?: ServiceManager.getService("activity")
 
     /** Only the UID-1000-authenticated provider handoff may install this slot. */
-    fun acceptInjectedBinder(candidate: IBinder): Boolean {
+    fun acceptInjectedBinder(candidate: IBinder, senderPid: Int): Boolean {
         val identity = identity(candidate)
         val probe = systemProbe(candidate)
         if (identity?.verifiedSystemServer != true || probe?.verified != true ||
-            identity.pid != probe.pid || !challenge(candidate, moe.shizuku.manager.BuildConfig.VERSION_CODE)) return false
+            identity.pid != probe.pid || identity.pid != senderPid ||
+            !challenge(candidate, moe.shizuku.manager.BuildConfig.VERSION_CODE)) return false
         return runCatching {
             candidate.linkToDeath({ if (injectedBinder === candidate) injectedBinder = null }, 0)
             injectedBinder = candidate

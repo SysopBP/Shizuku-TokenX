@@ -1,13 +1,13 @@
 // TokenX KernelSU / Zygisk API v4 system_server-only injector.
 // No ART hooks, UID changes, service replacement, or SELinux policy changes.
-#include <cstdint>
+#include <stdint.h>
 #include "zygisk.hpp"
 #include <android/log.h>
-#include <cerrno>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include <errno.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/stat.h>

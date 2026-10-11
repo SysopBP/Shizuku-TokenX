@@ -138,10 +138,11 @@ class ShizukuManagerProvider : ShizukuProvider() {
 
         return if (method == "tokenx.injectedBackend") {
             if (android.os.Binder.getCallingUid() != Process.SYSTEM_UID) return null
+            val senderPid = android.os.Binder.getCallingPid()
             val candidate = extras.getBinder("binder") ?: return null
             val identity = android.os.Binder.clearCallingIdentity()
             try {
-                if (!TokenXXposedSystemServerClient.acceptInjectedBinder(candidate)) return null
+                if (!TokenXXposedSystemServerClient.acceptInjectedBinder(candidate, senderPid)) return null
                 Log.i("TokenX/Injection", "Verified native system_server injection Binder")
                 Bundle().apply { putBinder("managerLifetime", injectionLifetime) }
             } finally { android.os.Binder.restoreCallingIdentity(identity) }

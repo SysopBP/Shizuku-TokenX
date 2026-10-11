@@ -31,6 +31,8 @@ object SystemUidProvisioner {
             return Result(false, 2, "Injection requires Android 8.1+ and a 64-bit System Server.", "preflight")
         if (context.packageName != BuildConfig.APPLICATION_ID)
             return Result(false, 2, "Injection is unavailable for a renamed/stealth APK.", "preflight")
+        if (context.applicationInfo.uid / 100000 != 0)
+            return Result(false, 2, "Provision System Server from the device owner profile.", "preflight")
         return runRoot("""
             set -e
             [ "$(id -u)" = 0 ] || { echo 'Root access required'; exit 2; }

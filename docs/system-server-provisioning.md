@@ -14,6 +14,9 @@ for KernelSU (Zygisk Next or ReZygisk). TokenX does not install or enable that
 runtime automatically. An unknown existing tokenx_system_server module is rejected
 instead of overwritten.
 
+The Zygisk API header is pinned to upstream commit 7bb941ac8edfcffd1d23761e401c45ca95409dc1; its ISC license is retained.
+Provisioning is performed from the device owner profile.
+
 The module contains the injector compiled with this APK and DEX extracted from
 this APK. SHA-256 checks validate the archive, installer payload, and staged files.
 After installation verifies, the confirmed operation invokes ksud soft-reboot.
@@ -26,7 +29,7 @@ framework replacements, ART hooks, shared UID APKs, legacy packages, system
 partition writes, or SELinux policy changes are needed.
 
 The endpoint publishes to TokenX's existing protected provider. The manager
-authenticates the UID-1000 caller and validates the native Binder's identity,
+authenticates the UID-1000 caller and its kernel-reported PID, and validates the native Binder's identity,
 functional probe, protocol/build version and a random challenge. The endpoint
 accepts privileged transactions only from the installed TokenX manager UID.
 Provider re-publication follows the manager process lifetime.
