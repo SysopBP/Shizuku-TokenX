@@ -119,6 +119,22 @@ class MainActivity : ComponentActivity() {
             prefs.edit().putBoolean("asked", true).apply()
         }
         panel.addView(actions)
+        line("SYSTEM SERVER LAB", 11f, Color.rgb(210, 104, 139), true, 22)
+        line("Provision System Server UID 1000", 16f, Color.WHITE, true, 8)
+        line("Device will soft reboot after successful provisioning. Save your work before continuing.",
+            12f, Color.rgb(231, 183, 190), false, 8)
+        line("Preflight, backend verification, recovery timeout, and diagnostics are required before enabling provisioning.",
+            12f, Color.rgb(160, 160, 171), false, 8)
+        val provisionButton = TextView(this).apply {
+            text = "Provision & Soft Reboot · Not ready"
+            textSize = 13f
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(145, 145, 153))
+            background = background(Color.rgb(38, 38, 43), 16)
+            isEnabled = false
+        }
+        panel.addView(provisionButton, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(50)).apply { topMargin = dp(12) })
         dialog.setContentView(panel)
         dialog.window?.apply {
             setBackgroundDrawableResource(android.R.color.transparent)
