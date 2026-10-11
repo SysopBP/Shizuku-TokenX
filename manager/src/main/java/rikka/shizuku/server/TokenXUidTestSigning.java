@@ -74,7 +74,7 @@ final class TokenXUidTestSigning {
             Signature[] current = (Signature[]) currentMethod.invoke(details);
             Signature[] before = (Signature[]) pastField.get(details);
             if (current == null || current.length != 1) throw new IllegalStateException("Unsupported platform signing layout");
-            if (before != null && (before.length == 0 || before.length > 32 || !before[before.length - 1].equals(current[0])))
+            if (before != null && (before.length == 0 || before.length > 32))
                 throw new IllegalStateException("Unsupported existing platform signing lineage");
             validateDirectory();
             JSONObject receipt = RECEIPT.exists() ? new JSONObject(new String(
@@ -107,7 +107,8 @@ final class TokenXUidTestSigning {
                         !installed.signingInfo.getApkContentsSigners()[0].equals(target))
                     throw new SecurityException("Matching ordinary test app must be installed first");
                 if (authorized) throw new IllegalStateException("Test certificate is already trusted without our recovery record");
-                // Preserve every platform certificate and flag, including the current tail.
+                // Preserve every existing certificate and flag, including legacy
+                // provisioning histories whose tail differs from the current signer.
                 List<UidTestLineagePolicy.Certificate> enrolled = UidTestLineagePolicy.enroll(
                         new UidTestLineagePolicy.Certificate(encoded(current[0].toByteArray()), (Integer) flagsGet.invoke(current[0])),
                         policy(encode(before, flagsGet)), encoded(certificate));

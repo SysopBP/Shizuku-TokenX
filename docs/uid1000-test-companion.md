@@ -14,6 +14,8 @@ The manager checks root command exit codes, bounded execution and staged APK has
 
 Use **Remove & restore** with the matching manager APK before upgrading to another build or CI rerun. Keep that APK until recovery completes. Different builds have different disposable certificates; automatic adoption of another build's recovery record is deliberately refused. If injection is unavailable, restore the matching build's injection first. Do not manually delete the recovery record or replace all of `packages.xml`.
 
+Existing certificate entries, flags and ordering are retained exactly, including legacy bootstrap histories with a duplicated companion certificate at the tail. No normalization or cleanup of another provisioner's signing entries is attempted. Android's runtime capability check must accept the proposed enrollment before it is applied. OEM installation/allowlist behavior still requires device verification.
+
 ## Verification
 
 CI builds the manager and both companion variants, verifies their actual manifests, signatures, build IDs, DEX endpoints and exact embedded APK bytes, and runs lineage preservation/recovery unit tests alongside the existing route and injection checks. Passing these checks establishes packaging and policy behavior, not successful provisioning on a phone.

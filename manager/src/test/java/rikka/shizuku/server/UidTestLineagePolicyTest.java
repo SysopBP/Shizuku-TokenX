@@ -35,9 +35,16 @@ public class UidTestLineagePolicyTest {
         assertThrows(IllegalStateException.class, () -> UidTestLineagePolicy.restore("new-platform", "platform",
                 original, after, after, List.of()));
     }
-    @Test public void enrollmentRejectsWrongTailDuplicateTestAndPlatformCertificate() {
+    @Test public void enrollmentPreservesLegacyBootstrapHistoryWithoutNormalizingIt() {
+        List<Certificate> legacy = List.of(new Certificate("legacy-companion", 2), new Certificate("legacy-companion", 2));
+        List<Certificate> after = UidTestLineagePolicy.enroll(platform, legacy, "new-test");
+        assertEquals(legacy, after.subList(1, after.size()));
+        assertEquals(legacy.get(1), after.get(after.size() - 1));
+        assertTrue(UidTestLineagePolicy.restore("platform", "platform", legacy, after, after, List.of()));
+    }
+    @Test public void enrollmentRejectsEmptyLineageDuplicateTestAndPlatformCertificate() {
         assertThrows(IllegalStateException.class, () -> UidTestLineagePolicy.enroll(platform,
-                List.of(new Certificate("different-current", 31)), "test"));
+                List.of(), "test"));
         assertThrows(IllegalStateException.class, () -> UidTestLineagePolicy.enroll(platform,
                 List.of(new Certificate("test", 0), platform), "test"));
         assertThrows(IllegalStateException.class, () -> UidTestLineagePolicy.enroll(platform, null, "platform"));
