@@ -119,7 +119,7 @@ class ShizukuManagerProvider : ShizukuProvider() {
         // Use generated AIDL so explicit method IDs are translated to wire codes.
         // getUid() = 3 means FIRST_CALL_TRANSACTION + 3, not raw transaction 3.
         moe.shizuku.server.IShizukuService.Stub.asInterface(binder).getUid()
-    }.getOrDefault(-1).getOrDefault(-1)
+    }.getOrDefault(-1)
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         if (extras == null) return null
