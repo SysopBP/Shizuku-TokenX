@@ -265,5 +265,3 @@ object SystemUidProvisioner {
     private fun q(value: String): String =
         "'" + value.replace("'", "'\\''") + "'"
 }
-
-}
