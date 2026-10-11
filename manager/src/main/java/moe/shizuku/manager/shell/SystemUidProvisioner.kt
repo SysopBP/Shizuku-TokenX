@@ -20,7 +20,8 @@ import java.security.DigestInputStream
 object SystemUidProvisioner {
     const val MODULE_ID = "tokenx_system_server"
     const val MODULE_DIR = "/data/adb/modules/$MODULE_ID"
-    private const val KSUD = "/data/adb/ksu/bin/ksud"
+    // KernelSU's bin/ksud is a symlink to this canonical daemon. Validate the real file.
+    private const val KSUD = "/data/adb/ksud"
 
     /** Read-only checks before preparing or installing any privileged payload. */
     fun preflight(context: Context): Result {
@@ -33,7 +34,7 @@ object SystemUidProvisioner {
         return runRoot("""
             set -e
             [ "$(id -u)" = 0 ] || { echo 'Root access required'; exit 2; }
-            test -f '$KSUD' && test -x '$KSUD' && test ! -L '$KSUD' || { echo 'KernelSU daemon unavailable'; exit 2; }
+            test -f '$KSUD' && test -x '$KSUD' && test ! -L '$KSUD' || { echo 'KernelSU daemon unavailable at $KSUD. Open KernelSU Manager to initialize it.'; exit 2; }
             [ "$(stat -c %u '$KSUD')" = 0 ] || exit 2
             '$KSUD' debug version | grep -Eq 'Kernel Version: [1-9][0-9]*' || { echo 'KernelSU kernel unavailable'; exit 2; }
             '$KSUD' module install --help >/dev/null

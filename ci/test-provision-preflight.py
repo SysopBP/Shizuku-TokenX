@@ -1,6 +1,7 @@
 """Execute the real read-only shell preflight against isolated fake device commands."""
 import os
 import pathlib
+import re
 import subprocess
 import tempfile
 import textwrap
@@ -8,11 +9,13 @@ import unittest
 
 SOURCE = pathlib.Path("manager/src/main/java/moe/shizuku/manager/shell/SystemUidProvisioner.kt").read_text()
 SCRIPT = textwrap.dedent(SOURCE.split('return runRoot("""', 1)[1].split('""".trimIndent()', 1)[0])
+KSUD = re.search(r'private const val KSUD = "([^"]+)"', SOURCE).group(1)
 
 
 class PreflightTest(unittest.TestCase):
     def run_preflight(self, runtime=True, disabled=False, root=True, kernel=True,
-                      collision=False, owner=True, pid="123", soft=True):
+                      collision=False, owner=True, pid="123", soft=True, daemon_symlink=False,
+                      daemon_missing=False, daemon_executable=True):
         with tempfile.TemporaryDirectory() as directory:
             base = pathlib.Path(directory)
             commands = base / "bin"
@@ -41,10 +44,24 @@ class PreflightTest(unittest.TestCase):
                     esac""" % ("40000" if kernel else "0", "0" if soft else "1"),
             }
             for name, body in programs.items():
-                file = commands / name
+                file = base / "ksud" if name == "ksud" else commands / name
                 file.write_text("#!/bin/sh\n" + body + "\n")
                 file.chmod(0o755)
-            script = SCRIPT.replace("$KSUD", str(commands / "ksud"))
+            # Reproduce upstream DAEMON_PATH and DAEMON_LINK_PATH, rather than
+            # replacing the configured path with an always-valid regular file.
+            link_directory = base / "ksu" / "bin"
+            link_directory.mkdir(parents=True)
+            (link_directory / "ksud").symlink_to(base / "ksud")
+            daemon = base / "ksud"
+            if daemon_symlink:
+                daemon.rename(base / "real-daemon")
+                daemon.symlink_to(base / "real-daemon")
+            if daemon_missing:
+                daemon.unlink()
+            elif not daemon_executable:
+                daemon.chmod(0o644)
+            self.assertTrue(KSUD.startswith("/data/adb/"))
+            script = SCRIPT.replace("$KSUD", str(base / KSUD.removeprefix("/data/adb/")))
             script = script.replace("$MODULE_DIR", str(modules / "tokenx_system_server"))
             script = script.replace("$MODULE_ID", "tokenx_system_server")
             script = script.replace("/data/adb/modules_update/", str(base / "updates") + "/")
@@ -62,7 +79,8 @@ class PreflightTest(unittest.TestCase):
 
     def test_failures_never_invoke_installation_or_reboot(self):
         for case in (dict(root=False), dict(kernel=False), dict(runtime=False), dict(disabled=True),
-                     dict(collision=True), dict(owner=False), dict(pid=""), dict(pid="12 13"), dict(soft=False)):
+                     dict(collision=True), dict(owner=False), dict(pid=""), dict(pid="12 13"), dict(soft=False),
+                     dict(daemon_symlink=True), dict(daemon_missing=True), dict(daemon_executable=False)):
             with self.subTest(case=case):
                 self.assertNotEqual(0, self.run_preflight(**case).returncode)
 
