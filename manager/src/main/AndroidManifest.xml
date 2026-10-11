@@ -88,6 +88,10 @@
 
     <queries>
         <package android:name="moe.shizuku.privileged.api" />
+        <!-- TokenX only uses these for framework-presence discovery. An installed manager is not an active bridge. -->
+        <package android:name="org.lsposed.manager" />
+        <package android:name="org.meowcat.edxposed.manager" />
+        <package android:name="de.robv.android.xposed.installer" />
     </queries>
 
     <application
@@ -107,13 +111,6 @@
         tools:ignore="GoogleAppIndexingWarning"
         tools:remove="android:appComponentFactory"
         tools:targetApi="33">
-
-        <!-- LSPosed backend: scope this APK to Android/System Framework so the entry
-             point is loaded inside system_server (UID 1000). -->
-        <meta-data android:name="xposedmodule" android:value="true" />
-        <meta-data android:name="xposeddescription" android:value="Shizuku TokenX System Server backend" />
-        <meta-data android:name="xposedminversion" android:value="82" />
-        <meta-data android:name="xposedscope" android:value="android" />
 
         <activity
             android:name=".MainActivity"
@@ -246,6 +243,16 @@
             tools:ignore="ExportedReceiver">
             <intent-filter>
                 <action android:name="rikka.shizuku.intent.action.REQUEST_BINDER" />
+                <action android:name="moe.shizuku.tokenx.intent.action.REQUEST_TRANSPORT" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".receiver.SystemBridgeRecoveryReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 

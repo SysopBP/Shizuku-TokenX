@@ -36,12 +36,6 @@ private val BrandColor = Color(0xFF3F51B5)
  */
 val LocalAmoledTheme = staticCompositionLocalOf { false }
 
-/** True when the TokenX MIUIX-inspired surface treatment is selected. */
-val LocalMiuixTheme = staticCompositionLocalOf { false }
-
-private const val PREF_THEME_STYLE = "tokenx_theme_style"
-private const val THEME_STYLE_MIUIX = "MIUIX"
-
 /** Bumped when a theme preference changes so the theme re-reads the prefs. */
 object ThemeState {
     var version by mutableIntStateOf(0)
@@ -68,68 +62,81 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
 
     val useSystemColor = prefs.getBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false)
     val amoled = darkTheme && prefs.getBoolean(ShizukuSettings.Keys.KEY_BLACK_NIGHT_THEME, false)
-    val miuix = prefs.getString(PREF_THEME_STYLE, "MATERIAL") == THEME_STYLE_MIUIX
 
     // Like KernelSU: keep the chosen key color by default, only follow the
     // wallpaper when the user enables system color. A fixed seed avoids a
     // washed-out grey palette on desaturated wallpapers.
+    val savedAccent = prefs.getLong(TokenXAppearanceKeys.ACCENT_COLOR, TokenXAccent.TOKEN_PURPLE.argb)
+    // ACCENT_COLOR is stored as a conventional 32-bit ARGB value. Passing it to the
+    // packed-ULong Color constructor makes Compose interpret ARGB bits as a packed
+    // color-space value and can produce an invalid color-space index at startup.
+    val tokenAccent = Color(savedAccent.toInt())
+    val selectedAccentPreset = prefs.getString(TokenXAppearanceKeys.ACCENT_PRESET, TokenXAccent.TOKEN_PURPLE.name)
+    val graphiteMode = !useSystemColor && selectedAccentPreset == TokenXAccent.GRAPHITE.name
     val seed = if (useSystemColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         (if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)).primary
     } else {
-        BrandColor
+        tokenAccent
+    }
+
+    val paletteStyle = runCatching {
+        PaletteStyle.valueOf(prefs.getString(TokenXAppearanceKeys.COLOR_STYLE, PaletteStyle.TonalSpot.name)!!)
+    }.getOrDefault(PaletteStyle.TonalSpot)
+    val colorSpec = when (prefs.getString(TokenXAppearanceKeys.COLOR_SPEC, "SPEC_2025")) {
+        "SPEC_2021" -> ColorSpec.SpecVersion.SPEC_2021
+        else -> ColorSpec.SpecVersion.SPEC_2025
     }
 
     val baseScheme = rememberDynamicColorScheme(
         seedColor = seed,
         isDark = darkTheme,
         isAmoled = amoled,
-        style = PaletteStyle.TonalSpot,
-        specVersion = ColorSpec.SpecVersion.SPEC_2021,
+        style = paletteStyle,
+        specVersion = colorSpec,
     )
 
     // The AMOLED switch only repaints the base surface roles, while the container
     // roles that the cards and the navigation bar actually use kept the standard
     // dark greys a black page with grey cards. Spread the black across every
     // surface role; row dividers keep the list readable without the card shape.
-    val colorScheme = when {
-        amoled -> baseScheme.copy(
-            background = Color.Black,
-            surface = Color.Black,
-            surfaceDim = Color.Black,
-            surfaceBright = Color.Black,
-            surfaceContainerLowest = Color.Black,
-            surfaceContainerLow = Color.Black,
-            surfaceContainer = Color.Black,
-            surfaceContainerHigh = Color.Black,
-            surfaceContainerHighest = Color.Black,
-            onBackground = Color(0xFFE6E6E6),
-            onSurface = Color(0xFFE6E6E6),
-            onSurfaceVariant = Color(0xFFB8B8B8),
-            outline = Color(0xFF8A8A8A),
-            outlineVariant = Color(0xFF4A4A4A),
-        )
-        miuix && darkTheme -> baseScheme.copy(
-            background = Color(0xFF0D0D0F),
-            surface = Color(0xFF121214),
-            surfaceContainerLowest = Color(0xFF101012),
-            surfaceContainerLow = Color(0xFF171719),
-            surfaceContainer = Color(0xFF1C1C1F),
-            surfaceContainerHigh = Color(0xFF222225),
-            surfaceContainerHighest = Color(0xFF29292D),
-            outlineVariant = Color(0xFF34343A),
-        )
-        miuix -> baseScheme.copy(
-            background = Color(0xFFF5F5F7),
-            surface = Color(0xFFFAFAFC),
-            surfaceContainerLowest = Color.White,
-            surfaceContainerLow = Color(0xFFF7F7F9),
-            surfaceContainer = Color(0xFFF0F0F3),
-            surfaceContainerHigh = Color(0xFFEAEAEF),
-            surfaceContainerHighest = Color(0xFFE3E3E9),
-            outlineVariant = Color(0xFFD7D7DE),
-        )
-        else -> baseScheme
-    }
+    // TKN Boot keeps wallpaper/glass surfaces neutral. The selected accent is for
+    // controls and active state, not for repainting every card/container.
+    val neutralScheme = baseScheme.copy(
+        primary = if (darkTheme && graphiteMode) Color(0xFF9AA0A8) else baseScheme.primary,
+        onPrimary = if (darkTheme && graphiteMode) Color(0xFF111317) else baseScheme.onPrimary,
+        primaryContainer = if (darkTheme && graphiteMode) Color(0xFF24282E) else baseScheme.primaryContainer,
+        onPrimaryContainer = if (darkTheme && graphiteMode) Color(0xFFE5E7EA) else baseScheme.onPrimaryContainer,
+        secondary = if (darkTheme && graphiteMode) Color(0xFF858B93) else baseScheme.secondary,
+        secondaryContainer = if (darkTheme && graphiteMode) Color(0xFF20242A) else baseScheme.secondaryContainer,
+        tertiary = if (darkTheme && graphiteMode) Color(0xFFADB2B8) else baseScheme.tertiary,
+        tertiaryContainer = if (darkTheme && graphiteMode) Color(0xFF282C32) else baseScheme.tertiaryContainer,
+        outline = if (darkTheme && graphiteMode) Color(0xFF5B6068) else baseScheme.outline,
+        outlineVariant = if (darkTheme && graphiteMode) Color(0xFF343941) else baseScheme.outlineVariant,
+        background = if (darkTheme) (if (graphiteMode) Color(0xFF050607) else Color(0xFF090A0D)) else Color(0xFFF7F7F9),
+        surface = if (darkTheme) (if (graphiteMode) Color(0xFF080A0C) else Color(0xFF0D0F13)) else Color(0xFFFFFFFF),
+        surfaceDim = if (darkTheme) (if (graphiteMode) Color(0xFF050607) else Color(0xFF090A0D)) else Color(0xFFE6E7EA),
+        surfaceBright = if (darkTheme) (if (graphiteMode) Color(0xFF1B1E22) else Color(0xFF25282E)) else Color(0xFFFFFFFF),
+        surfaceContainerLowest = if (darkTheme) (if (graphiteMode) Color(0xFF050607) else Color(0xFF090A0D)) else Color(0xFFFFFFFF),
+        surfaceContainerLow = if (darkTheme) (if (graphiteMode) Color(0xFF0A0C0F) else Color(0xFF101216)) else Color(0xFFF4F4F6),
+        surfaceContainer = if (darkTheme) (if (graphiteMode) Color(0xFF0E1013) else Color(0xFF14161B)) else Color(0xFFF0F0F3),
+        surfaceContainerHigh = if (darkTheme) (if (graphiteMode) Color(0xFF13161A) else Color(0xFF191C21)) else Color(0xFFE9E9ED),
+        surfaceContainerHighest = if (darkTheme) (if (graphiteMode) Color(0xFF191C21) else Color(0xFF202329)) else Color(0xFFE2E3E7),
+        onBackground = if (darkTheme) Color(0xFFF5F5F7) else Color(0xFF17181B),
+        onSurface = if (darkTheme) Color(0xFFF5F5F7) else Color(0xFF17181B),
+        onSurfaceVariant = if (darkTheme) Color(0xFFC7C9D0) else Color(0xFF555861),
+    )
+
+    val colorScheme = if (amoled) neutralScheme.copy(
+        background = Color.Black,
+        surface = Color.Black,
+        surfaceDim = Color.Black,
+        surfaceBright = Color.Black,
+        surfaceContainerLowest = Color.Black,
+        surfaceContainerLow = Color.Black,
+        surfaceContainer = Color.Black,
+        surfaceContainerHigh = Color.Black,
+        surfaceContainerHighest = Color.Black,
+    ) else neutralScheme
 
     // Match the status/navigation bar icons to the app's theme, not the system's;
     // otherwise a white in-app theme gets light icons on a white bar (invisible).
@@ -144,7 +151,34 @@ fun ShizukuTheme(content: @Composable () -> Unit) {
         }
     }
 
-    CompositionLocalProvider(LocalAmoledTheme provides amoled, LocalMiuixTheme provides miuix) {
+    val requestedUiStyle = runCatching {
+        TokenXUiStyle.valueOf(prefs.getString(TokenXAppearanceKeys.UI_STYLE, TokenXUiStyle.MATERIAL.name)!!)
+    }.getOrDefault(TokenXUiStyle.MATERIAL)
+    // The native Miuix dependency is now linked on Android. Expose the selected
+    // framework to the Compose tree; component-by-component Miuix rendering can
+    // be introduced without collapsing back to Material.
+    val activeUiStyle = requestedUiStyle
+
+    val tokenXGlass = TokenXGlassStyle(
+        enabled = prefs.getBoolean(TokenXAppearanceKeys.GLASS_ENABLED, true),
+        opacity = prefs.getFloat(TokenXAppearanceKeys.GLASS_OPACITY, .72f),
+        blurRadiusDp = prefs.getFloat(TokenXAppearanceKeys.GLASS_BLUR, 22f),
+        cornerRadiusDp = prefs.getFloat(TokenXAppearanceKeys.GLASS_RADIUS, 28f),
+        borderOpacity = prefs.getFloat(TokenXAppearanceKeys.GLASS_BORDER, .18f),
+        accent = tokenAccent,
+        backgroundMode = runCatching {
+            BackgroundMode.valueOf(
+                prefs.getString(TokenXAppearanceKeys.BACKGROUND_MODE, BackgroundMode.AMOLED_GRADIENT.name)
+                    ?: BackgroundMode.AMOLED_GRADIENT.name
+            )
+        }.getOrDefault(BackgroundMode.AMOLED_GRADIENT),
+    )
+
+    CompositionLocalProvider(
+        LocalAmoledTheme provides amoled,
+        LocalTokenXUiStyle provides activeUiStyle,
+        LocalTokenXGlass provides tokenXGlass
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             motionScheme = MotionScheme.expressive(),

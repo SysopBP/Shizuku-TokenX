@@ -14,7 +14,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +22,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.ui.theme.LocalAmoledTheme
+import moe.shizuku.manager.ui.theme.LocalTokenXGlass
 
 /**
  * An action that explains itself: an icon on a tinted plate, what it does, and why it might
@@ -40,7 +40,6 @@ fun ExpressiveCard(
     title: String,
     modifier: Modifier = Modifier,
     body: String? = null,
-    status: String? = null,
     enabled: Boolean = true,
     onClick: (() -> Unit)? = null
 ) {
@@ -67,7 +66,7 @@ fun ExpressiveCard(
                 }
             ),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
+        color = if (LocalTokenXGlass.current.enabled) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = LocalTokenXGlass.current.opacity) else MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
         Row(
             modifier = Modifier.padding(18.dp),
@@ -96,22 +95,12 @@ fun ExpressiveCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = title,
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    if (!status.isNullOrBlank()) {
-                        Text(
-                            text = status,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
                 if (!body.isNullOrBlank()) {
                     Text(

@@ -9,8 +9,11 @@ import android.util.Log
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
+import rikka.shizuku.server.ShizukuService
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** TokenX modern LSPosed system_server RPC and OEM compatibility layer. */
+// Root Shizuku and the UID-1000 TokenX bridge intentionally keep independent lifecycles.
 class TokenXXposedEntry : XposedModule() {
     init {
         // Earliest lifecycle marker: proves LSPosed instantiated the module class.
@@ -77,10 +80,29 @@ class TokenXXposedEntry : XposedModule() {
                 return
             }
             log(Log.INFO, TAG, "SYSTEM_SERVER_IDENTITY_OK backend=XPOSED_SYSTEM_SERVER pid=$pid uid=$uid selinux=$selinux process=$cmdline")
-            log(Log.INFO, TAG, "EMBEDDED_SHIZUKU_DISABLED root_shizuku_remains_fallback")
             log(Log.INFO, TAG, "RPC_INSTALL_CALL_BEGIN")
             installSystemServerBridge()
             log(Log.INFO, TAG, "RPC_INSTALL_CALL_RETURN")
+
+            // Restore the earlier UID-1000 provider handoff while keeping the root
+            // backend and protocol-4 RPC transport independent and available.
+            if (embeddedStartScheduled.compareAndSet(false, true)) {
+                Thread({
+                    log(Log.INFO, TAG, "EMBEDDED_SHIZUKU_START_ASYNC_BEGIN")
+                    runCatching { ShizukuService.startEmbeddedSystemServer() }
+                        .onSuccess {
+                            log(Log.INFO, TAG, "EMBEDDED_SHIZUKU_START_ASYNC_OK pid=${Process.myPid()} uid=${Process.myUid()}")
+                        }
+                        .onFailure {
+                            log(Log.ERROR, TAG, "EMBEDDED_SHIZUKU_START_ASYNC_FAIL_OPEN: ${it.javaClass.name}: ${it.message}")
+                        }
+                }, "TokenX-BinderPublish").apply {
+                    isDaemon = true
+                    start()
+                }
+            } else {
+                log(Log.WARN, TAG, "EMBEDDED_SHIZUKU_START_SKIP already_scheduled")
+            }
         } catch (t: Throwable) {
             Log.e(TAG, "SYSTEM_SERVER_CALLBACK_THROWABLE", t)
             runCatching {
@@ -120,23 +142,10 @@ class TokenXXposedEntry : XposedModule() {
                         return@intercept chain.proceed()
                     }
 
-                    // Binder.execTransact is process-wide. Our transaction code can
-                    // therefore be observed on Binder objects that are not ActivityManager.
-                    // Probe the interface token fail-open and restore the native Parcel cursor
-                    // before delegating so TokenX can never consume/corrupt another service's
-                    // transaction (including Shizuku's binder publication path).
-                    val entryPosition = data.dataPosition()
-                    try {
-                        data.enforceInterface(ACTIVITY_MANAGER_DESCRIPTOR)
-                    } catch (mismatch: SecurityException) {
-                        data.setDataPosition(entryPosition)
-                        log(Log.DEBUG, TAG, "SYSTEM_SERVER_RPC_BYPASS descriptor_mismatch code=$code")
-                        return@intercept chain.proceed()
-                    }
-
                     var consumed = false
                     try {
                         log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_INTERCEPT code=$code flags=$flags callingUid=${Binder.getCallingUid()} callingPid=${Binder.getCallingPid()}")
+                        data.enforceInterface(ACTIVITY_MANAGER_DESCRIPTOR)
                         when (val action = data.readInt()) {
                             ACTION_GET_IDENTITY -> {
                                 reply?.writeNoException()
@@ -191,6 +200,15 @@ class TokenXXposedEntry : XposedModule() {
                                 log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_FUNCTIONAL uid=${Process.myUid()} pid=${Process.myPid()} services=${available.joinToString(",")}")
                                 consumed = true
                             }
+                            ACTION_RESOLVE_PACKAGE_UID -> {
+                                val packageName = data.readString().orEmpty()
+                                val callingUserId = Binder.getCallingUid() / 100000
+                                val resolvedUid = resolvePackageUidFromSystem(packageName, callingUserId)
+                                reply?.writeNoException()
+                                reply?.writeInt(resolvedUid)
+                                log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID package=$packageName user=$callingUserId uid=$resolvedUid callingUid=${Binder.getCallingUid()}")
+                                consumed = true
+                            }
                             else -> log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_REJECT reason=unknown_action action=$action")
                         }
                     } catch (t: Throwable) {
@@ -218,6 +236,61 @@ class TokenXXposedEntry : XposedModule() {
         }.onFailure {
             log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_INSTALL_FAILED: ${it.javaClass.name}: ${it.message}")
         }
+    }
+
+    private fun resolvePackageUidFromSystem(packageName: String, userId: Int): Int {
+        if (packageName.isBlank()) return -1
+
+        // This code already executes inside real system_server. Use the framework
+        // PackageManager API directly instead of reflecting into Samsung's
+        // ApplicationPackageManager implementation. On Android 17 / One UI 9 the
+        // reflected invocation can throw InvocationTargetException even though the
+        // package is installed (observed with com.termux on run 555).
+        val direct = runCatching {
+            val activityThread = Class.forName("android.app.ActivityThread")
+            val current = activityThread.getDeclaredMethod("currentActivityThread").invoke(null)
+                ?: return@runCatching -1
+            val systemContext = activityThread.getDeclaredMethod("getSystemContext").invoke(current) as? Context
+                ?: return@runCatching -1
+            val pm = systemContext.packageManager
+            val getApplicationInfoAsUser = pm.javaClass.methods.firstOrNull {
+                it.name == "getApplicationInfoAsUser" &&
+                    it.parameterTypes.size == 3 &&
+                    it.parameterTypes[0] == String::class.java
+            } ?: return@runCatching -1
+            val appInfo = getApplicationInfoAsUser.invoke(pm, packageName, 0, userId)
+                as? android.content.pm.ApplicationInfo
+            appInfo?.uid ?: -1
+        }.onFailure {
+            log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID_DIRECT_FAILED package=$packageName user=$userId: ${it.javaClass.name}: ${it.message}")
+        }.getOrDefault(-1)
+
+        if (direct >= 0) {
+            log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID_OK package=$packageName user=$userId uid=$direct source=PackageManager")
+            return direct
+        }
+
+        // Last-resort lookup through PackageManager's binder service. This keeps
+        // authorization fail-closed while avoiding app-process visibility rules.
+        return runCatching {
+            val packageManagerBinder = android.os.ServiceManager.getService("package")
+                ?: return@runCatching -1
+            val stub = Class.forName("android.content.pm.IPackageManager" + "$" + "Stub")
+            val asInterface = stub.getDeclaredMethod("asInterface", IBinder::class.java)
+            val ipm = asInterface.invoke(null, packageManagerBinder) ?: return@runCatching -1
+            val method = ipm.javaClass.methods.firstOrNull {
+                it.name == "getPackageUid" &&
+                    it.parameterTypes.size == 3 &&
+                    it.parameterTypes[0] == String::class.java
+            } ?: return@runCatching -1
+            val uid = (method.invoke(ipm, packageName, 0L, userId) as? Int) ?: -1
+            if (uid >= 0) {
+                log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID_OK package=$packageName user=$userId uid=$uid source=IPackageManager")
+            }
+            uid
+        }.onFailure {
+            log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID_FALLBACK_FAILED package=$packageName user=$userId: ${it.javaClass.name}: ${it.message}")
+        }.getOrDefault(-1)
     }
 
     private fun readSelf(path: String): String = runCatching { java.io.File(path).readText().trim() }.getOrDefault("unknown")
@@ -256,10 +329,12 @@ class TokenXXposedEntry : XposedModule() {
         const val ACTION_SET_BINDER = 2
         const val ACTION_GET_BINDER = 3
         const val ACTION_SYSTEM_PROBE = 4
+        const val ACTION_RESOLVE_PACKAGE_UID = 5
         const val RETAIL_MODE_PACKAGE = "com.samsung.sea.rm"
         const val SYSTEM_UI_PACKAGE = "com.android.systemui"
         const val PROP_ONEUIX_LABS = "persist.tokenx.labs.oneuix"
         const val PROP_STATUS_BAR_LABS = "persist.tokenx.labs.statusbar"
         val RECEIVER_COMPAT_PACKAGES = setOf(RETAIL_MODE_PACKAGE)
+        val embeddedStartScheduled = AtomicBoolean(false)
     }
 }

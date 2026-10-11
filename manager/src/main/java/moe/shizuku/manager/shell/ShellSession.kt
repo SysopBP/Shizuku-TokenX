@@ -14,6 +14,9 @@ enum class ShellBackend {
     /** Through the Shizuku server: uid 2000 over adb, 0 for root, 1000 for the exploit. */
     SHIZUKU,
 
+    /** Through the staged Shizuku native launcher running as Android UID 1000. */
+    SSERVER,
+
     /** Through `su`. Works with Shizuku stopped, and is the only way to reach uid 0 then. */
     ROOT
 }
@@ -83,6 +86,7 @@ class ShellSession {
         val body = script(command)
         return when (backend) {
             ShellBackend.SHIZUKU -> runThroughShizuku(body, sink)
+            ShellBackend.SSERVER -> runThroughSserver(body, sink)
             ShellBackend.ROOT -> runThroughRoot(body, sink)
         }
     }
@@ -107,9 +111,9 @@ class ShellSession {
      * `cd`, resolved and verified by the shell itself so `..`, `~` and symlinks stay its
      * business rather than ours.
      */
-    fun cd(target: String, sink: (ShellLine) -> Unit): Boolean {
+    fun cd(target: String, sink: (ShellLine) -> Unit, backend: ShellBackend = ShellBackend.SHIZUKU): Boolean {
         val printed = StringBuilder()
-        val code = run(ShellBackend.SHIZUKU, "cd $target && pwd") { line ->
+        val code = run(backend, "cd " + quote(target) + " && pwd") { line ->
             if (line.kind == ShellLine.Kind.OUTPUT) printed.append(line.text).append('\n')
         }
         val resolved = printed.toString().trim()
@@ -177,29 +181,65 @@ class ShellSession {
             if (stopped) -1 else code
         } catch (e: Throwable) {
             Log.w(AppConstants.TAG, "Shell command failed", e)
-            sink(ShellLine(e.message ?: e.javaClass.simpleName, ShellLine.Kind.ERROR))
+            // Reflection wraps the real framework/Binder failure in InvocationTargetException.
+            // Surface the complete cause chain in the shell so Android-version regressions can
+            // be diagnosed on-device instead of reporting only the wrapper exception.
+            val chain = generateSequence(e) { it.cause }.toList()
+            chain.forEachIndexed { index, cause ->
+                val label = if (index == 0) "ERROR" else "CAUSE[$index]"
+                val detail = cause.message?.takeIf { it.isNotBlank() } ?: "(no message)"
+                sink(ShellLine("$label: ${cause.javaClass.name}: $detail", ShellLine.Kind.ERROR))
+            }
+            val deepest = chain.lastOrNull()
+            deepest?.stackTrace?.take(8)?.forEach { frame ->
+                sink(ShellLine("  at $frame", ShellLine.Kind.ERROR))
+            }
             running = null
             -1
         }
     }
 
+    private fun runThroughSserver(script: String, sink: (ShellLine) -> Unit): Int {
+        // Sserver commands must travel through a live Shizuku Binder owned by UID 1000.
+        // Do not silently fall back to su(1000): that would make the UI claim Binder-backed
+        // Sserver while actually using a different execution path.
+        if (!ShizukuStateMachine.isRunning()) {
+            sink(ShellLine("Sserver is not running.", ShellLine.Kind.ERROR))
+            return -1
+        }
+        val uid = runCatching { Shizuku.getUid() }.getOrDefault(-1)
+        if (uid != 1000) {
+            sink(ShellLine("Sserver Binder is not active (current Shizuku UID $uid).", ShellLine.Kind.ERROR))
+            return -1
+        }
+        return runThroughShizuku(script, sink)
+    }
+
     private fun runThroughRoot(script: String, sink: (ShellLine) -> Unit): Int {
         return try {
+            // libsu's Shell.cmd(String) treats the String as script/stdin. On this Android 17
+            // root path stdin can be unavailable, producing "sh: <stdin>[n]" and exit 127.
+            // Stage the complete session script in an executable shell argv instead.
+            val encoded = android.util.Base64.encodeToString(
+                script.toByteArray(Charsets.UTF_8),
+                android.util.Base64.NO_WRAP
+            )
+            val launcher = "echo " + quote(encoded) + " | base64 -d | /system/bin/sh"
             val out = object : CallbackList<String>() {
                 override fun onAddElement(e: String) = sink(ShellLine(e, ShellLine.Kind.OUTPUT))
             }
             val err = object : CallbackList<String>() {
                 override fun onAddElement(e: String) = sink(ShellLine(e, ShellLine.Kind.ERROR))
             }
-            val result = Shell.cmd(script).to(out, err).exec()
+            val result = Shell.cmd(launcher).to(out, err).exec()
             if (!result.isSuccess && err.isEmpty()) {
-                // su refused, or the command died before it could say anything.
                 sink(ShellLine("Root refused the command (exit ${result.code}).", ShellLine.Kind.ERROR))
             }
             result.code
         } catch (e: Throwable) {
             Log.w(AppConstants.TAG, "Root shell failed", e)
-            sink(ShellLine(e.message ?: e.javaClass.simpleName, ShellLine.Kind.ERROR))
+            val cause = generateSequence(e) { it.cause }.last()
+            sink(ShellLine(cause.message ?: cause.javaClass.simpleName, ShellLine.Kind.ERROR))
             -1
         }
     }

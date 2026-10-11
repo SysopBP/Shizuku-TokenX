@@ -38,10 +38,12 @@ import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Science
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
@@ -66,7 +68,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -82,7 +86,9 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import moe.shizuku.manager.R
+import moe.shizuku.manager.ui.component.TokenXBackground
 import moe.shizuku.manager.ui.screen.AppsScreen
+import moe.shizuku.manager.ui.screen.AppearanceStudioScreen
 import moe.shizuku.manager.ui.screen.HomeScreen
 import moe.shizuku.manager.ui.screen.AppToggleFeature
 import moe.shizuku.manager.ui.screen.IntentsScreen
@@ -94,7 +100,14 @@ import moe.shizuku.manager.ui.screen.SettingsScreen
 import moe.shizuku.manager.ui.screen.ShellScreen
 import moe.shizuku.manager.ui.screen.StealthScreen
 import moe.shizuku.manager.ui.screen.TerminalScreen
+import moe.shizuku.manager.ui.screen.TokenXControlCenterScreen
+import moe.shizuku.manager.ui.screen.TokenXGuideScreen
 import moe.shizuku.manager.ui.theme.LocalAmoledTheme
+import moe.shizuku.manager.ui.theme.FloatingBarStyle
+import moe.shizuku.manager.ui.theme.FloatingBarShape
+import moe.shizuku.manager.ui.theme.FloatingBarSelection
+import moe.shizuku.manager.ui.theme.TokenXAppearanceKeys
+import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.ui.theme.ShizukuTheme
 
 /**
@@ -105,7 +118,7 @@ import moe.shizuku.manager.ui.theme.ShizukuTheme
  * the bar spent its whole width on five icons while the two screens behind two of them were
  * mostly empty when you arrived.
  */
-enum class Detail { APP_OPS, SHELL, FIREWALL, AUTOSTART, STEALTH, TERMINAL, INTENTS, PERMISSIONS }
+enum class Detail { APP_OPS, SHELL, FIREWALL, AUTOSTART, STEALTH, TERMINAL, INTENTS, PERMISSIONS, APPEARANCE, TOKENX, GUIDE }
 
 /**
  * On wide windows (tablets, foldables, desktop mode, mirrored displays) a
@@ -126,6 +139,7 @@ private data class Tab(
 private val tabs = listOf(
     Tab(R.string.tab_home, Icons.Filled.Home, Icons.Outlined.Home),
     Tab(R.string.tab_apps, Icons.Filled.Apps, Icons.Outlined.Apps),
+    Tab(R.string.home_system_title, Icons.Filled.Bolt, Icons.Outlined.Bolt),
     // Labs holds the things that are gone to rather than lived in: the app-ops list and the
     // shell to begin with, and whatever else turns out to belong there. Each was a tab of its
     // own before, which is a lot of the bar for two screens that are mostly a list you read
@@ -140,10 +154,11 @@ fun ShizukuApp() {
         // Detail screens are shown outside the Scaffold, so wrap everything in a
         // Surface otherwise LocalContentColor falls back to black and plain
         // Text becomes unreadable in dark themes.
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
+        TokenXBackground {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = Color.Transparent
+            ) {
             // Apply the status bar inset exactly once for every screen: the app
             // bars themselves have no insets, and the Scaffold opts out too.
             Column(
@@ -198,11 +213,15 @@ fun ShizukuApp() {
                             Detail.TERMINAL -> TerminalScreen(onBack = { detail = null })
                             Detail.INTENTS -> IntentsScreen(onBack = { detail = null })
                             Detail.PERMISSIONS -> PermissionsScreen(onBack = { detail = null })
+                            Detail.APPEARANCE -> AppearanceStudioScreen()
+                            Detail.TOKENX -> TokenXControlCenterScreen(onBack = { detail = null })
+                            Detail.GUIDE -> TokenXGuideScreen(onBack = { detail = null })
                         }
                     }
                 } else {
                     MainTabs(pagerState = pagerState, onOpenDetail = { detail = it })
                 }
+            }
             }
         }
     }
@@ -237,6 +256,26 @@ private fun MainTabs(
     onOpenDetail: (Detail) -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val appearancePrefs = ShizukuSettings.getPreferences()
+    val floatingBarStyle = runCatching {
+        FloatingBarStyle.valueOf(
+            appearancePrefs.getString(TokenXAppearanceKeys.FLOATING_BAR_STYLE, FloatingBarStyle.FROSTED.name)!!
+        )
+    }.getOrDefault(FloatingBarStyle.FROSTED)
+    val floatingBarOpacity = appearancePrefs
+        .getFloat(TokenXAppearanceKeys.FLOATING_BAR_OPACITY, .82f)
+        .coerceIn(.20f, 1f)
+    val floatingBarShape = runCatching {
+        FloatingBarShape.valueOf(appearancePrefs.getString(TokenXAppearanceKeys.FLOATING_BAR_SHAPE, FloatingBarShape.ONE_UI.name)!!)
+    }.getOrDefault(FloatingBarShape.ONE_UI)
+    val floatingBarSelection = runCatching {
+        FloatingBarSelection.valueOf(appearancePrefs.getString(TokenXAppearanceKeys.FLOATING_BAR_SELECTION, FloatingBarSelection.GLASS.name)!!)
+    }.getOrDefault(FloatingBarSelection.GLASS)
+    val floatingBarWidth = appearancePrefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_WIDTH, .86f).coerceIn(.62f, 1f)
+    val floatingBarHeight = appearancePrefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_HEIGHT, 64f).coerceIn(52f, 78f)
+    val floatingBarBottomGap = appearancePrefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_BOTTOM_GAP, 8f).coerceIn(0f, 28f)
+    val floatingBarBorder = appearancePrefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_BORDER, .18f).coerceIn(0f, .5f)
+    val floatingBarElevation = appearancePrefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_ELEVATION, 8f).coerceIn(0f, 18f)
 
     // Whether the app has settled enough to read the lists nobody is looking at yet. Both app
     // lists are expensive to read - six hundred packages each - and a pager composes the page
@@ -293,8 +332,16 @@ private fun MainTabs(
                         active = active,
                         warmUp = warmUp
                     )
-                    2 -> LabsScreen(bottomPadding = bottomPadding, onOpenDetail = onOpenDetail)
-                    3 -> SettingsScreen(bottomPadding = bottomPadding, onOpenDetail = onOpenDetail)
+                    2 -> {
+                        BackHandler(enabled = active) {
+                            scope.launch { pagerState.animateScrollToPage(0) }
+                        }
+                        TokenXControlCenterScreen(
+                            onBack = { scope.launch { pagerState.animateScrollToPage(0) } }
+                        )
+                    }
+                    3 -> LabsScreen(bottomPadding = bottomPadding, onOpenDetail = onOpenDetail)
+                    4 -> SettingsScreen(bottomPadding = bottomPadding, onOpenDetail = onOpenDetail)
                 }
             }
         }
@@ -305,14 +352,13 @@ private fun MainTabs(
         // the bar, which a scrim that waited for a scroll would leave with a hard edge.
         // A gradient and not a blur: blurring a scrolling page means drawing it into an
         // offscreen layer and re-blurring it every frame.
+        // The entire bottom decoration must participate in the toolbar's exit scroll.
+        // Previously only HorizontalFloatingToolbar translated, leaving this full-width
+        // fade/band behind as an empty rounded bar after the controls hid.
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                // Before the insets, so the fade reaches the bottom of the screen instead of
-                // stopping at the top of the gesture area: below the bar is page the bar is
-                // floating over too. It lands on the colour the pages themselves draw, so it
-                // dissolves into them in every theme, black included.
                 .background(
                     Brush.verticalGradient(
                         0f to Color.Transparent,
@@ -356,27 +402,54 @@ private fun MainTabs(
                     animationSpec = pillSpec,
                     label = "tabPillWidth"
                 )
-                val pillColor = MaterialTheme.colorScheme.secondaryContainer
+                val pillColor = when (floatingBarSelection) {
+                    FloatingBarSelection.GLASS -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .72f)
+                    FloatingBarSelection.TILE -> MaterialTheme.colorScheme.secondaryContainer
+                    FloatingBarSelection.INDICATOR -> MaterialTheme.colorScheme.primary.copy(alpha = .30f)
+                    FloatingBarSelection.MINIMAL -> Color.Transparent
+                }
+                val barShape = when (floatingBarShape) {
+                    FloatingBarShape.ONE_UI -> androidx.compose.foundation.shape.RoundedCornerShape(18.dp)
+                    FloatingBarShape.SQUIRCLE -> androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
+                    FloatingBarShape.ROUNDED -> androidx.compose.foundation.shape.RoundedCornerShape(10.dp)
+                    FloatingBarShape.PILL -> CircleShape
+                }
+                val barSurface = when (floatingBarStyle) {
+                    FloatingBarStyle.FLOATING -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = floatingBarOpacity)
+                    FloatingBarStyle.FROSTED -> Color(0xFF101216).copy(alpha = floatingBarOpacity)
+                    FloatingBarStyle.SOLID -> MaterialTheme.colorScheme.surfaceContainerHighest
+                    FloatingBarStyle.CLEAR -> Color.Transparent
+                }
+                val barBorder = when (floatingBarStyle) {
+                    FloatingBarStyle.FROSTED -> Color.White.copy(alpha = floatingBarBorder)
+                    FloatingBarStyle.CLEAR -> Color.White.copy(alpha = floatingBarBorder * .55f)
+                    else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = floatingBarBorder.coerceAtLeast(.08f))
+                }
 
                 HorizontalFloatingToolbar(
                     expanded = true,
-                    modifier = Modifier,
+                    modifier = Modifier
+                        .fillMaxWidth(floatingBarWidth)
+                        .padding(bottom = floatingBarBottomGap.dp)
+                        .graphicsLayer { shadowElevation = floatingBarElevation.dp.toPx(); shape = barShape; clip = false },
+                    colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
+                        toolbarContainerColor = Color.Transparent,
+                        toolbarContentColor = MaterialTheme.colorScheme.onSurface
+                    ),
                     contentPadding = PaddingValues(0.dp),
                     scrollBehavior = scrollBehavior
                 ) {
                     Row(
                         modifier = Modifier
-                            .heightIn(min = FloatingToolbarDefaults.ContainerSize)
-                            .then(
-                                if (LocalAmoledTheme.current) {
-                                    Modifier.border(
-                                        width = 1.dp,
-                                        color = MaterialTheme.colorScheme.outlineVariant,
-                                        shape = FloatingToolbarDefaults.ContainerShape
-                                    )
-                                } else {
-                                    Modifier
-                                }
+                            .height(floatingBarHeight.dp)
+                            .background(
+                                color = barSurface,
+                                shape = barShape
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = barBorder,
+                                shape = barShape
                             )
                             .padding(FloatingToolbarDefaults.ContentPadding)
                             // Last in the chain on purpose: the padding sits outside the Row, so

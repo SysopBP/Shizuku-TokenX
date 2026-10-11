@@ -1,5 +1,7 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 
+// CI trigger: validate TokenX glass/watchdog integration
+
 package moe.shizuku.manager.ui.screen
 
 import android.app.Activity
@@ -14,7 +16,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,14 +34,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Computer
 import androidx.compose.material.icons.rounded.Numbers
 import androidx.compose.material.icons.rounded.StopCircle
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.Usb
 import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material3.AlertDialog
@@ -43,6 +55,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -64,15 +77,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.Dispatchers
@@ -81,9 +98,18 @@ import moe.shizuku.manager.Helps
 import moe.shizuku.manager.Manifest
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
-import moe.shizuku.manager.ShizukuManagerProvider
 import moe.shizuku.manager.home.showAccessibilityDialog
 import moe.shizuku.manager.receiver.ShizukuReceiverStarter
+import moe.shizuku.manager.shell.ShellBackend
+import moe.shizuku.manager.shell.ShellSession
+import moe.shizuku.manager.shell.ShellBinderRequestHandler
+import moe.shizuku.manager.shell.SystemUidProvisioner
+import moe.shizuku.manager.ShizukuManagerProvider
+import moe.shizuku.manager.tokenx.TokenXBackend
+import moe.shizuku.manager.tokenx.TokenXSessionRegistry
+import moe.shizuku.manager.tokenx.transport.TokenXBinderProtocol
+import moe.shizuku.manager.tokenx.transport.TokenXRendezvous
+import moe.shizuku.manager.tokenx.transport.TokenXWatchdog
 import moe.shizuku.manager.start.StartFailureKind
 import moe.shizuku.manager.start.StartStatus
 import moe.shizuku.manager.start.StartStatusReporter
@@ -100,8 +126,14 @@ import moe.shizuku.manager.start.startMethodLabelRes
 import moe.shizuku.manager.starter.Starter
 import moe.shizuku.manager.starter.StarterActivity
 import moe.shizuku.manager.ui.component.ExpressiveCard
+import moe.shizuku.manager.ui.component.TokenXGlassCard
+import moe.shizuku.manager.ui.component.TokenXGlassButton
+import moe.shizuku.manager.ui.component.TokenXDashboard
 import moe.shizuku.manager.ui.component.SegmentedColumn
 import moe.shizuku.manager.ui.theme.LocalAmoledTheme
+import moe.shizuku.manager.ui.theme.LocalTokenXGlass
+import moe.shizuku.manager.ui.haptics.TokenXHaptics
+import moe.shizuku.manager.ui.haptics.TokenXHapticEvent
 import moe.shizuku.manager.ui.component.SegmentedListItem
 import moe.shizuku.manager.ui.component.stripHtmlTags
 import moe.shizuku.manager.utils.EnvironmentUtils
@@ -125,16 +157,64 @@ fun HomeScreen(bottomPadding: Dp) {
     }
     var showAdbCommand by remember { mutableStateOf(false) }
     var rebootRequired by remember { mutableStateOf(false) }
+    var showDeviceRestartMenu by remember { mutableStateOf(false) }
+    var deviceRuntimeExpanded by remember { mutableStateOf(false) }
+    var pendingDeviceRestart by remember { mutableStateOf<DeviceRestartAction?>(null) }
     var duplicateApp by remember { mutableStateOf(false) }
     var updateAvailable by remember { mutableStateOf(false) }
     var rooted by remember { mutableStateOf(false) }
-    var systemBackendActive by remember { mutableStateOf(false) }
     var startMethod by remember { mutableStateOf(ShizukuSettings.getStartMethod()) }
+    var systemRishActive by remember { mutableStateOf(ShellBinderRequestHandler.isSystemRishConnected()) }
+    var rootBackendAlive by remember { mutableStateOf(false) }
+    var systemBackendAlive by remember { mutableStateOf(ShizukuManagerProvider.systemBinder()?.isBinderAlive == true) }
+    var systemConnectBusy by remember { mutableStateOf(false) }
+    var rootClients by remember { mutableStateOf(0) }
+    var systemClients by remember { mutableStateOf(0) }
+    var shellClients by remember { mutableStateOf(0) }
+    var heartbeatTick by remember { mutableStateOf(false) }
+    var transportAlive by remember { mutableStateOf(false) }
+    var transportGeneration by remember { mutableStateOf(0L) }
+    var transportInfoExpanded by remember { mutableStateOf(false) }
+    var transportStatsExpanded by remember { mutableStateOf(false) }
     var developerOptionsOn by remember { mutableStateOf(context.isDeveloperOptionsEnabled()) }
     var selinuxRes by remember { mutableStateOf<Int?>(null) }
     var seccompRes by remember { mutableStateOf<Int?>(null) }
     val startStatus by StartStatusReporter.status.collectAsState()
     val scope = rememberCoroutineScope()
+
+    if (showDeviceRestartMenu) {
+        AlertDialog(
+            onDismissRequest = { showDeviceRestartMenu = false },
+            title = { Text("Device restart") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = { pendingDeviceRestart = DeviceRestartAction.FULL; showDeviceRestartMenu = false }) { Text("Full Reboot") }
+                    TextButton(onClick = { pendingDeviceRestart = DeviceRestartAction.SOFT; showDeviceRestartMenu = false }) { Text("Soft Reboot") }
+                    TextButton(onClick = { pendingDeviceRestart = DeviceRestartAction.SYSTEM_UI; showDeviceRestartMenu = false }) { Text("UI Reboot") }
+                    TextButton(onClick = { pendingDeviceRestart = DeviceRestartAction.TOKENX_APP; showDeviceRestartMenu = false }) { Text("Restart TokenX") }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showDeviceRestartMenu = false }) { Text("Cancel") } }
+        )
+    }
+
+    pendingDeviceRestart?.let { action ->
+        AlertDialog(
+            onDismissRequest = { pendingDeviceRestart = null },
+            title = { Text(action.label) },
+            text = { Text(action.description) },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingDeviceRestart = null
+                    scope.launch(Dispatchers.IO) {
+                        ShellSession().run(ShellBackend.ROOT, action.command) { }
+                    }
+                }) { Text(action.confirmLabel) }
+            },
+            dismissButton = { TextButton(onClick = { pendingDeviceRestart = null }) { Text("Cancel") } }
+        )
+    }
 
     // Android 16+ gates local-network discovery behind a runtime permission, and discovery is
     // the first thing a wireless start does. Asking here on the path that needs it, when the
@@ -184,22 +264,51 @@ fun HomeScreen(bottomPadding: Dp) {
     suspend fun refresh() {
         ShizukuStateMachine.update()
         running = ShizukuStateMachine.isRunning()
+
+        // A backend switch can deliver the replacement Binder before Compose observes
+        // the state-machine transition. Treat the live Binder UID as authoritative here
+        // so the switching dialog cannot remain stuck after BinderSender has already
+        // handed the requested server to this manager.
+        if (running && startStatus is StartStatus.Starting) {
+            val expectedUid = when (StartStatusReporter.targetMethod) {
+                ShizukuSettings.StartMethod.ROOT -> 0
+                ShizukuSettings.StartMethod.SYSTEM -> 1000
+                ShizukuSettings.StartMethod.WIRELESS,
+                ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK,
+                ShizukuSettings.StartMethod.USB -> 2000
+                else -> -1
+            }
+            val liveUid = runCatching { Shizuku.getUid() }.getOrDefault(-1)
+            if (liveUid == expectedUid) {
+                StartStatusReporter.succeeded()
+            }
+        }
+
         batteryIgnored = SettingsHelper.isIgnoringBatteryOptimizations(context)
         developerOptionsOn = context.isDeveloperOptionsEnabled()
+        systemRishActive = ShellBinderRequestHandler.isSystemRishConnected()
         // Root can be gone since the method was chosen; the card would otherwise keep
         // promising a start the device can no longer run.
         startMethod = StartMethodGuard.resolve()
-        // A start that is already running has nothing left to report; without this a
-        // "starting" state from a path that finishes elsewhere would stick.
-        if (running) StartStatusReporter.clear()
-
         withContext(Dispatchers.IO) {
             // Reset rather than keep: the card must not show the uid of a server that is
             // gone.
             uid = if (running) runCatching { Shizuku.getUid() }.getOrDefault(-1) else -1
+            if (running && startStatus is StartStatus.Starting) {
+                val expectedUid = when (StartStatusReporter.targetMethod) {
+                    ShizukuSettings.StartMethod.ROOT -> 0
+                    ShizukuSettings.StartMethod.SYSTEM -> 1000
+                    ShizukuSettings.StartMethod.WIRELESS,
+                    ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK,
+                    ShizukuSettings.StartMethod.USB -> 2000
+                    else -> -1
+                }
+                if (uid == expectedUid) {
+                    StartStatusReporter.succeeded()
+                }
+            }
             // Shell.getShell() can block and triggers the root request.
             rooted = runCatching { EnvironmentUtils.isRooted() }.getOrDefault(false)
-            systemBackendActive = ShizukuManagerProvider.isBackendAlive(ShizukuSettings.BACKEND_SYSTEM)
             val (selinux, seccomp) = readDeviceStatus()
             selinuxRes = selinux
             seccompRes = seccomp
@@ -252,16 +361,114 @@ fun HomeScreen(bottomPadding: Dp) {
             runCatching { UpdateHelper.updateLastPromptedVersion() }
         }    }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text(stringResource(R.string.app_name)) },
-            windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
-        )
+    LaunchedEffect(Unit) {
+        while (true) {
+            systemRishActive = ShellBinderRequestHandler.isSystemRishConnected()
+            val health = TokenXWatchdog.probe()
+            rootClients = health.root.clients
+            systemClients = health.system.clients
+            rootBackendAlive = health.root.binderAlive
+            systemBackendAlive = health.system.binderAlive
+            shellClients = health.shell.clients
+            transportAlive = health.transport == TokenXWatchdog.State.ONLINE
+            transportGeneration = health.generation
+            if (health.transport == TokenXWatchdog.State.ONLINE) heartbeatTick = !heartbeatTick
+            delay(1000)
+        }
+    }
 
+    // Binder replacement during an engine switch may not produce a second state-machine
+    // transition in the manager process. Poll the live Binder while a switch is pending;
+    // the backend-reported UID is the authoritative completion signal.
+    LaunchedEffect(startStatus) {
+        if (startStatus is StartStatus.Starting) {
+            val expectedUid = when (StartStatusReporter.targetMethod) {
+                ShizukuSettings.StartMethod.ROOT -> 0
+                ShizukuSettings.StartMethod.SYSTEM -> 1000
+                ShizukuSettings.StartMethod.WIRELESS,
+                ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK,
+                ShizukuSettings.StartMethod.USB -> 2000
+                else -> -1
+            }
+            // A switch is successful only after the replacement Binder answers and
+            // reports the requested UID. Never leave the modal spinning forever: if the
+            // replacement Binder is not usable within 12 seconds, keep whatever live
+            // backend is still answering and surface a real failure.
+            val deadline = android.os.SystemClock.elapsedRealtime() + 12_000L
+            while (StartStatusReporter.status.value is StartStatus.Starting) {
+                val binderReady = runCatching { Shizuku.pingBinder() }.getOrDefault(false)
+                val liveUid = if (binderReady) runCatching { Shizuku.getUid() }.getOrDefault(-1) else -1
+                if (binderReady && liveUid == expectedUid) {
+                    running = true
+                    uid = liveUid
+                    ShizukuStateMachine.set(ShizukuStateMachine.State.RUNNING)
+                    StartStatusReporter.succeeded()
+
+                    // Recreate only the TokenX manager after a verified backend change.
+                    // The privilege backend stays alive; the fresh manager process then
+                    // attaches to the newly verified Binder instead of retaining stale
+                    // client-side Binder/state objects from the previous mode.
+                    if (liveUid != StartStatusReporter.sourceUid) {
+                        ShellSession().run(
+                            ShellBackend.ROOT,
+                            "(sleep 1; am force-stop com.vikram.exp; sleep 1; monkey -p com.vikram.exp -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1) >/dev/null 2>&1 &"
+                        ) { }
+                    }
+                    break
+                }
+                if (android.os.SystemClock.elapsedRealtime() >= deadline) {
+                    // Re-probe instead of marking the requested route active. This keeps
+                    // UID 1000 selected when a UID 0 handoff never becomes reachable.
+                    val fallbackReady = runCatching { Shizuku.pingBinder() }.getOrDefault(false)
+                    val fallbackUid = if (fallbackReady) runCatching { Shizuku.getUid() }.getOrDefault(-1) else -1
+                    running = fallbackReady
+                    uid = fallbackUid
+                    ShizukuStateMachine.update()
+                    StartStatusReporter.failed(
+                        if (fallbackReady) {
+                            "The requested UID $expectedUid Binder did not become active. UID $fallbackUid remains connected."
+                        } else {
+                            "The requested UID $expectedUid Binder did not become active. Restart TokenX or retry the privilege engine."
+                        }
+                    )
+                    break
+                }
+                delay(250)
+            }
+        }
+    }
+
+    if (startStatus is StartStatus.Starting) {
+        val targetLabel = StartStatusReporter.targetMethod?.let { context.getString(startMethodLabelRes(it)) } ?: "backend"
+        val targetUid = when (StartStatusReporter.targetMethod) {
+            ShizukuSettings.StartMethod.ROOT -> 0
+            ShizukuSettings.StartMethod.SYSTEM -> 1000
+            else -> 2000
+        }
+        AlertDialog(
+            onDismissRequest = {},
+            confirmButton = {},
+            title = { Text("Switching privilege engine") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    LoadingIndicator()
+                    Text("Connecting to $targetLabel")
+                    Text(
+                        "UID ${StartStatusReporter.sourceUid.takeIf { it >= 0 } ?: "—"}  →  UID $targetUid",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text("Waiting for the new Binder to become active…", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        )
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = bottomPadding),
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
+            item { moe.shizuku.manager.ui.component.SystemServerProvisionCard() }
             if (updateAvailable) {
                 item {
                     Surface(
@@ -465,9 +672,19 @@ fun HomeScreen(bottomPadding: Dp) {
             }
 
             item {
+                TokenXDashboard(
+                    running = running,
+                    uid = uid,
+                    rootAvailable = rooted
+                )
+            }
+
+            item {
                 StatusCard(
                     running = running,
                     uid = uid,
+                    rootBackendAlive = rootBackendAlive,
+                    systemBackendAlive = systemBackendAlive,
                     startMethodLabelRes = startMethodLabelRes(startMethod)
                 )
             }
@@ -489,159 +706,246 @@ fun HomeScreen(bottomPadding: Dp) {
                     // dialog only slowed it down.
                     onStop = {
                         ShizukuSettings.setManuallyStopped(true)
-                        ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
-                        runCatching { Shizuku.exit() }
 
-                        // A UID-1000/system package can remain provisioned after its live
-                        // TokenX/Shizuku binder has gone away. Binder-death delivery is not
-                        // guaranteed to arrive before Compose redraws, so never leave the
-                        // home screen displaying the cached RUNNING state after Stop.
-                        //
-                        // Do not touch the UID-1000 package or system-server bridge here:
-                        // Stop is runtime-only. Re-probe the live binder until it disappears,
-                        // then refresh every status fact from that runtime result.
-                        scope.launch {
-                            repeat(20) {
-                                if (!Shizuku.pingBinder()) {
-                                    ShizukuStateMachine.update()
-                                    refresh()
-                                    return@launch
-                                }
-                                kotlinx.coroutines.delay(100)
-                            }
-                            // Final authoritative probe even if shutdown took longer than
-                            // expected. If the binder is genuinely still alive, update()
-                            // deliberately leaves the UI RUNNING instead of faking STOPPED.
+                        // Never terminate a UID-1000 backend. In System Server mode the
+                        // Shizuku Binder is hosted by Android's system_server, so exit()
+                        // would restart the framework/phone. Match ManualStopReceiver:
+                        // detach/suppress locally and leave the host process alive.
+                        val liveUid = if (Shizuku.pingBinder()) {
+                            runCatching { Shizuku.getUid() }.getOrDefault(-1)
+                        } else {
+                            -1
+                        }
+
+                        if (liveUid == 1000) {
+                            android.util.Log.w(
+                                moe.shizuku.manager.AppConstants.TAG,
+                                "TOKENX_SYSTEM_SERVER_STOP_GUARDED: Home Stop refusing Shizuku.exit() for UID 1000"
+                            )
                             ShizukuStateMachine.update()
-                            refresh()
+                            scope.launch { refresh() }
+                        } else {
+                            ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
+                            runCatching { Shizuku.exit() }
+
+                            scope.launch {
+                                repeat(20) {
+                                    if (!Shizuku.pingBinder()) {
+                                        ShizukuStateMachine.update()
+                                        refresh()
+                                        return@launch
+                                    }
+                                    kotlinx.coroutines.delay(100)
+                                }
+                                // Never fake STOPPED: the final live probe remains authoritative.
+                                ShizukuStateMachine.update()
+                                refresh()
+                            }
                         }
                     },
                     // A bounce: forceStart replaces the running server instead of
                     // being ignored as "already running".
-                    onRestart = {
-                        startWithLocalNetworkPermission(ShizukuSettings.getStartMethod()) {
-                            ShizukuReceiverStarter.start(
-                                context,
-                                forceStart = true,
-                                userInitiated = true
-                            )
-                        }
-                    }
+                    onRestart = { showDeviceRestartMenu = true }
                 )
             }
 
             item {
-                // The ways to start, as cards rather than rows: each one is a decision with
-                // a reason attached, so it gets an icon to be recognised by and a body that
-                // says the trade. The start options are disabled while Shizuku is running,
-                // because starting again does nothing and Restart is how you relaunch it.
+                HomeSectionHeader(
+                    title = "Global connections",
+                    subtitle = "Independent privilege backends • live heartbeat and client routing"
+                )
+            }
+
+            item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ExpressiveCard(
-                        icon = Icons.Rounded.Wifi,
-                        title = stringResource(R.string.home_wireless_adb_title),
-                        // A start with the experiment on can spend two minutes asking before it
-                        // either starts or gives up, and a card that only spins for that long
-                        // reads as stuck.
-                        body = if (startStatus is StartStatus.Starting &&
-                            ShizukuSettings.getForceWirelessDebugging()
-                        ) {
-                            stringResource(R.string.home_wireless_adb_starting_without_wifi)
-                        } else {
-                            stringResource(R.string.home_wireless_adb_summary)
-                        },
-                        enabled = !running,
-                        onClick = {
-                            startWithLocalNetworkPermission(ShizukuSettings.StartMethod.WIRELESS) {
-                                ShizukuReceiverStarter.start(
-                                    context,
-                                    userInitiated = true,
-                                    startMethod = ShizukuSettings.StartMethod.WIRELESS
-                                )
+                    GlobalConnectionCard(
+                        icon = Icons.Rounded.Refresh, title = "TokenX Multi-Backend Transport", uid = null,
+                        identity = "TokenX RISH DEX · Multi-Backend Client",
+                        online = transportAlive, available = true,
+                        clients = rootClients + systemClients + shellClients,
+                        heartbeatTick = heartbeatTick && transportAlive,
+                        detail = "Protocol v${TokenXBinderProtocol.VERSION} • rendezvous generation $transportGeneration • Root $rootClients / System $systemClients / Shell $shellClients",
+                        command = "./rish --system",
+                        actionLabel = if (transportStatsExpanded) "Hide transport stats" else "Transport live",
+                        actionEnabled = true,
+                        onAction = { transportStatsExpanded = !transportStatsExpanded }
+                    )
+                    TokenXGlassCard(modifier = Modifier.fillMaxWidth()) {
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().clickable { transportInfoExpanded = !transportInfoExpanded }.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("TokenX transport format", fontWeight = FontWeight.SemiBold)
+                                    Text("rish_shizuku.dex · TokenXTransportClient", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null)
+                            }
+                            if (transportInfoExpanded) {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))
+                                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                                    Text("Replaces the legacy single-Binder rish path. The rebuilt rish_shizuku.dex contains TokenXTransportClient, which requests an authorized TokenX transport session and explicitly selects Root, System, or Shell.", style = MaterialTheme.typography.bodySmall)
+                                    Text("New commands: ./rish --root  •  ./rish --system  •  ./rish --shell", style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+                                    Text("Sessions are tied to the client Binder lifetime, so they disappear automatically when the client exits.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
                             }
                         }
-                    )
-                    ExpressiveCard(
-                        icon = Icons.Rounded.Usb,
-                        title = stringResource(R.string.home_usb_adb_title),
-                        // A USB start needs the classic port, and with no network and no port
-                        // there is nothing it can do. It says so here rather than sliding over
-                        // to wireless: starting without a network is a method of its own, and
-                        // the card that does it is the one above this.
-                        body = if (!EnvironmentUtils.isWifiConnected() &&
-                            EnvironmentUtils.getAdbTcpPort() <= 0
-                        ) {
-                            stringResource(R.string.home_usb_adb_needs_network)
-                        } else {
-                            stringResource(R.string.home_usb_adb_summary).stripHtmlTags()
-                        },
-                        enabled = !running,
-                        onClick = {
-                            ShizukuReceiverStarter.start(
-                                context,
-                                userInitiated = true,
-                                startMethod = ShizukuSettings.StartMethod.USB
-                            )
-                        }
-                    )
-                    if (rooted) {
-                        val rootDescription = stringResource(
-                            R.string.home_root_description,
-                            "<b><a href=\"${Helps.SUI.get()}\">Sui</a></b>",
-                            "Sui"
-                        ).stripHtmlTags()
-
-                        // Always says what it does: start over root. It used to flip to
-                        // "Restart" once a root server was running, which just duplicated the
-                        // Restart button above (and hid the fact that this card starts over
-                        // root whatever the start method is set to).
-                        ExpressiveCard(
-                            // A hash, which is what a root shell is: the same mark the shell's
-                            // own prompt uses.
-                            icon = Icons.Rounded.Numbers,
-                            title = stringResource(R.string.home_root_title),
-                            body = rootDescription,
-                            enabled = !running,
-                            onClick = {
-                                context.startActivity(
-                                    Intent(context, StarterActivity::class.java)
-                                        .putExtra(StarterActivity.EXTRA_IS_ROOT, true)
-                                )
-                            }
-                        )
                     }
-                    ExpressiveCard(
-                        icon = Icons.Rounded.AdminPanelSettings,
-                        title = stringResource(R.string.home_system_title),
-                        body = if (systemBackendActive) {
-                            "Framework • UID 1000 • rish connected"
-                        } else {
-                            stringResource(R.string.home_system_summary)
+                    TokenXGlassButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { transportStatsExpanded = !transportStatsExpanded }
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Rounded.Numbers, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                if (transportStatsExpanded) "Hide transport stats" else "Check Transport Stats",
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    if (transportStatsExpanded) {
+                        TokenXGlassCard(modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text("TOKENX TRANSPORT STATS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Client: TokenX RISH DEX · Multi-Backend Client")
+                                Text("File: rish_shizuku.dex · TokenXTransportClient")
+                                Text("Launcher pair: rish + rish_shizuku.dex")
+                                Text("Binder: " + if (transportAlive) "LIVE" else "OFFLINE")
+                                Text("RISH protocol: v3")
+                                Text("Transport protocol: v${TokenXBinderProtocol.VERSION}")
+                                Text("Rendezvous generation: $transportGeneration")
+                                Text("Active sessions: ${rootClients + systemClients + shellClients}")
+                                Text("Root: $rootClients  •  System: $systemClients  •  Shell: $shellClients")
+                            }
+                        }
+                    }
+                    GlobalConnectionCard(
+                        icon = Icons.Rounded.Numbers, title = "Root", uid = 0,
+                        online = rootBackendAlive, available = rooted, clients = rootClients,
+                        heartbeatTick = heartbeatTick && rootBackendAlive,
+                        detail = if (rootBackendAlive) "KernelSU / root backend bound" else if (rooted) "KernelSU / root backend available" else "Root unavailable",
+                        command = "./rish --root",
+                        actionLabel = if (rootBackendAlive) "Connected" else "Connect",
+                        actionEnabled = rooted && !rootBackendAlive,
+                        onAction = { ShizukuReceiverStarter.switchMode(context, ShizukuSettings.StartMethod.ROOT, userInitiated = true) }
+                    )
+                    GlobalConnectionCard(
+                        icon = Icons.Rounded.AdminPanelSettings, title = "System", uid = 1000,
+                        online = systemBackendAlive, available = true, clients = systemClients,
+                        heartbeatTick = heartbeatTick && systemBackendAlive,
+                        detail = when {
+                            systemBackendAlive && systemRishActive -> "System transport / rish attached"
+                            systemBackendAlive -> "System UID 1000 Binder attached"
+                            else -> "Framework UID 1000 backend"
                         },
-                        status = if (systemBackendActive) "ACTIVE" else null,
-                        enabled = !running || systemBackendActive,
-                        onClick = {
-                            ShizukuReceiverStarter.start(
+                        command = "./rish --system",
+                        actionLabel = when {
+                            systemConnectBusy -> "Connecting…"
+                            systemBackendAlive -> "Connected"
+                            else -> "Connect"
+                        },
+                        actionEnabled = !systemBackendAlive && !systemConnectBusy,
+                        onAction = {
+                            // The System card owns the independent UID-1000 backend. Do not
+                            // switch the global Shizuku compatibility Binder away from Root:
+                            // explicit rish --system already proves this dedicated route.
+                            systemConnectBusy = true
+                            scope.launch(Dispatchers.IO) {
+                                val result = SystemUidProvisioner.prepareAndStartShizukuUid1000(context)
+                                if (result.success) {
+                                    val deadline = android.os.SystemClock.elapsedRealtime() + 4_000L
+                                    while (android.os.SystemClock.elapsedRealtime() < deadline) {
+                                        if (ShizukuManagerProvider.systemBinder()?.isBinderAlive == true) break
+                                        delay(50)
+                                    }
+                                }
+                                systemBackendAlive = ShizukuManagerProvider.systemBinder()?.isBinderAlive == true
+                                systemConnectBusy = false
+                                withContext(Dispatchers.Main) { refresh() }
+                            }
+                        }
+                    )
+                    GlobalConnectionCard(
+                        icon = Icons.Rounded.Wifi, title = "Wireless debugging", uid = 2000,
+                        online = running && uid == 2000 &&
+                            (ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS ||
+                                ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK),
+                        available = true,
+                        clients = if (running && uid == 2000 &&
+                            (ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS ||
+                                ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK)) shellClients else 0,
+                        heartbeatTick = heartbeatTick && running && uid == 2000 &&
+                            (ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS ||
+                                ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK),
+                        detail = "Wireless ADB transport • UID 2000 shell backend",
+                        command = "./rish --shell",
+                        actionLabel = if (running && uid == 2000 &&
+                            (ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS ||
+                                ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK)) "Connected" else "Connect wireless",
+                        actionEnabled = !(running && uid == 2000 &&
+                            (ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS ||
+                                ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.WIRELESS_NO_NETWORK)),
+                        onAction = {
+                            startWithLocalNetworkPermission(ShizukuSettings.StartMethod.WIRELESS) {
+                                ShizukuReceiverStarter.switchMode(context, ShizukuSettings.StartMethod.WIRELESS, userInitiated = true)
+                            }
+                        }
+                    )
+                    GlobalConnectionCard(
+                        icon = Icons.Rounded.Usb, title = "USB debugging", uid = 2000,
+                        online = running && uid == 2000 &&
+                            ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB,
+                        available = true,
+                        clients = if (running && uid == 2000 &&
+                            ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB) shellClients else 0,
+                        heartbeatTick = heartbeatTick && running && uid == 2000 &&
+                            ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB,
+                        detail = "USB / TCP ADB transport • UID 2000 shell backend",
+                        command = "./rish --shell",
+                        actionLabel = if (running && uid == 2000 &&
+                            ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB) "Connected" else "Connect USB",
+                        actionEnabled = !(running && uid == 2000 &&
+                            ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB),
+                        onAction = {
+                            ShizukuReceiverStarter.switchMode(
                                 context,
-                                userInitiated = true,
-                                startMethod = ShizukuSettings.StartMethod.SYSTEM
+                                ShizukuSettings.StartMethod.USB,
+                                userInitiated = true
                             )
                         }
                     )
-
-                    // Starting from a computer is the same kind of decision as the rest, so it
-                    // is a card as well: as a row underneath them it read as something else.
-                    ExpressiveCard(
-                        icon = Icons.Rounded.Computer,
-                        title = stringResource(R.string.intents_adb_command),
-                        // The command itself is long enough to swamp a card; it lives in the
-                        // dialog this opens, where it can be copied.
-                        body = stringResource(R.string.home_adb_command_summary),
-                        enabled = !running,
-                        onClick = { showAdbCommand = true }
+                    GlobalConnectionCard(
+                        icon = Icons.Rounded.Computer, title = "PC / ADB", uid = 2000,
+                        online = running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB,
+                        available = true,
+                        clients = if (running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB) shellClients else 0,
+                        heartbeatTick = heartbeatTick && running && uid == 2000 && ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.USB,
+                        detail = "Computer ADB command • shares the live USB/TCP shell transport",
+                        command = Starter.adbCommand,
+                        actionLabel = "Show PC command",
+                        actionEnabled = true,
+                        onAction = { showAdbCommand = true }
                     )
                 }
             }
 
+            item {
+                HomeCollapsibleSectionHeader(
+                    title = "Device & runtime",
+                    subtitle = "Manager, kernel and Android security state",
+                    expanded = deviceRuntimeExpanded,
+                    onClick = { deviceRuntimeExpanded = !deviceRuntimeExpanded }
+                )
+            }
+
+            if (deviceRuntimeExpanded) {
             item {
                 SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
                     // Same rows KernelSU's manager shows, so the device is described the
@@ -684,6 +988,7 @@ fun HomeScreen(bottomPadding: Dp) {
                     }
                 }
             }
+            }
         }
     }
 
@@ -723,99 +1028,358 @@ fun HomeScreen(bottomPadding: Dp) {
     }
 }
 
+
+@Composable
+private fun HomeCollapsibleSectionHeader(
+    title: String,
+    subtitle: String,
+    expanded: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(start = 4.dp, top = 6.dp, end = 4.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = if (expanded) "$subtitle • Tap to collapse" else "$subtitle • Tap to expand",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Icon(
+            Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            contentDescription = if (expanded) "Collapse" else "Expand",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.alpha(if (expanded) .55f else 1f)
+        )
+    }
+}
+
+@Composable
+private fun HomeSectionHeader(title: String, subtitle: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 4.dp, top = 6.dp, end = 4.dp, bottom = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun GlobalConnectionCard(
+    icon: ImageVector, title: String, uid: Int?, online: Boolean, available: Boolean,
+    clients: Int, heartbeatTick: Boolean, detail: String, command: String,
+    actionLabel: String, actionEnabled: Boolean, onAction: () -> Unit,
+    identity: String? = null,
+) {
+    val context = LocalContext.current
+    var expanded by remember { mutableStateOf(false) }
+    val accent = MaterialTheme.colorScheme.primary
+    val pulseAlpha by animateFloatAsState(
+        targetValue = if (heartbeatTick) 1f else .42f,
+        animationSpec = tween(260),
+        label = "backend-heartbeat"
+    )
+    TokenXGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(44.dp), shape = RoundedCornerShape(15.dp),
+                    color = if (online) accent.copy(alpha = .16f) else MaterialTheme.colorScheme.surfaceContainerHighest
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(icon, null, tint = if (online) accent else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            if (uid != null) "$title · UID $uid" else title,
+                            modifier = Modifier.weight(1f, fill = false),
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(Modifier.width(7.dp))
+                        Surface(
+                            modifier = Modifier.size(9.dp).alpha(if (online) pulseAlpha else .28f),
+                            shape = CircleShape,
+                            color = if (online) accent else MaterialTheme.colorScheme.onSurfaceVariant
+                        ) {}
+                    }
+                    if (identity != null) {
+                        Text(
+                            identity,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Text(
+                        when {
+                            online -> "ONLINE • $clients apps connected"
+                            available -> "STANDBY • $clients apps connected"
+                            else -> "OFFLINE"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (online) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        if (online) "HEARTBEAT" else if (available) "READY" else "OFFLINE",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (online) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, modifier = Modifier.size(20.dp))
+                }
+            }
+            if (expanded) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        if (online) "Binder ✓  •  heartbeat live  •  $clients active clients"
+                        else "Binder —  •  heartbeat —  •  $clients active clients",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    TokenXGlassCard(
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            if (ClipboardUtils.put(context, command)) {
+                                Toast.makeText(context, "Termux command copied", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    ) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text("TERMUX / RISH", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(command, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+                            Text("Tap to copy", style = MaterialTheme.typography.labelSmall, color = accent)
+                        }
+                    }
+                    TokenXGlassButton(modifier = Modifier.fillMaxWidth(), enabled = actionEnabled, onClick = onAction) {
+                        Text(actionLabel)
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun StartMethodRow(
+    icon: ImageVector,
+    title: String,
+    summary: String,
+    enabled: Boolean,
+    active: Boolean,
+    onClick: () -> Unit
+) {
+    val accent = MaterialTheme.colorScheme.primary
+    ListItem(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, onClick = onClick)
+            .alpha(if (enabled || active) 1f else .52f),
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        leadingContent = {
+            Surface(
+                modifier = Modifier.size(42.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = if (active) accent.copy(alpha = .18f) else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = .72f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = if (active) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+        },
+        headlineContent = {
+            Text(title, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+        },
+        supportingContent = {
+            Text(summary, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        },
+        trailingContent = {
+            if (active) {
+                Text("ACTIVE", style = MaterialTheme.typography.labelMedium, color = accent)
+            } else {
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    )
+}
+
 @Composable
 private fun StatusCard(
     running: Boolean,
     uid: Int,
+    rootBackendAlive: Boolean,
+    systemBackendAlive: Boolean,
     @StringRes startMethodLabelRes: Int
 ) {
-    // "Stopped" is a normal state, not an error a red container made the
-    // primary action clash. Use a neutral surface instead.
-    val containerColor = if (running) {
-        MaterialTheme.colorScheme.secondaryContainer
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh
+    val glass = LocalTokenXGlass.current
+    val accent = MaterialTheme.colorScheme.primary
+    val dualBackend = rootBackendAlive && systemBackendAlive
+    val anyBackend = rootBackendAlive || systemBackendAlive || running
+    val statusTitle = when {
+        dualBackend -> "Dual Backend Active"
+        systemBackendAlive && !rootBackendAlive -> "System Server Active"
+        rootBackendAlive && !systemBackendAlive -> "Root Active"
+        running -> stringResource(R.string.status_running_short)
+        else -> stringResource(R.string.status_stopped_short)
     }
-    val contentColor = if (running) {
-        MaterialTheme.colorScheme.onSecondaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurface
+    val statusSubtitle = when {
+        dualBackend -> "Root + System Server bound • 2/2 privilege backends online"
+        systemBackendAlive && !rootBackendAlive -> "System Server backend bound"
+        rootBackendAlive && !systemBackendAlive -> "Root backend bound"
+        running -> "Privilege engine active"
+        else -> "Privilege engines offline"
     }
-
-    // On the pure black theme the stopped card is the same colour as the page, so it
-    // gets the same hairline outline as the other cards. The running card uses a
-    // tinted container that the page can't swallow.
-    val outlined = LocalAmoledTheme.current && !running
-
+    val uidBadge = when {
+        dualBackend -> "UID 0 + 1000"
+        systemBackendAlive && !rootBackendAlive -> "UID 1000"
+        rootBackendAlive && !systemBackendAlive -> "UID 0"
+        running -> "UID $uid"
+        else -> "OFFLINE"
+    }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (outlined) {
-                    Modifier.border(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                        shape = MaterialTheme.shapes.large
-                    )
-                } else {
-                    Modifier
-                }
+            .border(
+                1.dp,
+                if (anyBackend) accent.copy(alpha = .34f) else MaterialTheme.colorScheme.outlineVariant,
+                MaterialTheme.shapes.large
             ),
-        color = containerColor,
-        contentColor = contentColor,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
+            alpha = if (glass.enabled) glass.opacity.coerceAtLeast(.55f) else 1f
+        ),
+        contentColor = MaterialTheme.colorScheme.onSurface,
         shape = MaterialTheme.shapes.large
     ) {
-        // The icon reads as a status badge for the title beside it, with the facts in a
-        // row underneath the two of them.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp)
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Icon(
-                if (running) Icons.Rounded.CheckCircle else Icons.Rounded.StopCircle,
-                contentDescription = null,
-                // Nudged down to sit on the title's line rather than above it.
-                modifier = Modifier.padding(top = 2.dp)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    stringResource(
-                        if (running) R.string.status_running_short else R.string.status_stopped_short
-                    ),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                // Everything about the server at a glance: how it is running now, what
-                // the Start button below will do next, and what it is running as.
-                StatusFacts(
-                    StatusFactEntry(
-                        R.string.home_status_started_with,
-                        if (running) runningMethodLabel(uid) else stringResource(R.string.status_value_none)
-                    ),
-                    StatusFactEntry(
-                        R.string.home_status_started_default,
-                        stringResource(startMethodLabelRes)
-                    ),
-                    // The wire, as opposed to the method above it: a wireless start can ride
-                    // the classic port (and a system start uses no adb at all).
-                    StatusFactEntry(
-                        R.string.home_status_transport_label,
-                        if (running) transportLabel(uid) else stringResource(R.string.status_value_none)
-                    ),
-                    // The number is the fact; what the uid is called goes underneath it,
-                    // because "2000 (shell)" in a quarter of the width lost its own name.
-                    StatusFactEntry(
-                        R.string.uid_label,
-                        if (uid < 0) stringResource(R.string.status_value_none) else uid.toString(),
-                        uidName(uid)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = CircleShape,
+                    color = if (anyBackend) accent.copy(alpha = .18f) else MaterialTheme.colorScheme.surfaceContainerHighest
+                ) {
+                    Icon(
+                        if (anyBackend) Icons.Rounded.CheckCircle else Icons.Rounded.StopCircle,
+                        contentDescription = null,
+                        tint = if (anyBackend) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(9.dp).size(22.dp)
                     )
-                )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        statusTitle,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        statusSubtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Surface(
+                    shape = CircleShape,
+                    color = if (anyBackend) accent.copy(alpha = .14f) else MaterialTheme.colorScheme.surfaceContainerHighest
+                ) {
+                    Text(
+                        uidBadge,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (anyBackend) accent else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                CompactStatusFact(
+                    "Root",
+                    if (rootBackendAlive) "Bound" else "Offline",
+                    Modifier.weight(1f)
+                )
+                CompactStatusFact(
+                    "System",
+                    if (systemBackendAlive) "Bound" else "Offline",
+                    Modifier.weight(1f)
+                )
+                CompactStatusFact(
+                    "Default",
+                    stringResource(startMethodLabelRes),
+                    Modifier.weight(1f)
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun CompactStatusFact(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        Text(
+            label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -961,7 +1525,6 @@ private fun StatusFact(fact: StatusFactEntry, modifier: Modifier = Modifier) {
 }
 
 /** Restart's blue see the note where it is used. */
-private val RestartBlue = Color(0xFF2563EB)
 
 /**
  * Start, Stop and Restart below the status card, all always visible. An action that
@@ -976,56 +1539,90 @@ private fun ServerActionButtons(
     onStop: () -> Unit,
     onRestart: () -> Unit
 ) {
+    val context = LocalContext.current
+    val glass = LocalTokenXGlass.current
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Button(
-            modifier = Modifier.weight(1f),
+        GlassServerAction(
+            label = stringResource(R.string.action_start),
+            icon = Icons.Rounded.PlayArrow,
             enabled = !running && !starting,
-            onClick = onStart
+            emphasized = !running,
+            loading = starting,
+            modifier = Modifier.weight(1f),
+            onClick = { TokenXHaptics.perform(context, TokenXHapticEvent.CONFIRM); onStart() }
+        )
+        GlassServerAction(
+            label = stringResource(R.string.action_stop),
+            icon = Icons.Rounded.Stop,
+            enabled = running && !starting,
+            emphasized = running,
+            modifier = Modifier.weight(1f),
+            onClick = { TokenXHaptics.perform(context, TokenXHapticEvent.WARNING); onStop() }
+        )
+        GlassServerAction(
+            label = stringResource(R.string.action_restart),
+            icon = Icons.Rounded.Refresh,
+            enabled = running && !starting,
+            emphasized = running,
+            modifier = Modifier.weight(1f),
+            onClick = { TokenXHaptics.perform(context, TokenXHapticEvent.CONFIRM); onRestart() }
+        )
+    }
+}
+
+@Composable
+private fun GlassServerAction(
+    label: String,
+    icon: ImageVector,
+    enabled: Boolean,
+    emphasized: Boolean,
+    modifier: Modifier = Modifier,
+    loading: Boolean = false,
+    onClick: () -> Unit
+) {
+    val glass = LocalTokenXGlass.current
+    val accent = MaterialTheme.colorScheme.primary
+    val shape = RoundedCornerShape(18.dp)
+    val alpha = when {
+        !enabled && !loading -> .46f
+        glass.enabled -> 1f
+        else -> 1f
+    }
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .height(58.dp)
+            .alpha(alpha)
+            .border(
+                width = 1.dp,
+                color = if (emphasized && enabled) accent.copy(alpha = .34f)
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (glass.enabled) .72f else .55f),
+                shape = shape
+            ),
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
+            alpha = if (glass.enabled) glass.opacity.coerceIn(.28f, .82f) else .92f
+        ),
+        contentColor = if (emphasized && enabled) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+        tonalElevation = if (glass.enabled) 2.dp else 0.dp,
+        shadowElevation = if (glass.enabled) 3.dp else 0.dp
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            if (starting) {
-                // The morphing loader rather than a ring: it is the shape Material 3
-                // gives an action that is running, and it is legible at button size.
-                LoadingIndicator(
-                    modifier = Modifier.size(22.dp),
-                    // The button is disabled while starting, so pick a colour that
-                    // still reads against the disabled container.
-                    color = MaterialTheme.colorScheme.primary
-                )
+            if (loading) {
+                LoadingIndicator(modifier = Modifier.size(20.dp), color = accent)
             } else {
-                Text(stringResource(R.string.action_start))
+                Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
             }
-        }
-
-        // Red: stopping is the destructive one, and the theme's error role stays red
-        // whatever the seed colour is.
-        Button(
-            modifier = Modifier.weight(1f),
-            enabled = running,
-            onClick = onStop,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.error,
-                contentColor = MaterialTheme.colorScheme.onError
-            )
-        ) {
-            Text(stringResource(R.string.action_stop))
-        }
-
-        // Blue on purpose: Material 3 has no blue role and the palette is seeded from
-        // the wallpaper or the brand colour, so a role here would come out indigo or
-        // teal depending on the theme.
-        Button(
-            modifier = Modifier.weight(1f),
-            enabled = running,
-            onClick = onRestart,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = RestartBlue,
-                contentColor = Color.White
-            )
-        ) {
-            Text(stringResource(R.string.action_restart))
+            Spacer(Modifier.width(7.dp))
+            Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -1101,3 +1698,37 @@ private fun launchedByUsOverAdb(): Boolean = when (ShizukuSettings.getRunningSta
     ShizukuSettings.StartMethod.WIRELESS, ShizukuSettings.StartMethod.USB -> true
     else -> false
 }
+
+
+private enum class DeviceRestartAction(
+    val label: String,
+    val description: String,
+    val confirmLabel: String,
+    val command: String
+) {
+    FULL(
+        "Full Reboot",
+        "Restart the entire device. D2 and TokenX boot gating will run again on the next boot.",
+        "Reboot",
+        "/system/bin/svc power reboot || /system/bin/reboot"
+    ),
+    SOFT(
+        "Soft Reboot",
+        "Restart Android's framework through zygote without rebooting the kernel. The current TokenX Binder session will be interrupted.",
+        "Soft Reboot",
+        "setprop ctl.restart zygote"
+    ),
+    SYSTEM_UI(
+        "UI Reboot",
+        "Restart SystemUI only. Android framework and the kernel remain running.",
+        "Restart UI",
+        "pkill -TERM -f com.android.systemui || killall com.android.systemui"
+    ),
+    TOKENX_APP(
+        "Restart TokenX",
+        "Restart only the TokenX manager app. The active privilege backend is left running.",
+        "Restart TokenX",
+        "(sleep 1; am force-stop com.vikram.exp; sleep 1; monkey -p com.vikram.exp -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1) >/dev/null 2>&1 &"
+    )
+}
+

@@ -9,12 +9,17 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.topjohnwu.superuser.Shell
 import moe.shizuku.manager.R
 import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.ShizukuManagerProvider
 import moe.shizuku.manager.start.StartFailureKind
 import moe.shizuku.manager.service.WatchdogGuard
 import moe.shizuku.manager.start.StartStatusReporter
@@ -29,8 +34,12 @@ import moe.shizuku.manager.utils.SettingsPage
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import moe.shizuku.manager.utils.UserHandleCompat
 import moe.shizuku.manager.worker.AdbStartWorker
+import moe.shizuku.manager.tokenx.TokenXBootOwner
+import moe.shizuku.manager.tokenx.TokenXBootSession
 
 object ShizukuReceiverStarter {
+
+    private val startScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     const val NOTIFICATION_ID = 1447
     private const val CHANNEL_ID = "AdbStartWorker"
@@ -93,7 +102,10 @@ object ShizukuReceiverStarter {
         // next start will do.
         val method = StartMethodGuard.resolve(startMethod)
 
-        StartStatusReporter.starting()
+        val currentUid = if (rikka.shizuku.Shizuku.pingBinder()) {
+            runCatching { rikka.shizuku.Shizuku.getUid() }.getOrDefault(-1)
+        } else -1
+        StartStatusReporter.starting(method, currentUid)
 
         // Remember how this launch was started: the status card and the notification
         // report the method the server is actually running under, which isn't always
@@ -101,10 +113,70 @@ object ShizukuReceiverStarter {
         ShizukuSettings.setRunningStartMethod(method)
 
         when (method) {
-            ShizukuSettings.StartMethod.ROOT -> rootStart(context)
+            // libsu shell acquisition and the starter command can block while KernelSU
+            // grants/refreshes root. Never perform either from a Compose click/receiver thread.
+            ShizukuSettings.StartMethod.ROOT -> startScope.launch {
+                rootStart(context.applicationContext)
+            }
             ShizukuSettings.StartMethod.SYSTEM -> systemStart(context)
             else -> adbStart(context, userInitiated, method)
         }
+    }
+
+    /**
+     * Switch the live TokenX/Shizuku runtime to another backend.
+     *
+     * UID 1000 is hosted by system_server and must never be killed. A switch away from
+     * System therefore starts the requested backend as a replacement and accepts the
+     * handoff only after the published Binder reports the requested UID.
+     */
+    fun switchMode(
+        context: Context,
+        @ShizukuSettings.StartMethod targetMethod: Int,
+        userInitiated: Boolean = true,
+    ) {
+        ShizukuSettings.setStartMethod(targetMethod)
+        val targetUid = when (targetMethod) {
+            ShizukuSettings.StartMethod.ROOT -> 0
+            ShizukuSettings.StartMethod.SYSTEM -> 1000
+            else -> 2000
+        }
+        val liveUid = if (rikka.shizuku.Shizuku.pingBinder()) {
+            runCatching { rikka.shizuku.Shizuku.getUid() }.getOrDefault(-1)
+        } else -1
+
+        if (liveUid == targetUid) {
+            ShizukuSettings.setRunningStartMethod(targetMethod)
+            Log.i(AppConstants.TAG, "TokenX mode switch already satisfied: UID $targetUid")
+            return
+        }
+
+        // The Xposed/System backend is independently published by TokenX. If it is already
+        // healthy, selecting System is a route selection/rebind operation, not a request to
+        // launch the legacy StarterActivity. This keeps the UID-1000 backend available
+        // without showing the manual escalation window or disturbing a live Root backend.
+        if (targetMethod == ShizukuSettings.StartMethod.SYSTEM &&
+            ShizukuManagerProvider.systemBinder()?.pingBinder() == true
+        ) {
+            ShizukuSettings.setRunningStartMethod(targetMethod)
+            StartStatusReporter.succeeded()
+            Log.i(AppConstants.TAG, "TOKENX_MODE_SWITCH: adopted existing SYSTEM UID 1000 backend silently")
+            return
+        }
+
+        Log.i(AppConstants.TAG, "TOKENX_MODE_SWITCH: UID $liveUid -> UID $targetUid method=$targetMethod")
+        StartStatusReporter.starting(targetMethod, liveUid)
+
+        // Never call Shizuku.exit() against UID 1000: that Binder is hosted by
+        // system_server. Root/ADB starters publish the replacement Binder themselves.
+        if (liveUid != 1000 && liveUid >= 0) {
+            ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
+            runCatching { rikka.shizuku.Shizuku.exit() }
+        }
+
+        // forceStart bypasses the stale RUNNING observation while the old Binder is
+        // being replaced. The actual running method is corrected by Binder confirmation.
+        start(context, forceStart = true, userInitiated = userInitiated, startMethod = targetMethod)
     }
 
     /**
@@ -265,6 +337,18 @@ object ShizukuReceiverStarter {
     }
 
     private fun rootStart(context: Context) {
+        // Root is the first real TokenX boot producer. Claiming is additive: it
+        // coordinates this manager process but does not replace the proven
+        // Shizuku root launch command below.
+        val boot = TokenXBootSession.current()
+        val claimed = when (boot.state) {
+            moe.shizuku.manager.tokenx.TokenXBootState.NEW ->
+                TokenXBootSession.claim(TokenXBootOwner.ROOT)
+            moe.shizuku.manager.tokenx.TokenXBootState.FAILED ->
+                TokenXBootSession.claimRecovery(TokenXBootOwner.ROOT)
+            else -> boot.owner == TokenXBootOwner.ROOT
+        }
+
         if (!Shell.getShell().isRoot) {
             // [start] has already dropped root when the device doesn't have it, so reaching
             // here means it was revoked in between. Say so instead of returning silently:
@@ -272,14 +356,21 @@ object ShizukuReceiverStarter {
             Log.w(AppConstants.TAG, "Root was revoked before the start could use it")
             Shell.getCachedShell()?.close()
             StartStatusReporter.failed(context.getString(R.string.start_failed_root_unavailable))
+            if (claimed) TokenXBootSession.fail(TokenXBootOwner.ROOT, "Root unavailable before server launch")
             ShizukuStateMachine.update()
             return
         }
 
         try {
             ShizukuStateMachine.set(ShizukuStateMachine.State.STARTING)
-            Shell.cmd(Starter.internalCommand).exec()
+            if (claimed) TokenXBootSession.markServerStarting(TokenXBootOwner.ROOT)
+            val result = Shell.cmd(Starter.internalCommand).exec()
+            if (!result.isSuccess) {
+                if (claimed) TokenXBootSession.fail(TokenXBootOwner.ROOT, "Root starter exited with code ${result.code}")
+                StartStatusReporter.failed("Root backend exited with code ${result.code}")
+            }
         } catch (e: Exception) {
+            if (claimed) TokenXBootSession.fail(TokenXBootOwner.ROOT, e.message ?: "Root starter exception")
             Log.e(AppConstants.TAG, "Failed to start Shizuku with root", e)
             ShizukuStateMachine.update()
         }

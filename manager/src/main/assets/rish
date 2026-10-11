@@ -1,4 +1,6 @@
 #!/system/bin/sh
+# Protocol marker required by TokenX preview CI; launcher and DEX are exported as a pair.
+TOKENX_RISH_CLIENT_VERSION=3
 BASEDIR=$(dirname "$0")
 DEX="$BASEDIR"/rish_shizuku.dex
 

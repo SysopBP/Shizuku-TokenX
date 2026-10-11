@@ -68,6 +68,10 @@ import moe.shizuku.manager.manage.OpMode
 import moe.shizuku.manager.manage.PackageTools
 import moe.shizuku.manager.manage.PermissionKind
 import moe.shizuku.manager.manage.StandbyBucket
+import moe.shizuku.manager.tokenx.TokenXAppRoute
+import moe.shizuku.manager.tokenx.TokenXAppRouting
+import moe.shizuku.manager.tokenx.TokenXBackend
+import moe.shizuku.manager.tokenx.TokenXRuntime
 import moe.shizuku.manager.ui.component.AppIcon
 import moe.shizuku.manager.ui.component.CenteredMessage
 import moe.shizuku.manager.ui.component.ChipEmphasis
@@ -118,6 +122,9 @@ fun AppDetailScreen(
     var opPicker by remember { mutableStateOf<AppOp?>(null) }
     var bucketPicker by remember { mutableStateOf(false) }
     var confirm by remember { mutableStateOf<PendingConfirm?>(null) }
+    var tokenXRoute by remember(packageName) {
+        mutableStateOf(TokenXAppRouting.get(context, packageName))
+    }
 
     LaunchedEffect(packageName, version) {
         loading = detail == null
@@ -241,6 +248,75 @@ fun AppDetailScreen(
                                 },
                                 centerSlots = true
                             )
+                        }
+                    }
+                }
+
+                // ---- TokenX execution route ----------------------------------------------
+                item {
+                    Text(
+                        "TokenX execution",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 8.dp, top = 4.dp)
+                    )
+                }
+                item {
+                    val tokenXRuntime = TokenXRuntime.snapshot(context)
+                    SegmentedColumn {
+                        item {
+                            SegmentedListItem(
+                                headlineContent = { Text("Privilege route") },
+                                supportingContent = {
+                                    Text(
+                                        when (tokenXRoute) {
+                                            TokenXAppRoute.AUTO -> "Automatic • choose the best verified backend for each capability"
+                                            TokenXAppRoute.ROOT -> "Root • force UID 0 when the root backend is ready"
+                                            TokenXAppRoute.SYSTEM -> "System • force verified Xposed → system_server UID 1000"
+                                        }
+                                    )
+                                },
+                                trailingContent = {
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        StatusChip(tokenXRoute.name)
+                                        val ready = when (tokenXRoute) {
+                                            TokenXAppRoute.AUTO -> true
+                                            TokenXAppRoute.ROOT -> tokenXRuntime.backendRegistry.isReady(TokenXBackend.ROOT)
+                                            TokenXAppRoute.SYSTEM -> tokenXRuntime.backendRegistry.isReady(TokenXBackend.SYSTEM_SERVER)
+                                        }
+                                        Text(
+                                            if (ready) "Ready" else "Unavailable",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (ready) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                },
+                                centerSlots = true
+                            )
+                        }
+                        TokenXAppRoute.entries.forEach { route ->
+                            item {
+                                SegmentedListItem(
+                                    headlineContent = { Text(route.name) },
+                                    supportingContent = {
+                                        Text(
+                                            when (route) {
+                                                TokenXAppRoute.AUTO -> "Recommended • capability-aware fallback"
+                                                TokenXAppRoute.ROOT -> "KernelSU / UID 0"
+                                                TokenXAppRoute.SYSTEM -> "LSPosed RPC / real system_server UID 1000"
+                                            }
+                                        )
+                                    },
+                                    trailingContent = {
+                                        RadioButton(selected = tokenXRoute == route, onClick = null)
+                                    },
+                                    onClick = {
+                                        tokenXRoute = route
+                                        TokenXAppRouting.set(context, packageName, route)
+                                    },
+                                    centerSlots = true
+                                )
+                            }
                         }
                     }
                 }

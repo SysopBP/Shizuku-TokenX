@@ -4,7 +4,6 @@ import com.android.build.gradle.internal.tasks.CompileArtProfileTask
 
 plugins {
     id "com.android.application"
-    id "org.jetbrains.kotlin.android"
     id "org.jetbrains.kotlin.plugin.compose"
     id "org.jetbrains.kotlin.plugin.serialization"
     id "dev.rikka.tools.refine"
@@ -56,15 +55,28 @@ android {
             version = "3.31.0+"
         }
     }
-    kotlinOptions {
-        jvmTarget = "21"
-    }
     packagingOptions {
         jniLibs {
             useLegacyPackaging = true
         }
         resources {
-            excludes += ["**"]
+            // Upstream stripped every Java resource from the APK. TokenX's modern
+            // LSPosed module descriptor lives under META-INF/xposed, so keep that
+            // namespace while continuing to discard unrelated dependency resources.
+            // Do not blanket-exclude META-INF: modern libxposed discovers this APK
+            // through META-INF/xposed. Keep those descriptors in the final APK.
+            excludes += [
+                "META-INF/*.kotlin_module",
+                "META-INF/LICENSE*",
+                "META-INF/NOTICE*",
+                "META-INF/DEPENDENCIES",
+                "META-INF/versions/**"
+            ]
+            pickFirsts += [
+                "META-INF/xposed/java_init.list",
+                "META-INF/xposed/scope.list",
+                "META-INF/xposed/module.prop"
+            ]
         }
     }
     dependenciesInfo {
@@ -157,17 +169,28 @@ tasks.withType(CompileArtProfileTask.class).configureEach {
     enabled = false
 }
 configurations.configureEach {
+    // SESL forks retain AndroidX namespaces, so stock counterparts must not
+    // coexist in the manager runtime graph.
     exclude group: "androidx.appcompat", module: "appcompat"
+    exclude group: "androidx.core", module: "core"
+    exclude group: "androidx.core", module: "core-ktx"
+    exclude group: "androidx.fragment", module: "fragment"
+    exclude group: "androidx.fragment", module: "fragment-ktx"
+    exclude group: "androidx.customview", module: "customview"
+    exclude group: "androidx.drawerlayout", module: "drawerlayout"
+    exclude group: "androidx.viewpager", module: "viewpager"
     exclude group: "androidx.profileinstaller", module: "profileinstaller"
+    // Legacy Rikka wrapper also owns the androidx.appcompat namespace; SESL replaces it.
+    exclude group: "dev.rikka.rikkax.appcompat", module: "appcompat"
 }
 
 dependencies {
-    // Supplied by LSPosed at runtime; never package XposedBridge into the APK.
-    compileOnly "de.robv.android.xposed:api:82"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2"
 
     implementation project(":server")
+    // Package the TokenX LSPosed bridge into the manager APK.
+    implementation project(":xposed")
     implementation project(":rish")
     implementation project(":starter")
     implementation project(":api")
@@ -183,7 +206,13 @@ dependencies {
     implementation "androidx.compose.material3:material3:1.5.0-alpha18"
     implementation "androidx.compose.material:material-icons-extended"
     implementation "com.materialkolor:material-kolor:3.0.1"
+
+    // Phase 2 UI framework renderer. Core UI only; navigation/blur stay isolated.
+    // Android-target artifact avoids pulling the Compose Multiplatform metadata graph
+    // into TokenX's AndroidX Compose build while retaining native Miuix UI components.
+    implementation "top.yukonga.miuix.kmp:miuix-ui-android:0.9.4"
     implementation "androidx.compose.runtime:runtime-livedata"
+    implementation "io.coil-kt:coil-compose:2.7.0"
     implementation "androidx.lifecycle:lifecycle-runtime-compose:2.9.0"
 
     // The first tests in this module: the shell's suggestion rules turn on the shape of a word
@@ -194,8 +223,6 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling"
 
     implementation "androidx.browser:browser:1.8.0"
-    implementation "androidx.core:core-ktx:1.16.0"
-    implementation "androidx.fragment:fragment-ktx:1.8.7"
     implementation "androidx.recyclerview:recyclerview:1.4.0"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.0"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.9.0"
@@ -207,7 +234,10 @@ dependencies {
     implementation "com.squareup.okhttp3:okhttp:4.12.0"
     implementation "com.github.topjohnwu.libsu:core:6.0.0"
 
-    implementation "dev.rikka.rikkax.appcompat:appcompat:1.6.1"
+    // TokenX Samsung UI bridge — tribalfs SESL AppCompat. Keep the migration
+    // isolated while Compose remains the primary UI; expand SESL module-by-module
+    // after each CI/device compatibility check.
+    implementation "sesl.androidx.appcompat:appcompat:1.8.0+1.0.21-sesl8+rev2"
     implementation "dev.rikka.rikkax.compatibility:compatibility:2.0.0"
     implementation "dev.rikka.rikkax.core:core-ktx:1.4.1"
     implementation "dev.rikka.rikkax.material:material:2.7.2"

@@ -18,12 +18,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material.icons.outlined.Route
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ui.Detail
 import moe.shizuku.manager.ui.theme.LocalAmoledTheme
+import moe.shizuku.manager.ui.theme.LocalTokenXGlass
 
 /**
  * The things that are gone to rather than lived in.
@@ -56,6 +61,7 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(stringResource(R.string.tab_labs)) },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0f)),
             windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
         )
 
@@ -104,6 +110,39 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                     onClick = { onOpenDetail(Detail.AUTOSTART) }
                 )
             }
+
+            item {
+                LabTile(
+                    icon = Icons.Outlined.Route,
+                    label = "TokenX Control Center",
+                    badge = "ROOT · D2 · SYSTEM RPC",
+                    onClick = { onOpenDetail(Detail.TOKENX) }
+                )
+            }
+            item {
+                LabTile(
+                    icon = Icons.Outlined.Terminal,
+                    label = "RISH v3 Export",
+                    badge = "ROOT · SYSTEM · SHELL",
+                    onClick = { onOpenDetail(Detail.TERMINAL) }
+                )
+            }
+            item {
+                LabTile(
+                    icon = Icons.Outlined.Key,
+                    label = "Root Console",
+                    badge = "UID 0",
+                    onClick = { onOpenDetail(Detail.TERMINAL) }
+                )
+            }
+            item {
+                LabTile(
+                    icon = Icons.Outlined.BugReport,
+                    label = "Secure Chain Monitor",
+                    badge = "LIVE · D2 · SYSTEM RPC",
+                    onClick = { onOpenDetail(Detail.TOKENX) }
+                )
+            }
         }
     }
 }
@@ -116,7 +155,7 @@ fun LabsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
  * colour is what the eye lands on first.
  */
 @Composable
-private fun LabTile(icon: ImageVector, label: String, onClick: () -> Unit) {
+private fun LabTile(icon: ImageVector, label: String, badge: String? = null, onClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -134,7 +173,7 @@ private fun LabTile(icon: ImageVector, label: String, onClick: () -> Unit) {
                 }
             ),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (LocalTokenXGlass.current.enabled) LocalTokenXGlass.current.opacity else 1f)
     ) {
         Column(
             modifier = Modifier
@@ -166,8 +205,18 @@ private fun LabTile(icon: ImageVector, label: String, onClick: () -> Unit) {
                 // Two lines, so a longer name wraps rather than being cut, and centred,
                 // because it is a tile and not a list row.
                 maxLines = 2,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface
             )
+            badge?.let {
+                Text(
+                    text = it,
+                    modifier = Modifier.padding(top = 5.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

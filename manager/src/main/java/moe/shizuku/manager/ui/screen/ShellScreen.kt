@@ -113,6 +113,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 import moe.shizuku.manager.R
 import moe.shizuku.manager.shell.ShellBackend
 import moe.shizuku.manager.shell.LibraryCommand
@@ -129,8 +130,11 @@ import moe.shizuku.manager.ui.component.AppIcon
 import moe.shizuku.manager.ui.component.appLabel
 import moe.shizuku.manager.shell.ShellLine
 import moe.shizuku.manager.shell.ShellSession
+import moe.shizuku.manager.shell.SystemUidProvisioner
 import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.manager.utils.ShizukuStateMachine
+import moe.shizuku.manager.tokenx.TokenXRuntime
+import moe.shizuku.manager.tokenx.TokenXBackend
 import rikka.shizuku.Shizuku
 
 /** How much scrollback to keep. A command like `logcat` would otherwise grow without end. */
@@ -179,9 +183,9 @@ private val BARE_SU = Regex("""^su(?:\s+-\s*)?$""")
  *
  * Every command is its own process see [ShellSession] for why a real tty is not on offer
  * here with the working directory and anything exported to `export` carried from one to the
- * next, so it reads like a session even though nothing outlives a command. Two backends, and
- * the same screen for both: through Shizuku (whatever uid the server runs as: 2000 over adb,
- * 0 with root, 1000 with the exploit) or through `su`, which works with Shizuku stopped.
+ * next, so it reads like a session even though nothing outlives a command. Three backends, and
+ * the same screen for all: Shizuku, the dedicated TokenX Sserver Binder path at uid 1000,
+ * or `su` at uid 0, which works with Shizuku stopped.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -192,7 +196,6 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
     // The session, the output and the channel it arrives on outlive this screen, because it is
     // opened from the Labs list rather than being a page: leaving it to check something and
     // coming back has to find what was run still there. See ShellContinuity.
-    val session = ShellContinuity.session
     val listState = rememberLazyListState()
 
     val lines = ShellContinuity.lines
@@ -208,8 +211,23 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
         mutableStateOf(TextFieldValue(""))
     }
     var backend by rememberSaveable { mutableStateOf(ShellBackend.SHIZUKU) }
+    var tokenxRuntime by remember { mutableStateOf(TokenXRuntime.snapshot(context)) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            tokenxRuntime = withContext(Dispatchers.IO) { TokenXRuntime.snapshot(context) }
+            delay(TokenXRuntime.REFRESH_INTERVAL_MS)
+        }
+    }
+    val backendAvailability = mapOf(
+        ShellBackend.ROOT to tokenxRuntime.backendRegistry.isReady(TokenXBackend.ROOT),
+        ShellBackend.SSERVER to tokenxRuntime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID),
+        ShellBackend.SHIZUKU to tokenxRuntime.backendRegistry.isReady(TokenXBackend.SHELL),
+    )
+    val session = ShellContinuity.session(backend)
     var running by remember { mutableStateOf(false) }
-    var cwd by remember { mutableStateOf(session.cwd) }
+    var cwd by remember(backend) { mutableStateOf(session.cwd) }
+    var cwdField by remember(backend) { mutableStateOf(session.cwd) }
+    var recentOpen by remember { mutableStateOf(false) }
     // A chip that fills the input leaves the cursor in it, so the command can be finished
     // without reaching for the field again.
     val focus = remember { FocusRequester() }
@@ -368,7 +386,8 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
         if (inner != null) {
             feed(ShellLine(context.getString(R.string.shell_adb_prefix_dropped), ShellLine.Kind.INFO))
         }
-        feed(ShellLine("$cwd $ $command", ShellLine.Kind.COMMAND))
+        val prompt = if (backend == ShellBackend.ROOT) "#" else "$"
+        feed(ShellLine("${backend.name}  $cwd $prompt $command", ShellLine.Kind.COMMAND))
         history = ShellHistory.record(context, command)
         historyIndex = -1
 
@@ -377,10 +396,11 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
             running = true
             scope.launch {
                 val ok = withContext(Dispatchers.IO) {
-                    runCatching { session.cd(target, ::feed) }.getOrDefault(false)
+                    runCatching { session.cd(target, ::feed, backend) }.getOrDefault(false)
                 }
                 if (!ok) feed(ShellLine("cd: no such directory: $target", ShellLine.Kind.ERROR))
                 cwd = session.cwd
+                cwdField = session.cwd
                 running = false
             }
             return
@@ -586,6 +606,8 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
                             text = when {
                                 backend == ShellBackend.ROOT ->
                                     stringResource(R.string.shell_backend_root_status)
+                                backend == ShellBackend.SSERVER ->
+                                    stringResource(R.string.shell_backend_sserver_status)
                                 uid >= 0 -> stringResource(R.string.shell_backend_shizuku_status, uid)
                                 else -> stringResource(R.string.shell_backend_offline)
                             },
@@ -689,32 +711,42 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
         ) {
             FilterChip(
                 selected = backend == ShellBackend.SHIZUKU,
-                onClick = { backend = ShellBackend.SHIZUKU },
-                enabled = shizukuRunning,
-                label = { Text(stringResource(R.string.shell_backend_shizuku)) }
+                onClick = {
+                    if (running) return@FilterChip
+                    if (backendAvailability[ShellBackend.SHIZUKU] == true) {
+                        backend = ShellBackend.SHIZUKU
+                        feed(ShellLine("Shell selected • UID 2000 backend online", ShellLine.Kind.INFO))
+                    } else {
+                        feed(ShellLine("Shell UID 2000 backend is not connected.", ShellLine.Kind.ERROR))
+                    }
+                },
+                label = { Text("Shell") }
             )
-            // Never disabled: a chip that cannot be pressed is also a chip that cannot ask
-            // for root, and asking is what makes the root manager offer the grant.
+            FilterChip(
+                selected = backend == ShellBackend.SSERVER,
+                onClick = {
+                    if (running) return@FilterChip
+                    if (backendAvailability[ShellBackend.SSERVER] == true) {
+                        backend = ShellBackend.SSERVER
+                        feed(ShellLine("System selected • UID 1000 backend online", ShellLine.Kind.INFO))
+                    } else {
+                        feed(ShellLine("System UID 1000 backend is not connected.", ShellLine.Kind.ERROR))
+                    }
+                },
+                label = { Text("System") }
+            )
             FilterChip(
                 selected = backend == ShellBackend.ROOT,
                 onClick = {
-                    backend = ShellBackend.ROOT
-                    if (rootAvailable != true) {
-                        scope.launch {
-                            val granted = withContext(Dispatchers.IO) {
-                                runCatching { EnvironmentUtils.isRooted() }.getOrDefault(false)
-                            }
-                            rootAvailable = granted
-                            if (granted) {
-                                feed(ShellLine(context.getString(R.string.shell_root_granted), ShellLine.Kind.INFO))
-                            } else {
-                                feed(ShellLine(context.getString(R.string.shell_root_refused), ShellLine.Kind.ERROR))
-                                backend = ShellBackend.SHIZUKU
-                            }
-                        }
+                    if (running) return@FilterChip
+                    if (backendAvailability[ShellBackend.ROOT] == true) {
+                        backend = ShellBackend.ROOT
+                        feed(ShellLine("Root selected • UID 0 backend online", ShellLine.Kind.INFO))
+                    } else {
+                        feed(ShellLine("Root UID 0 backend is not connected.", ShellLine.Kind.ERROR))
                     }
                 },
-                label = { Text(stringResource(R.string.shell_backend_root)) }
+                label = { Text("Root") }
             )
             Text(
                 // The tail is the part that says where you are, so a long path keeps its
@@ -886,6 +918,37 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
             }
 
             Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = cwdField,
+                    onValueChange = { cwdField = it },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Working directory") },
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+                    keyboardActions = KeyboardActions(onGo = {
+                        if (!running && cwdField.isNotBlank()) {
+                            running = true
+                            scope.launch {
+                                val ok = withContext(Dispatchers.IO) {
+                                    runCatching { session.cd(cwdField.trim(), ::feed, backend) }.getOrDefault(false)
+                                }
+                                if (ok) { cwd = session.cwd; cwdField = session.cwd }
+                                else feed(ShellLine("cd: no such directory: ${cwdField.trim()}", ShellLine.Kind.ERROR))
+                                running = false
+                            }
+                        }
+                    })
+                )
+                IconButton(onClick = { recentOpen = true }, enabled = history.isNotEmpty()) {
+                    Icon(Icons.Outlined.History, contentDescription = "Recent commands")
+                }
+            }
+
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 8.dp),
@@ -941,6 +1004,27 @@ fun ShellScreen(bottomPadding: Dp = 0.dp, onBack: (() -> Unit)? = null) {
                     }
                 }
             }
+        }
+    }
+
+    if (recentOpen) {
+        ModalBottomSheet(onDismissRequest = { recentOpen = false }) {
+            Text("Recent commands", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+                items(history.take(12), key = { it.command }) { entry ->
+                    ListItem(
+                        modifier = Modifier.clickable {
+                            field = TextFieldValue(entry.command, TextRange(entry.command.length))
+                            recentOpen = false
+                            focus.requestFocus()
+                        },
+                        headlineContent = { Text(entry.command, fontFamily = FontFamily.Monospace, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                        supportingContent = { Text("Tap to restore") },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
         }
     }
 

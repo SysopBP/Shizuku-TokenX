@@ -58,6 +58,7 @@ import moe.shizuku.manager.ui.component.ExpressiveSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -121,10 +122,6 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
     var updateMode by remember { mutableStateOf(ShizukuSettings.getUpdateMode()) }
     var nightMode by remember { mutableStateOf(ShizukuSettings.getNightMode()) }
     var themeDialog by remember { mutableStateOf(false) }
-    var themeStyleDialog by remember { mutableStateOf(false) }
-    var themeStyle by remember {
-        mutableStateOf(ShizukuSettings.getPreferences().getString("tokenx_theme_style", "MATERIAL") ?: "MATERIAL")
-    }
     var useSystemColor by remember {
         mutableStateOf(ShizukuSettings.getPreferences().getBoolean(ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR, false))
     }
@@ -138,13 +135,22 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
     }
     var adbWithoutDeveloperOptionsPrompt by remember { mutableStateOf(false) }
 
-    /** ADB persistence is offered only for an authorized root/system start method. */
-    val canPersistAdbPort = remember(startMethod) {
-        val running = ShizukuSettings.getRunningStartMethod()
+    /**
+     * Whether the persistent ADB port can be written here at all.
+     *
+     * The property belongs to adbd, so root or a server running as the system uid is the
+     * only thing allowed to write it, and on a shell-only server the platform refuses it
+     * outright. Offering a switch that can only fail is worse than not offering it, so the
+     * row appears when one of those is running, or when the device has what it takes to
+     * reach one: root as the chosen start method, or the agent a system start goes through.
+     *
+     * Nothing here prompts for root the way checking for a root shell would, and the row
+     * stays visible while the setting is on, so it can always be turned off again.
+     */
+    val canPersistAdbPort =
         startMethod == ShizukuSettings.StartMethod.ROOT ||
-            running == ShizukuSettings.StartMethod.ROOT ||
-            running == ShizukuSettings.StartMethod.SYSTEM
-    }
+            ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.ROOT ||
+            ShizukuSettings.getRunningStartMethod() == ShizukuSettings.StartMethod.SYSTEM
 
     /**
      * Applies the setting and keeps the switch honest: if the writes were refused (no
@@ -202,6 +208,7 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(stringResource(R.string.tab_settings)) },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0f)),
             windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
         )
 
@@ -602,7 +609,47 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
             }
 
             item {
+                Text(
+                    "TOKENX",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 16.dp, top = 12.dp)
+                )
+            }
+            item {
+                SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
+                    item {
+                        SegmentedListItem(
+                            centerSlots = true,
+                            leadingContent = { SettingsIcon(Icons.Outlined.AdminPanelSettings) },
+                            headlineContent = { Text("TokenX Control Center") },
+                            supportingContent = { Text("Backends, router, Boot Guardian, native API and live privilege state") },
+                            trailingContent = {
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                            },
+                            onClick = { onOpenDetail(Detail.TOKENX) }
+                        )
+                    }
+                }
+            }
+
+            item {
                 SettingsSectionHeader(R.string.settings_section_appearance)
+            }
+            item {
+                SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
+                    item {
+                        SegmentedListItem(
+                            centerSlots = true,
+                            leadingContent = { SettingsIcon(Icons.Outlined.Palette) },
+                            headlineContent = { Text("TokenX Appearance Studio") },
+                            supportingContent = { Text("Glass, backgrounds, opacity, blur, radius, dimming and presets") },
+                            trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
+                            onClick = { onOpenDetail(Detail.APPEARANCE) }
+                        )
+                    }
+                }
             }
             item {
                 SegmentedColumn(modifier = Modifier.fillMaxWidth()) {
@@ -624,20 +671,6 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
                             },
                             onClick = { themeDialog = true }
-                        )
-                    }
-                    item {
-                        SegmentedListItem(
-                            centerSlots = true,
-                            leadingContent = { SettingsIcon(Icons.Outlined.Palette) },
-                            headlineContent = { Text("Theme style") },
-                            supportingContent = {
-                                Text(if (themeStyle == "MIUIX") "MIUIX" else "Material Expressive")
-                            },
-                            trailingContent = {
-                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
-                            },
-                            onClick = { themeStyleDialog = true }
                         )
                     }
                     item {
@@ -718,31 +751,6 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                     item {
                         SegmentedListItem(
                             centerSlots = true,
-                            leadingContent = { SettingsIcon(Icons.Outlined.DeveloperMode) },
-                            headlineContent = { Text(stringResource(R.string.about_developer)) },
-                            supportingContent = { Text(stringResource(R.string.about_developer_name)) }
-                        )
-                    }
-                    item {
-                        SegmentedListItem(
-                            centerSlots = true,
-                            leadingContent = { SettingsIcon(Icons.Outlined.Link) },
-                            headlineContent = { Text(stringResource(R.string.about_github)) },
-                            supportingContent = { Text(stringResource(R.string.about_github_summary)) },
-                            trailingContent = {
-                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
-                            },
-                            onClick = {
-                                CustomTabsHelper.launchUrlOrCopy(
-                                    context,
-                                    context.getString(R.string.about_github_url)
-                                )
-                            }
-                        )
-                    }
-                    item {
-                        SegmentedListItem(
-                            centerSlots = true,
                             leadingContent = { SettingsIcon(Icons.Outlined.SystemUpdate) },
                             headlineContent = { Text(stringResource(R.string.check_for_updates)) },
                             supportingContent = {
@@ -764,13 +772,12 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                         SegmentedListItem(
                             centerSlots = true,
                             leadingContent = { SettingsIcon(Icons.Outlined.MenuBook) },
-                            headlineContent = { Text(stringResource(R.string.settings_help)) },
+                            headlineContent = { Text("TokenX Guide") },
+                            supportingContent = { Text("Purpose, setup, usage, backends, System Server safety and troubleshooting") },
                             trailingContent = {
                                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
                             },
-                            onClick = {
-                                CustomTabsHelper.launchUrlOrCopy(context, context.getString(R.string.help_url))
-                            }
+                            onClick = { onOpenDetail(Detail.GUIDE) }
                         )
                     }
                     item {
@@ -887,25 +894,6 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
         )
     }
 
-    if (themeStyleDialog) {
-        ChoiceDialog(
-            title = "Theme style",
-            options = listOf(
-                "MATERIAL" to "Material Expressive",
-                "MIUIX" to "MIUIX",
-            ),
-            selected = themeStyle,
-            onDismiss = { themeStyleDialog = false },
-            onSelect = {
-                ShizukuSettings.getPreferences().edit()
-                    .putString("tokenx_theme_style", it).apply()
-                themeStyle = it
-                ThemeState.refresh()
-                themeStyleDialog = false
-            }
-        )
-    }
-
     if (themeDialog) {
         ChoiceDialog(
             title = stringResource(R.string.settings_theme),
@@ -975,12 +963,12 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
             options = buildList {
                 add(ShizukuSettings.StartMethod.WIRELESS.toString() to stringResource(R.string.start_method_wireless))
                 add(ShizukuSettings.StartMethod.USB.toString() to stringResource(R.string.start_method_usb))
-                add(ShizukuSettings.StartMethod.SYSTEM.toString() to stringResource(R.string.start_method_system))
-                // Offered only where it can work the same rule the home screen's root
-                // row follows.
+                // Keep the two privileged backends together. Root is offered only where
+                // KernelSU/su is actually available, then System remains the UID-1000 path.
                 if (rootAvailable) {
                     add(ShizukuSettings.StartMethod.ROOT.toString() to stringResource(R.string.start_method_root))
                 }
+                add(ShizukuSettings.StartMethod.SYSTEM.toString() to stringResource(R.string.start_method_system))
                 // Offered only while the experiment behind it is on, which is what it is: the
                 // wireless start with that fight switched on. Turning the experiment off takes
                 // the default back to wireless debugging, so this cannot be chosen and then

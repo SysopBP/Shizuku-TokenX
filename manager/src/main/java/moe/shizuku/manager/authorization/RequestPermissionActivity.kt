@@ -1,11 +1,14 @@
 package moe.shizuku.manager.authorization
 
 import android.app.Dialog
+import android.graphics.Color
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
+import android.view.Window
+import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.flow.first
@@ -121,12 +124,41 @@ class RequestPermissionActivity : AppActivity() {
                     label, getString(R.string.permission_group_description)))
         }
 
-        dialog = MaterialAlertDialogBuilder(this)
-                .setView(binding.root)
-                .setCancelable(false)
-                .setOnDismissListener { finish() }
-                .create()
-        dialog.setCanceledOnTouchOutside(false)
-        dialog.show()
+        /*
+         * Android 17 / One UI 9 can crash AppCompat's AlertController when a fully custom
+         * view is installed into this permission activity: adjustParentPanelPadding()
+         * expects the stock parentPanel hierarchy, but the TokenX dialog theme does not
+         * provide it. This activity already owns the whole screen, so present the existing
+         * confirmation binding directly in a platform Dialog instead of routing it through
+         * AlertController. This preserves the TokenX UI and Allow/Deny callbacks while
+         * removing the crashing AppCompat layout assumption.
+         */
+        dialog = Dialog(this).apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            setContentView(binding.root)
+            setCancelable(false)
+            setCanceledOnTouchOutside(false)
+            setOnDismissListener { finish() }
+            window?.apply {
+                setBackgroundDrawableResource(android.R.color.transparent)
+                setLayout(
+                    WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT
+                )
+            }
+        }
+
+        try {
+            dialog.show()
+            // setLayout before show() is not honored on every Samsung build.
+            dialog.window?.setLayout(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.WRAP_CONTENT
+            )
+        } catch (tr: Throwable) {
+            LOGGER.e(tr, "TokenX permission dialog failed to show")
+            setResult(uid, pid, requestCode, allowed = false, onetime = true)
+            finish()
+        }
     }
 }

@@ -143,17 +143,39 @@ fun grantWriteSecureSettingsIfNeeded() {
     if (context.hasWriteSecureSettings()) return
 
     scope.launch {
-        // `pm grant` prints nothing when it works, so the permission itself is the answer.
-        val output = runShellCommand(
+        val grantCommand =
             "pm grant ${context.packageName} android.permission.WRITE_SECURE_SETTINGS"
-        )
+
+        // TokenX devices normally have KernelSU available before the Shizuku binder is
+        // published. Grant through root first so a fresh install does not need the user to
+        // toggle WRITE_SECURE_SETTINGS manually in a permission manager.
+        val rootOutput = runCatching {
+            ProcessBuilder("su", "-c", grantCommand)
+                .redirectErrorStream(true)
+                .start()
+                .let { process ->
+                    val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
+                    val exitCode = process.waitFor()
+                    "exit=$exitCode" + if (output.isNotEmpty()) ": $output" else ""
+                }
+        }.getOrNull()
+
+        if (context.hasWriteSecureSettings()) {
+            Log.i(AppConstants.TAG, "Granted WRITE_SECURE_SETTINGS through KernelSU/root")
+            return@launch
+        }
+
+        // Keep the existing server path as a fallback for devices where root is not
+        // available but Shizuku/TokenX is already running.
+        val serverOutput = runShellCommand(grantCommand)
         if (context.hasWriteSecureSettings()) {
             Log.i(AppConstants.TAG, "Granted WRITE_SECURE_SETTINGS through the running server")
         } else {
             Log.w(
                 AppConstants.TAG,
-                "Could not grant WRITE_SECURE_SETTINGS through the server" +
-                    (output?.let { ": $it" } ?: "")
+                "Could not grant WRITE_SECURE_SETTINGS automatically" +
+                    (rootOutput?.let { "; root: $it" } ?: "") +
+                    (serverOutput?.let { "; server: $it" } ?: "")
             )
         }
     }

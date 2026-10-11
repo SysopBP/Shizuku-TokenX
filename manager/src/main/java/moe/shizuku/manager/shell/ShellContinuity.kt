@@ -20,8 +20,14 @@ import kotlinx.coroutines.channels.Channel
  */
 object ShellContinuity {
 
-    /** The working directory and anything exported, carried from command to command. */
-    val session: ShellSession by lazy { ShellSession() }
+    /** Independent working directory/export state for each privilege transport. */
+    private val sessions = mutableMapOf<ShellBackend, ShellSession>()
+
+    fun session(backend: ShellBackend): ShellSession =
+        synchronized(sessions) { sessions.getOrPut(backend) { ShellSession() } }
+
+    /** Compatibility for callers that have not selected a transport yet. */
+    val session: ShellSession get() = session(ShellBackend.SHIZUKU)
 
     /** Everything that has been run and everything it printed. */
     val lines = mutableStateListOf<ShellLine>()

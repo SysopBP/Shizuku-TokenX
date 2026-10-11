@@ -5,8 +5,18 @@ on:
   push:
     branches:
       - master
+      - feature/system-server-uid1000-injection
+      - tokenx-dev
+      - tokenx-recovery
+      - tokenx-uid1000-cleanup
+      - tokenx-native-uid1000-settings-test
+      - tokenx-build632-routing-audit
+      - tokenx-build633-settings-attribution
+      - integration/37885383867-updates
+      - codex/tokenx-666-pairing-fixes
+      - main
+      - feature/670-system-bridge-recovery
     paths:
-      - '.github/workflows/tokenx-debug.yml'
       - 'manager/**'
       - 'xposed/**'
       - 'common/**'
@@ -192,17 +202,23 @@ jobs:
           test -s manager/src/main/assets/rish_shizuku.dex
           ./gradlew :manager:assembleDebug --stacktrace
 
-      - name: Verify APK identity
+      - name: Run manager unit tests
+        env:
+          GITHUB_ACTOR: ${{ secrets.SESL_GITHUB_USERNAME }}
+          GITHUB_TOKEN: ${{ secrets.SESL_GITHUB_TOKEN }}
+        run: ./gradlew :manager:testDebugUnitTest
+
+      - name: Test provisioning failure gates
+        run: python3 ci/test-provision-preflight.py
+
+      - name: Verify Preview identity
         shell: bash
         run: |
           set -euo pipefail
-          # Validate the actual source version and generated APK rather than an
-          # obsolete preview tag that is no longer used by build.gradle.
-          grep -Eq '^def baseVersionName = "[^"]+"' build.gradle
-          grep -F 'versionName = "${baseVersionName}' build.gradle >/dev/null
-          FILE="$(find manager/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
-          test -n "$FILE" && test -s "$FILE"
-          echo "TokenX APK identity verified: $FILE"
+          grep -F 'def baseVersionName = "14.2.0-TKN"' build.gradle >/dev/null
+          grep -F '"-preview.3"' build.gradle >/dev/null
+          grep -F 'v14.2.0-TKN-preview.3' README.md >/dev/null
+          echo "TokenX Preview identity verified"
 
       - name: Verify bundled rish pair
         shell: bash
@@ -215,52 +231,35 @@ jobs:
             test -s "$SOURCE"
             EXTRACTED="$(mktemp)"
             unzip -p "$FILE" "assets/$asset" > "$EXTRACTED"
-            test -s "$EXTRACTED"
-            cmp "$SOURCE" "$EXTRACTED" || {
-              echo "::error::Packaged $asset does not match the freshly built source asset"
+            if ! test -s "$EXTRACTED" || ! cmp -s "$SOURCE" "$EXTRACTED"; then
+              echo "::error::APK rish asset missing or differs from built source: $asset"
               rm -f "$EXTRACTED"
               exit 1
-            }
+            fi
             rm -f "$EXTRACTED"
           done
-          # Check the routing contract that exists in this source revision.
           grep -F -- '--system)' manager/src/main/assets/rish >/dev/null
           grep -F -- '--root)' manager/src/main/assets/rish >/dev/null
           grep -F 'TOKENX_RISH_BACKEND' shell/src/main/java/rikka/shizuku/shell/ShizukuShellLoader.java >/dev/null
-          grep -F 'manager-selected System binder' shell/src/main/java/rikka/shizuku/shell/ShizukuShellLoader.java >/dev/null
           if grep -F 'remoteUid(binder)' shell/src/main/java/rikka/shizuku/shell/ShizukuShellLoader.java >/dev/null; then
-            echo "::error::Unsafe raw Binder UID probe found in system route"
+            echo "::error::Unsafe raw Binder UID probe restored"
             exit 1
           fi
-          echo "TokenX rish assets match the APK and system/root routing source checks passed"
+          echo "Bundled rish assets and explicit route source verified"
 
       - name: Verify TokenX Xposed packaging
         shell: bash
         run: |
           set -euo pipefail
           FILE="$(find manager/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
-          test -n "$FILE" && test -s "$FILE"
-          echo "Xposed metadata found in APK:"
-          unzip -Z1 "$FILE" | grep -E '(^assets/xposed_init$|^META-INF/xposed/)' || true
-          # Support the actual legacy Xposed entry shipped by this source tree.
-          # Do not require a modern descriptor for an entry class not in this revision.
-          unzip -p "$FILE" assets/xposed_init | grep -Fx 'moe.shizuku.manager.xposed.SystemServerEntry' || {
-            echo "::error::TokenX Xposed system_server entry is missing from packaged assets"
-            exit 1
-          }
-          # Inspect each DEX independently; never pipe unzip into grep under
-          # pipefail, where a successful early grep can trigger SIGPIPE.
-          DEX_STRINGS="$(mktemp)"
-          for dex in $(unzip -Z1 "$FILE" | grep -E '^classes[0-9]*[.]dex$'); do
-            unzip -p "$FILE" "$dex" | strings >> "$DEX_STRINGS"
-          done
-          grep -F 'SystemServerEntry' "$DEX_STRINGS" >/dev/null || {
-            echo "::error::Packaged DEX lacks the declared Xposed entry class"
-            rm -f "$DEX_STRINGS"
-            exit 1
-          }
-          rm -f "$DEX_STRINGS"
-          echo "TokenX packaged Xposed entry and class verified"
+          test -n "$FILE"
+          unzip -l "$FILE" | grep -F 'META-INF/xposed/java_init.list'
+          unzip -l "$FILE" | grep -F 'META-INF/xposed/scope.list'
+          unzip -l "$FILE" | grep -F 'META-INF/xposed/module.prop'
+          unzip -p "$FILE" META-INF/xposed/java_init.list | grep -Fx 'moe.shizuku.tokenx.xposed.TokenXXposedEntry'
+          unzip -p "$FILE" META-INF/xposed/scope.list | grep -Fx 'system'
+          unzip -p "$FILE" 'classes*.dex' | strings | grep -F 'TokenXXposedEntry' >/dev/null
+          echo "TokenX modern Xposed descriptors + entry class verified in manager APK"
 
       - name: Verify TokenX Xposed system_server backend
         shell: bash
@@ -339,6 +338,14 @@ jobs:
             }
           echo "TokenX rish SYSTEM dedicated on-demand backend route verified"
 
+      - name: Verify packaged native System Server injection
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="$(find manager/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          python3 ci/verify-system-server-injection.py "$FILE"
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose "$FILE"
+
       - name: Collect APK
         id: apk
         shell: bash
@@ -357,3 +364,4 @@ jobs:
           path: ${{ steps.apk.outputs.apk }}
           if-no-files-found: error
           retention-days: 14
+

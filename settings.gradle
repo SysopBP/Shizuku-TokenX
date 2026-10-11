@@ -3,17 +3,16 @@ pluginManagement {
         google()
         mavenLocal()
         mavenCentral()
-        maven { url = "https://api.xposed.info/" }
         maven {
             url = "https://plugins.gradle.org/m2/"
         }
     }
     plugins {
-        id "com.android.application" version "8.11.1"
-        id "com.android.library" version "8.11.1"
-        id "org.jetbrains.kotlin.android" version "2.2.20"
-        id "org.jetbrains.kotlin.plugin.compose" version "2.2.20"
-        id "org.jetbrains.kotlin.plugin.serialization" version "2.2.20"
+        id "com.android.application" version "9.1.1"
+        id "com.android.library" version "9.1.1"
+        id "org.jetbrains.kotlin.android" version "2.4.0"
+        id "org.jetbrains.kotlin.plugin.compose" version "2.4.0"
+        id "org.jetbrains.kotlin.plugin.serialization" version "2.4.0"
         id "dev.rikka.tools.autoresconfig" version "1.2.2"
         id "dev.rikka.tools.materialthemebuilder" version "1.5.1"
         id "dev.rikka.tools.refine" version "4.4.0"
@@ -26,15 +25,33 @@ dependencyResolutionManagement {
         google()
         mavenLocal()
         mavenCentral()
-        // Xposed API is a compileOnly dependency for the manager/LSPosed hooks.
-        // pluginManagement repositories do not participate in project dependency
-        // resolution, so declare the Xposed Maven repository here as well.
-        maven {
-            url = "https://api.xposed.info/"
-            content {
-                includeGroup("de.robv.android.xposed")
+
+        // TokenX SESL bridge: tribalfs publishes SESL through GitHub Packages.
+        // Local builds: export GITHUB_ACTOR and GITHUB_TOKEN (classic PAT with read:packages).
+        // CI uses the repository GITHUB_TOKEN where package access permits it.
+        def ghActor = System.getenv("GITHUB_ACTOR") ?: providers.gradleProperty("gpr.user").orNull
+        def ghToken = System.getenv("GITHUB_TOKEN") ?: providers.gradleProperty("gpr.key").orNull
+        if (ghActor && ghToken) {
+            maven {
+                name = "TribalfsSeslAndroidx"
+                url = uri("https://maven.pkg.github.com/tribalfs/sesl-androidx")
+                credentials {
+                    username = ghActor
+                    password = ghToken
+                }
+                content { includeGroupByRegex("sesl\\.androidx(\\..*)?") }
+            }
+            maven {
+                name = "TribalfsSeslMaterial"
+                url = uri("https://maven.pkg.github.com/tribalfs/sesl-material-components-android")
+                credentials {
+                    username = ghActor
+                    password = ghToken
+                }
+                content { includeGroupByRegex("sesl\\.com\\.google\\.android\\.material") }
             }
         }
+
         maven {
             url = "https://jitpack.io"
             content {
@@ -56,7 +73,7 @@ dependencyResolutionManagement {
     }
 }
 
-include ":server", ":starter", ":shell", ":manager", ":common"
+include ":server", ":starter", ":shell", ":manager", ":common", ":xposed"
 
 def root = "api"
 

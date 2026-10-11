@@ -81,22 +81,38 @@ fun Context.runningMethodLabel(): String? = runningStartMethodLabelRes()?.let { 
 fun Context.runningMethodSuffix(): String = runningMethodLabel()?.let { " · $it" } ?: ""
 
 object StartStatusReporter {
+    @Volatile var targetMethod: Int? = null
+        private set
+    @Volatile var sourceUid: Int = -1
+        private set
+
     private val _status = MutableStateFlow<StartStatus>(StartStatus.Idle)
     val status: StateFlow<StartStatus> = _status.asStateFlow()
 
-    fun starting() {
+    fun starting(
+        @ShizukuSettings.StartMethod method: Int = ShizukuSettings.getStartMethod(),
+        fromUid: Int = -1
+    ) {
+        targetMethod = method
+        sourceUid = fromUid
         _status.value = StartStatus.Starting
     }
 
     fun succeeded() {
         _status.value = StartStatus.Succeeded
+        targetMethod = null
+        sourceUid = -1
     }
 
     fun failed(message: String, kind: StartFailureKind = StartFailureKind.GENERIC) {
         _status.value = StartStatus.Failed(message, kind)
+        targetMethod = null
+        sourceUid = -1
     }
 
     fun clear() {
         _status.value = StartStatus.Idle
+        targetMethod = null
+        sourceUid = -1
     }
 }

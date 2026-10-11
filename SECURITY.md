@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Security updates are provided **only** for the following versions of Shizuku:
+Security updates are provided **only** for the following versions of Shizuku-TokenX:
 
 | Version | Supported |
 | ------- | --------- |
@@ -16,9 +16,9 @@ Reports affecting unsupported versions may be closed without action.
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in Shizuku, please report it **privately** and practice responsible disclosure. [See how](https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/report-a-vulnerability/privately-reporting-a-security-vulnerability).
+If you discover a security vulnerability in Shizuku-TokenX, please report it **privately** and practice responsible disclosure. [See how](https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/report-a-vulnerability/privately-reporting-a-security-vulnerability).
 
-Shizuku provides access to **ADB-level and/or root-level privileges**, so security issues may have a high impact.
+Shizuku-TokenX can expose **Shell / UID 2000, Root / UID 0, and System / UID 1000** execution paths, so authorization, backend-routing, Binder-transport, and system_server RPC issues may have a high impact.
 
 When reporting a vulnerability, you may include any of the following:
 

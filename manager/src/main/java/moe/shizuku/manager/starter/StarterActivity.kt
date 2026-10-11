@@ -1,7 +1,6 @@
 package moe.shizuku.manager.starter
 
 import android.app.Application
-import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -47,10 +46,6 @@ import rikka.lifecycle.Resource
 import rikka.lifecycle.Status
 
 private class NotRootedException: Exception()
-
-/** How many times the agent is told to run the payload, and how far apart. */
-private const val FOTA_ATTEMPTS = 6
-private const val FOTA_ATTEMPT_INTERVAL_MS = 700L
 
 /**
  * How the system start asks the payload to report how far it got.
@@ -133,52 +128,9 @@ class StarterActivity : AppBarActivity() {
             binding.text1.text = output
         }
 
-        viewModel.agentStopped = { agentWasStopped }
-
-        // The payload's own report, while this screen is the one waiting for it. Exported
-        // because the sender is another app's process, and filtered to one action so nothing
-        // else of this app's traffic is in scope. Registered the platform way rather than
-        // through ContextCompat, whose flagged form needs a newer androidx than this app
-        // builds against.
-        val stageReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                val stage = intent.getStringExtra(STAGE_EXTRA) ?: return
-                viewModel.reportPayloadStage(stage)
-            }
-        }
-        val stageFilter = IntentFilter(STAGE_ACTION)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(stageReceiver, stageFilter, Context.RECEIVER_EXPORTED)
-        } else {
-            @Suppress("UnspecifiedRegisterReceiverFlag")
-            registerReceiver(stageReceiver, stageFilter)
-        }
-        payloadStageReceiver = stageReceiver
-    }
-
-    /** The payload's report arrives only while a system start is waiting. */
-    private var payloadStageReceiver: BroadcastReceiver? = null
-
-    override fun onDestroy() {
-        payloadStageReceiver?.let { runCatching { unregisterReceiver(it) } }
-        payloadStageReceiver = null
-        super.onDestroy()
     }
 
     private var hasStarted = false
-
-    /**
-     * Whether this activity came back to the front while a system start was waiting. The
-     * payload ends by stopping the agent, and the agent's activity is what covered this one,
-     * so coming back means the payload ran: the one thing that separates "the agent never
-     * acted" from "the starter or the server failed", and it needs no logcat to see.
-     */
-    private var agentWasStopped = false
-
-    override fun onResume() {
-        super.onResume()
-        if (viewModel.exploitSent) agentWasStopped = true
-    }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
@@ -245,14 +197,6 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
         return null
     }
 
-    /** Set once the agent has been told to run the payload. */
-    @Volatile
-    var exploitSent = false
-        private set
-
-    /** Set by the activity: whether the agent vanished while a start was waiting. */
-    var agentStopped: (() -> Boolean)? = null
-
     private val handler = CoroutineExceptionHandler { _, throwable ->
         ShizukuStateMachine.update()
         log(error = throwable)
@@ -281,33 +225,12 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
             // service nobody asked for only hides that.
             val waiting = when {
                 root -> { startRoot(); true }
-                isSystem && systemCustom -> { startSystemCustom(); true }
-                isSystem -> startSys()
+                isSystem -> { startSystemCustom(); true }
                 else -> { AdbStarter.startAdb(appContext, port, { log(it) }); true }
             }
             try {
                 if (waiting) Starter.waitForBinder({ log(it) })
             } catch (e: TimeoutException) {
-                // A privileged/system-UID launch can successfully execute the native starter
-                // yet still fail to hand its Binder back to the manager (notably on newer
-                // Samsung/Android builds). Do not strand the user on a one-minute timeout:
-                // when root is available, immediately retry through the known-good root
-                // backend. This also replaces any half-started shizuku_server.
-                if (isSystem && Shell.getShell().isRoot) {
-                    log("\nSystem start did not deliver the Binder; falling back to root...\n")
-                    ShizukuSettings.setRunningStartMethod(ShizukuSettings.StartMethod.ROOT)
-                    runCatching { startRoot() }
-                        .onFailure { log("Root fallback launch failed: ${it.message}\n") }
-
-                    try {
-                        Starter.waitForBinder({ log(it) })
-                        log("\nRoot fallback is active.\n")
-                        return@launch
-                    } catch (_: TimeoutException) {
-                        log("\nRoot fallback also failed to deliver the Binder.\n")
-                    }
-                }
-
                 val starter = starterLog()
                 if (starter != null) {
                     log(
@@ -322,59 +245,11 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
                             "\n"
                     )
                 }
-                log(
-                    if (agentStopped?.invoke() == true) {
-                        "the agent was stopped while this start was waiting, which is the " +
-                            "payload's last step: the payload ran, so what failed is the " +
-                            "starter or the server it starts\n"
-                    } else {
-                        "the agent is still running, so it did not act on the command: the " +
-                            "payload never ran\n"
-                    }
-                )
                 throw e
             }
         }
     }
 
-    /**
-     * Launches the Shizuku server under the system UID (1000) by abusing a
-     * device-specific privilege escalation. This only works on devices that ship
-     * the vulnerable component, and is opt-in via the "System start method"
-     * setting.
-     */
-    /**
-     * System mode is now an LSPosed system_server backend, not an APK UID spoof/exploit.
-     * LSPosed loads SystemServerEntry into the Android framework process (uid 1000), where
-     * it starts the server automatically. This button therefore verifies the bridge rather
-     * than trying to manufacture uid 1000 from this ordinary app process.
-     */
-    private suspend fun startSys(): Boolean {
-        log("System Server / LSPosed mode\n")
-        log("This mode runs inside Android system_server as UID 1000.\n")
-        log("Enable this app in LSPosed and scope it to System Framework (android), then restart the framework/device.\n")
-
-        ShizukuStateMachine.update()
-        return if (ShizukuStateMachine.isRunning()) {
-            log("System Server bridge is active.\n")
-            true
-        } else {
-            val message =
-                "System Server bridge is not active yet. Enable the TokenX module in LSPosed " +
-                    "for System Framework (android), then reboot or restart the framework."
-            log(message)
-            withContext(Dispatchers.Main) { StartStatusReporter.failed(message) }
-            false
-        }
-    }
-
-    /**
-     * The instruction path for the system start: this app has no privilege of its own, so
-     * it says what to run and waits for the service to appear. Whatever can launch a
-     * process as a privileged uid - the user's own exploit, an automation, a root shell -
-     * runs the executable this app ships, and the wait is the same one the other methods
-     * use.
-     */
     private suspend fun startSystemCustom() {
         // Two forms of the same thing, because which one works depends on the shell the
         // command is run in: the run-time lookup needs permission to ask the package
@@ -433,21 +308,6 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
         return "STARTER=\$(pm path $packageName | grep base.apk" +
             " | sed -E 's|^package:(.*/)[^/]+\\.apk\$|\\1lib/$abi/libshizuku.so|')" +
             " && \$STARTER"
-    }
-
-    /** Set as soon as the payload's shell reports anything at all. */
-    @Volatile
-    var payloadSeen = false
-        private set
-
-    /**
-     * A stage the payload's own shell reported. Which of these arrived, and which was last,
-     * says how far the command we handed the agent got, without depending on a log file that
-     * may be missing for reasons on either side of the process boundary.
-     */
-    fun reportPayloadStage(stage: String) {
-        payloadSeen = true
-        log("the payload's shell reached: $stage\n")
     }
 
     private fun log(line: String? = null, error: Throwable? = null) {

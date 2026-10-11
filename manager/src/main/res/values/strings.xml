@@ -4,7 +4,7 @@
       docs/translations.md. Uploading this file is also what applies its settings over there, so
       a change here reaches translators on the next push and not before.
     -->
-    <string name="app_name" translatable="false">Shizuku-Next</string>
+    <string name="app_name" translatable="false">Shizuku TKN Boot</string>
 
     <!-- To translators: you can leave your here -->
     <string name="home_status_adb_wireless">adb</string>
@@ -137,7 +137,7 @@
     <string name="tools_terminal_summary">Run shell commands in any terminal app, using rish</string>
     <string name="tools_battery">Battery optimization</string>
     <string name="intents_title">Intents</string>
-    <string name="about_package">Package</string>\n    <string name="about_developer">Developer</string>\n    <string name="about_developer_name">SysopBP</string>\n    <string name="about_github">GitHub</string>\n    <string name="about_github_summary">SysopBP / Shizuku-TokenX</string>\n    <string name="about_github_url">https://github.com/SysopBP/Shizuku-TokenX</string>
+    <string name="about_package">Package</string>
     <string name="check_for_updates_now">Check now</string>
     <string name="start_failed">Could not start Shizuku</string>
     <string name="start_failed_write_secure_settings">Shizuku cannot switch wireless debugging on without the WRITE_SECURE_SETTINGS permission. Turn it on yourself under Developer options &gt; Wireless debugging, or grant the permission with <b>adb shell pm grant moe.shizuku.privileged.api android.permission.WRITE_SECURE_SETTINGS</b>. Once Shizuku is running it keeps that permission itself, so this is a one-off.</string>
@@ -156,7 +156,7 @@
     <string name="start_failed_usb_no_port">No local ADB port is open Android clears it on every reboot, and reopening it needs a connection to borrow. Connect to Wi-Fi and Shizuku will reopen it over wireless debugging, run <b>adb tcpip 5555</b> from a computer, or choose <b>Start without Wi-Fi</b> as the start method to start over wireless debugging instead.</string>
     <string name="start_failed_root_unavailable">Root is no longer available on this device, so Shizuku can\'t start over root. Pick another start method.</string>
     <string name="start_failed_system_needs_app">The system start method must be started from the app.</string>
-    <string name="start_failed_system_no_exploit">System start is unavailable through the selected method. Choose Custom command and use an available authorized start method.</string>
+    <string name="start_failed_system_no_exploit">The legacy Samsung system-start backend has been removed. Use the System custom command or the current TokenX UID 1000 path.</string>
     <string name="start_failed_no_binder">The service did not appear within a minute. Both halves keep a log: the starter under ShizukuServiceStarter and the hand-over under BinderSender. A logcat reader filtered to those two shows whether the starter got as far as forking the server, and whether the server ever asked for the binder.</string>
     <string name="start_system_custom_intro">Escalate however you can, your own exploit, an automation or a root shell, and run this command: it launches the service as the system uid. The app is waiting for it to appear.</string>
     <string name="start_system_custom_lookup">Run this one where the shell may ask the package manager. It resolves the executable at run time, so an update that moves it cannot break the command:</string>
@@ -265,11 +265,11 @@
     <string name="settings_persist_adb_port_refused">Android refused this. Shizuku must be running as root or the system user.</string>
     <string name="settings_persist_adb_port_unavailable">Start Shizuku first. This setting can only be changed through Shizuku.</string>
     <string name="settings_system_start_method">System start method</string>
-    <string name="settings_system_start_method_exploit">Samsung (FOTA agent)</string>
+    <string name="settings_system_start_method_exploit">TokenX System UID</string>
     <string name="settings_system_start_method_custom">Custom command</string>
 
     <string name="home_system_title">Start via System UID</string>
-    <string name="home_system_summary">Use the authorized System Server backend (UID 1000). Requires the TokenX LSPosed system_server integration to be active.</string>
+    <string name="home_system_summary">Run Shizuku as the system user (UID 1000) using the current TokenX system path</string>
     <string name="home_adb_command_summary">Start Shizuku from a computer over ADB. Tap to copy the command</string>
     <string name="settings_tcp_mode">TCP mode</string>
     <string name="settings_tcp_mode_summary">"Allows Shizuku to restart without Wi-Fi. (Shizuku must have started once since reboot)"</string>
@@ -399,11 +399,13 @@
     <!-- Shell -->
     <string name="shell_title">Shell</string>
     <string name="shell_backend_shizuku">Shizuku</string>
+    <string name="shell_backend_sserver">Sserver</string>
     <string name="shell_backend_root">Root</string>
     <string name="shell_backend_shizuku_status">Shizuku, uid %1$d</string>
+    <string name="shell_backend_sserver_status">System Server, uid 1000</string>
     <string name="shell_backend_root_status">Root, uid 0</string>
     <string name="shell_backend_offline">No command runner is active</string>
-    <string name="shell_needs_a_backend">Start Shizuku, or pick Root on a rooted device: one of the two runs the commands. Root works with Shizuku stopped.</string>
+    <string name="shell_needs_a_backend">Start Shizuku, use Sserver when the TokenX System Server bridge is active, or pick Root on a rooted device.</string>
     <string name="shell_intro">Runs as the uid Shizuku runs as (2000 over adb, 0 with root), so it reaches whatever that uid can: /sdcard, /system, and app data with root. It opens in /sdcard, one command at a time; with no tty behind it, programs that need a terminal (nano, an ssh prompt) will not run here.</string>
     <string name="shell_root_granted">Root is available: commands run as uid 0.</string>
     <string name="shell_root_refused">Root access was denied, so commands will use Shizuku. Grant this app root access to use Root.</string>

@@ -11,7 +11,7 @@ idea.module {
 subprojects { subproject ->
     plugins.withId("com.android.base") {
         android {
-            compileSdk = 36
+            compileSdk = 37
             buildToolsVersion = "37.0.0"
             ndkVersion = "29.0.14206865"
             defaultConfig {
@@ -27,9 +27,10 @@ subprojects { subproject ->
 }
 
 def gitCommitCount = Integer.parseInt("git rev-list --count HEAD".execute([], project.rootDir).text.trim())
-def baseVersionName = "14.0.15"
+def baseVersionName = "14.2.0-TKN"
+def isPreview = project.hasProperty("preview")
 def isBeta = project.hasProperty("beta")
 ext {
     versionCode = gitCommitCount
-    versionName = "${baseVersionName}${if (isBeta) "-beta" else ""}-next"
+    versionName = "${baseVersionName}${if (isPreview) "-preview.3" else if (isBeta) "-beta" else ""}"
 }

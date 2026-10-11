@@ -41,11 +41,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Stream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import kotlin.collections.ArraysKt;
 import moe.shizuku.api.BinderContainer;
@@ -58,7 +58,6 @@ import rikka.hidden.compat.PackageManagerApis;
 import rikka.shizuku.server.util.Android17Compat;
 import rikka.hidden.compat.UserManagerApis;
 import rikka.parcelablelist.ParcelableListSlice;
-import rikka.rish.RishConfig;
 import rikka.shizuku.ShizukuApiConstants;
 import rikka.shizuku.server.api.IContentProviderUtils;
 import rikka.shizuku.server.util.HandlerUtil;
@@ -67,121 +66,108 @@ import rikka.shizuku.server.util.UserHandleCompat;
 
 public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuClientManager, ShizukuConfigManager> {
 
-    private static final String TOKENX_TAG = "TokenX-SystemServer";
-
-    private static void tokenxCheckpoint(String message) {
-        ServerLog.mark(message);
-        Log.i(TOKENX_TAG, message);
-    }
-
-    /**
-     * True only when LSPosed loaded the server into system_server. In this mode System.exit
-     * would reboot/kill Android's core process, so every standalone-server exit path must be
-     * suppressed.
-     */
     private static volatile boolean EMBEDDED_SYSTEM_SERVER = false;
+    private static final String TOKENX_TRACE_TAG = "TokenX-SystemServer";
+
+    private static void tokenxTrace(String message) {
+        ServerLog.mark(message);
+        Log.i(TOKENX_TRACE_TAG, message);
+    }
+    private static final String TOKENX_SYSTEM_SERVER_SERVICE = "tokenx_system_server";
+    private static final String TOKENX_SYSTEM_SERVER_DESCRIPTOR = "moe.shizuku.tokenx.ISystemServerBridge";
+    private static final int TOKENX_TX_HEALTH = IBinder.FIRST_CALL_TRANSACTION;
+    private static final int TOKENX_TX_CAPABILITIES = IBinder.FIRST_CALL_TRANSACTION + 1;
+    private static final int TOKENX_CAP_UID1000 = 1;
+    private static final int TOKENX_CAP_EMBEDDED_SYSTEM_SERVER = 1 << 1;
+    private static final int TOKENX_CAP_FRAMEWORK_BINDER = 1 << 2;
+    private static final Binder TOKENX_SYSTEM_SERVER_HEALTH_BINDER = new Binder() {
+        @Override
+        protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
+            if (code == TOKENX_TX_HEALTH) {
+                data.enforceInterface(TOKENX_SYSTEM_SERVER_DESCRIPTOR);
+                reply.writeNoException();
+                reply.writeInt(Process.myUid());
+                reply.writeInt(Process.myPid());
+                reply.writeString(android.os.SELinux.getContext());
+                return true;
+            }
+            if (code == TOKENX_TX_CAPABILITIES) {
+                data.enforceInterface(TOKENX_SYSTEM_SERVER_DESCRIPTOR);
+                int capabilities = 0;
+                if (Process.myUid() == Process.SYSTEM_UID) capabilities |= TOKENX_CAP_UID1000;
+                if (EMBEDDED_SYSTEM_SERVER) capabilities |= TOKENX_CAP_EMBEDDED_SYSTEM_SERVER;
+                capabilities |= TOKENX_CAP_FRAMEWORK_BINDER;
+                reply.writeNoException();
+                reply.writeInt(capabilities);
+                return true;
+            }
+            return super.onTransact(code, data, reply, flags);
+        }
+    };
+
+    private static void publishTokenXSystemServerHealthBinder() {
+        if (Process.myUid() != Process.SYSTEM_UID) return;
+        try {
+            IBinder existing = ServiceManager.getService(TOKENX_SYSTEM_SERVER_SERVICE);
+            if (existing == null) {
+                ServiceManager.addService(TOKENX_SYSTEM_SERVER_SERVICE, TOKENX_SYSTEM_SERVER_HEALTH_BINDER);
+                ServerLog.mark("TOKENX_BINDER_PUBLISHED: " + TOKENX_SYSTEM_SERVER_SERVICE
+                        + " uid=" + Process.myUid() + " pid=" + Process.myPid());
+            } else {
+                ServerLog.mark("TOKENX_BINDER_PRESENT: " + TOKENX_SYSTEM_SERVER_SERVICE);
+            }
+        } catch (Throwable tr) {
+            ServerLog.mark("TOKENX_BINDER_PUBLISH_FAILED: " + Log.getStackTraceString(tr));
+            LOGGER.e(tr, "failed to publish TokenX system_server health Binder");
+        }
+    }
 
     public static final String MANAGER_APPLICATION_ID;
 
     static {
         String packageName = null;
-        try {
-            String apk = System.getenv("CLASSPATH");
 
-            int lastSlash = apk.lastIndexOf(File.separatorChar);
-            String parentDir = apk.substring(0, lastSlash);
-
-            int secondLastSlash = parentDir.lastIndexOf(File.separatorChar);
-            String dirName = parentDir.substring(secondLastSlash + 1);
-
-            int dash = dirName.indexOf('-');
-            if (dash > 0) {
-                packageName = dirName.substring(0, dash);
-            } else {
-                packageName = dirName;
-            }
-
-            LOGGER.i("Manager package name is " + packageName);
-        } catch (Throwable tr) {
-            LOGGER.w("Couldn't get manager package name from CLASSPATH", tr);
-        }
-        // system_server has no Shizuku CLASSPATH. The generated server BuildConfig already
-        // contains the manager package id, so use it as the embedded-backend fallback.
-        MANAGER_APPLICATION_ID = packageName != null
-                ? packageName
-                : moe.shizuku.server.BuildConfig.MANAGER_APPLICATION_ID;
-    }
-
-    /**
-     * Starts the existing Shizuku binder implementation inside system_server. Called only
-     * from the LSPosed entry point after it has verified Process.SYSTEM_UID.
-     */
-    public static synchronized void startEmbeddedSystemServer() {
-        if (Process.myUid() != Process.SYSTEM_UID) {
-            throw new SecurityException("Embedded backend requires system_server UID 1000");
-        }
-        EMBEDDED_SYSTEM_SERVER = true;
-        tokenxCheckpoint("TOKENX_START_ATTEMPT embedded system_server start uid=" + Process.myUid() + " pid=" + Process.myPid());
-
-        /*
-         * LSPosed invokes this from a worker thread inside system_server. Unlike the
-         * standalone app_process entry point, that worker has no prepared Looper. The
-         * service constructor creates a Handler from Looper.myLooper(), so constructing it
-         * on the LSPosed worker can fail before BinderSender ever gets a chance to hand the
-         * binder to the manager.
-         *
-         * Construct the embedded backend on system_server's main looper instead. This keeps
-         * the backend genuinely UID 1000; root/shell remain fallback paths only.
-         */
-        final Looper mainLooper = Looper.getMainLooper();
-        if (mainLooper == null) {
-            throw new IllegalStateException("system_server main looper is not ready");
-        }
-
-        if (Looper.myLooper() == mainLooper) {
-            tokenxCheckpoint("TOKENX_BINDER_CREATE_ENTER already on system_server main looper");
-            new ShizukuService();
-            tokenxCheckpoint("TOKENX_BINDER_CREATED pid=" + Process.myPid());
-            return;
-        }
-
-        final Handler mainHandler = new Handler(mainLooper);
-        final CountDownLatch startupComplete = new CountDownLatch(1);
-        final AtomicReference<Throwable> startupFailure = new AtomicReference<>();
-
-        tokenxCheckpoint("TOKENX_BINDER_CREATE_REQUEST pid=" + Process.myPid());
-        if (!mainHandler.post(() -> {
+        // TokenX can run in two very different processes:
+        //  1. the normal standalone server, where CLASSPATH points at the manager APK; and
+        //  2. LSPosed's system_server hook (UID 1000), where CLASSPATH belongs to Android
+        //     framework/services and therefore cannot identify the TokenX manager.
+        //
+        // The old code parsed system_server's CLASSPATH and later concluded that the manager
+        // APK was not installed. Use TokenX's real manager package in the embedded path and
+        // retain the upstream CLASSPATH discovery for root/shell standalone launches.
+        if (Process.myUid() == Process.SYSTEM_UID) {
+            packageName = "moe.shizuku.privileged.api";
+            LOGGER.i("Embedded system_server TokenX manager package is " + packageName);
+            ServerLog.mark("MANAGER_RESOLVED: embedded system_server -> " + packageName);
+        } else {
             try {
-                tokenxCheckpoint("TOKENX_BINDER_CREATE_ENTER on system_server main looper");
-                new ShizukuService();
-                tokenxCheckpoint("TOKENX_BINDER_CREATED pid=" + Process.myPid() + "; manager handoff scheduled");
+                String apk = System.getenv("CLASSPATH");
+                if (apk == null || apk.isEmpty()) {
+                    throw new IllegalStateException("CLASSPATH is empty");
+                }
+
+                int lastSlash = apk.lastIndexOf(File.separatorChar);
+                String parentDir = apk.substring(0, lastSlash);
+
+                int secondLastSlash = parentDir.lastIndexOf(File.separatorChar);
+                String dirName = parentDir.substring(secondLastSlash + 1);
+
+                int dash = dirName.indexOf('-');
+                if (dash > 0) {
+                    packageName = dirName.substring(0, dash);
+                } else {
+                    packageName = dirName;
+                }
+
+                LOGGER.i("Manager package name is " + packageName);
             } catch (Throwable tr) {
-                startupFailure.set(tr);
-                tokenxCheckpoint("TOKENX_BINDER_CREATE_FAILED: " + Log.getStackTraceString(tr));
-                LOGGER.e(tr, "embedded system_server startup failed");
-            } finally {
-                startupComplete.countDown();
+                LOGGER.w("Couldn't get manager package name from CLASSPATH", tr);
             }
-        })) {
-            throw new IllegalStateException("could not post embedded backend to system_server main looper");
         }
 
-        try {
-            if (!startupComplete.await(20, TimeUnit.SECONDS)) {
-                throw new IllegalStateException("timed out waiting for TokenX binder construction");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("interrupted waiting for TokenX binder construction", e);
-        }
-
-        Throwable failure = startupFailure.get();
-        if (failure != null) {
-            throw new IllegalStateException("TokenX binder construction failed", failure);
-        }
-
-        tokenxCheckpoint("TOKENX_SERVICE_REGISTERED construction confirmed");
+        MANAGER_APPLICATION_ID = packageName;
     }
+
 
     public static void main(String[] args) {
         // First, and before anything can fail: from here on the manager can read what this
@@ -190,7 +176,16 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
         try {
             DdmHandleAppName.setAppName("shizuku_server", 0);
-            RishConfig.setLibraryPath(System.getProperty("shizuku.library.path"));
+            // Keep Rish completely out of the embedded system_server class-link path.
+            // LSPosed's module ClassLoader does not expose librish.so to system_server.
+            // The standalone root/shell server still configures Rish here when main() runs.
+            try {
+                Class<?> rishConfig = Class.forName("rikka.rish.RishConfig");
+                rishConfig.getMethod("setLibraryPath", String.class)
+                        .invoke(null, System.getProperty("shizuku.library.path"));
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException("Unable to configure Rish for standalone server", e);
+            }
 
             Looper.prepareMainLooper();
             new ShizukuService();
@@ -201,8 +196,83 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             // Nothing else can report this one: there is no manager connection to report it
             // over yet, and the logcat is not readable by the app that is waiting.
             ServerLog.mark("startup failed: " + Log.getStackTraceString(tr));
-            throw tr;
+            if (tr instanceof RuntimeException) throw (RuntimeException) tr;
+            if (tr instanceof Error) throw (Error) tr;
+            throw new IllegalStateException("Shizuku server startup failed", tr);
         }
+    }
+
+    /** Start the full Shizuku service inside system_server while preserving UID 1000. */
+    public static synchronized void startEmbeddedSystemServer() {
+        if (Process.myUid() != Process.SYSTEM_UID) {
+            throw new SecurityException("Embedded backend requires system_server UID 1000");
+        }
+
+        EMBEDDED_SYSTEM_SERVER = true;
+        publishTokenXSystemServerHealthBinder();
+        tokenxTrace("TOKENX_START_ATTEMPT uid=" + Process.myUid() + ", pid=" + Process.myPid());
+        ServerLog.mark("SYSTEM_SERVER_HOOK: embedded start uid=" + Process.myUid()
+                + ", pid=" + Process.myPid());
+        ServerLog.mark("NATIVE_READY: embedded backend does not require librish");
+
+        final Looper mainLooper = Looper.getMainLooper();
+        if (mainLooper == null) {
+            EMBEDDED_SYSTEM_SERVER = false;
+            throw new IllegalStateException("system_server main looper is not ready");
+        }
+
+        if (Looper.myLooper() == mainLooper) {
+            tokenxTrace("TOKENX_BINDER_CREATE_ENTER main-looper");
+            new ShizukuService();
+            tokenxTrace("TOKENX_BINDER_CREATED uid=" + Process.myUid() + " pid=" + Process.myPid());
+            ServerLog.mark("SERVER_CREATED: embedded backend ready on main looper");
+            ServerLog.mark("BINDER_PUBLISHED: provider binder handoff scheduled");
+            return;
+        }
+
+        final CountDownLatch ready = new CountDownLatch(1);
+        final AtomicReference<Throwable> failure = new AtomicReference<>();
+        Runnable start = () -> {
+            try {
+                tokenxTrace("TOKENX_BINDER_CREATE_REQUEST system_server-main-looper");
+                ServerLog.mark("embedded service constructing on system_server main looper");
+                tokenxTrace("TOKENX_BINDER_CREATE_ENTER posted-main-looper");
+                new ShizukuService();
+                tokenxTrace("TOKENX_BINDER_CREATED uid=" + Process.myUid() + " pid=" + Process.myPid());
+                ServerLog.mark("SERVER_CREATED: embedded service constructed");
+                ServerLog.mark("BINDER_PUBLISHED: provider binder handoff scheduled");
+            } catch (Throwable tr) {
+                failure.set(tr);
+                ServerLog.mark("embedded startup failed: " + Log.getStackTraceString(tr));
+                LOGGER.e(tr, "embedded system_server startup failed");
+            } finally {
+                ready.countDown();
+            }
+        };
+
+        if (!new Handler(mainLooper).post(start)) {
+            EMBEDDED_SYSTEM_SERVER = false;
+            throw new IllegalStateException("could not post embedded backend to system_server main looper");
+        }
+
+        try {
+            if (!ready.await(30, TimeUnit.SECONDS)) {
+                EMBEDDED_SYSTEM_SERVER = false;
+                throw new IllegalStateException("timed out constructing embedded backend");
+            }
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            EMBEDDED_SYSTEM_SERVER = false;
+            throw new IllegalStateException("interrupted while constructing embedded backend", ex);
+        }
+
+        Throwable startupFailure = failure.get();
+        if (startupFailure != null) {
+            EMBEDDED_SYSTEM_SERVER = false;
+            throw new IllegalStateException("embedded backend construction failed", startupFailure);
+        }
+
+        ServerLog.mark("CLIENT_HANDOFF: embedded backend ready; provider binder publication active");
     }
 
     private static void waitSystemService(String name) {
@@ -256,9 +326,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         ApkChangedObservers.start(ai.sourceDir, () -> {
             if (getManagerApplicationInfo() == null) {
                 if (EMBEDDED_SYSTEM_SERVER) {
-                    // Never terminate system_server. The bridge becomes inert until the next
-                    // framework restart / module reload if its manager APK is removed.
-                    LOGGER.w("manager app is uninstalled in user 0; embedded backend stays alive");
+                    LOGGER.w("manager app is unavailable; embedded system_server backend stays alive");
                 } else {
                     LOGGER.w("manager app is uninstalled in user 0, exiting...");
                     System.exit(ServerConstants.MANAGER_APP_NOT_FOUND);
@@ -267,16 +335,30 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         });
 
         BinderSender.register(this);
-        tokenxCheckpoint("TOKENX_BINDER_SENDER_REGISTERED");
+        tokenxTrace("TOKENX_BINDER_SENDER_REGISTERED");
 
         mainHandler.post(() -> {
-            tokenxCheckpoint("TOKENX_HANDOFF_BEGIN manager=" + MANAGER_APPLICATION_ID);
+            tokenxTrace("TOKENX_HANDOFF_BEGIN manager=" + MANAGER_APPLICATION_ID);
             sendBinderToClient();
-            boolean managerHandoff = sendBinderToManagerVerified();
-            if (managerHandoff) {
-                tokenxCheckpoint("TOKENX_HANDOFF_SENT manager=" + MANAGER_APPLICATION_ID);
-            } else {
-                tokenxCheckpoint("TOKENX_HANDOFF_FAILED manager=" + MANAGER_APPLICATION_ID);
+            sendBinderToManager();
+            tokenxTrace("TOKENX_HANDOFF_DISPATCHED manager=" + MANAGER_APPLICATION_ID);
+
+            // The embedded UID-1000 backend may be ready before the manager provider.
+            // Retry Binder publication only; do not launch another Shizuku server.
+            if (Process.myUid() == Process.SYSTEM_UID) {
+                final long[] retryDelays = {500L, 1500L, 3000L, 5000L, 8000L, 12000L};
+                for (long retryDelay : retryDelays) {
+                    mainHandler.postDelayed(() -> {
+                        try {
+                            ServerLog.mark("embedded binder handoff retry after " + retryDelay + "ms");
+                            sendBinderToManager();
+                        } catch (Throwable tr) {
+                            ServerLog.mark("embedded binder handoff retry failed: "
+                                    + Log.getStackTraceString(tr));
+                            LOGGER.e(tr, "embedded binder handoff retry failed");
+                        }
+                    }, retryDelay);
+                }
             }
         });
     }
@@ -326,12 +408,18 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     @Override
     public void exit() {
         enforceManagerPermission("exit");
-        if (EMBEDDED_SYSTEM_SERVER) {
-            // A normal Shizuku server owns its process; the embedded backend does not.
-            // Killing this process would kill system_server and force a framework restart.
-            LOGGER.w("exit ignored for embedded system_server backend");
+
+        // TokenX can run this service embedded inside Android's real system_server.
+        // System.exit() is valid for the traditional standalone Shizuku process, but
+        // from UID 1000/system_server it terminates the Android framework and causes
+        // an immediate soft reboot. Never allow the normal Shizuku/TokenX Stop action
+        // to kill its host process.
+        if (Process.myUid() == Process.SYSTEM_UID) {
+            LOGGER.w("exit requested for embedded system_server backend; refusing to terminate system_server");
+            ServerLog.mark("embedded stop requested: system_server protected; process exit skipped");
             return;
         }
+
         LOGGER.i("exit");
         System.exit(0);
     }
@@ -354,7 +442,12 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             return;
         }
 
-        ServerLog.mark("attachApplication from " + requestPackageName);
+        ServerLog.mark("TOKENX_CLIENT_ATTACH: package=" + requestPackageName
+                + ", callingUid=" + Binder.getCallingUid()
+                + ", callingPid=" + Binder.getCallingPid()
+                + ", backendUid=" + Process.myUid()
+                + ", backendPid=" + Process.myPid()
+                + ", embedded=" + EMBEDDED_SYSTEM_SERVER);
         int apiVersion = args.getInt(ATTACH_APPLICATION_API_VERSION, -1);
 
         int callingPid = Binder.getCallingPid();
@@ -418,30 +511,41 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     @Override
     public void showPermissionConfirmation(int requestCode, @NonNull ClientRecord clientRecord, int callingUid, int callingPid, int userId) {
-        ApplicationInfo ai = Android17Compat.getApplicationInfo(clientRecord.packageName, 0, userId);
-        if (ai == null) {
-            return;
-        }
+        /*
+         * TokenX can host Shizuku directly inside system_server (UID 1000). Binder keeps
+         * the rish/client identity while this callback runs. Android 17 enforces
+         * QUERY_USERS/MANAGE_USERS for getUserInfo(), so perform framework lookups under
+         * the service identity while retaining the captured caller uid/pid for the grant.
+         */
+        final long identity = Binder.clearCallingIdentity();
+        try {
+            ApplicationInfo ai = Android17Compat.getApplicationInfo(clientRecord.packageName, 0, userId);
+            if (ai == null) {
+                return;
+            }
 
-        PackageInfo pi = Android17Compat.getPackageInfo(MANAGER_APPLICATION_ID, 0, userId);
-        UserInfo userInfo = UserManagerApis.getUserInfo(userId);
-        boolean isWorkProfileUser = BuildUtils.atLeast30() ?
-                "android.os.usertype.profile.MANAGED".equals(userInfo.userType) :
-                (userInfo.flags & UserInfo.FLAG_MANAGED_PROFILE) != 0;
-        if (pi == null && !isWorkProfileUser) {
-            LOGGER.w("Manager not found in non work profile user %d. Revoke permission", userId);
-            clientRecord.dispatchRequestPermissionResult(requestCode, false);
-            return;
-        }
+            PackageInfo pi = Android17Compat.getPackageInfo(MANAGER_APPLICATION_ID, 0, userId);
+            UserInfo userInfo = UserManagerApis.getUserInfo(userId);
+            boolean isWorkProfileUser = BuildUtils.atLeast30() ?
+                    "android.os.usertype.profile.MANAGED".equals(userInfo.userType) :
+                    (userInfo.flags & UserInfo.FLAG_MANAGED_PROFILE) != 0;
+            if (pi == null && !isWorkProfileUser) {
+                LOGGER.w("Manager not found in non work profile user %d. Revoke permission", userId);
+                clientRecord.dispatchRequestPermissionResult(requestCode, false);
+                return;
+            }
 
-        Intent intent = new Intent(ServerConstants.REQUEST_PERMISSION_ACTION)
-                .setPackage(MANAGER_APPLICATION_ID)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
-                .putExtra("uid", callingUid)
-                .putExtra("pid", callingPid)
-                .putExtra("requestCode", requestCode)
-                .putExtra("applicationInfo", ai);
-        ActivityManagerApis.startActivityNoThrow(intent, null, isWorkProfileUser ? 0 : userId);
+            Intent intent = new Intent(ServerConstants.REQUEST_PERMISSION_ACTION)
+                    .setPackage(MANAGER_APPLICATION_ID)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
+                    .putExtra("uid", callingUid)
+                    .putExtra("pid", callingPid)
+                    .putExtra("requestCode", requestCode)
+                    .putExtra("applicationInfo", ai);
+            ActivityManagerApis.startActivityNoThrow(intent, null, isWorkProfileUser ? 0 : userId);
+        } finally {
+            Binder.restoreCallingIdentity(identity);
+        }
     }
 
     @Override
@@ -627,6 +731,27 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     @Override
     public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
+        // Rish transactions are handled by server-shared's RishService. When TokenX is
+        // embedded directly in system_server, handling them under the incoming app Binder
+        // identity makes framework calls inherit the terminal app UID. Android 17 then
+        // rejects user queries with QUERY_USERS/MANAGE_USERS before the shell can start.
+        //
+        // Authenticate the original caller first, then clear only the nested Rish Binder
+        // identity. This keeps Shizuku's client permission boundary intact while making
+        // framework calls/fork setup execute as the UID-1000 backend.
+        if (EMBEDDED_SYSTEM_SERVER && code >= 30000 && code <= 30002) {
+            // Android 17 libbinder deliberately aborts when a process that has already
+            // initialized ProcessState forks and the child subsequently touches Binder.
+            // system_server is permanently Binder-initialized, so rish's native fork/exec
+            // host is not a safe execution path here. Fail closed instead of allowing a
+            // terminal request to take down a system_server child/process.
+            enforceCallingPermission("rish");
+            ServerLog.mark("RISH_TKN_BLOCKED: embedded system_server cannot fork rish safely on Android 17; code="
+                    + code + ", uid=" + Process.myUid());
+            throw new RemoteException(
+                    "TokenX embedded system_server rish is disabled: Android 17 forbids Binder use after fork");
+        }
+
         //LOGGER.d("transact: code=%d, calling uid=%d", code, Binder.getCallingUid());
         if (code == ServerConstants.BINDER_TRANSACTION_getApplications) {
             data.enforceInterface(ShizukuApiConstants.BINDER_DESCRIPTOR);
@@ -671,50 +796,29 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         sendBinderToManager(this);
     }
 
-    private boolean sendBinderToManagerVerified() {
-        boolean success = false;
-        for (int userId : UserManagerApis.getUserIdsNoThrow()) {
-            boolean installed;
-            try {
-                installed = Android17Compat.getApplicationInfo(MANAGER_APPLICATION_ID, 0, userId) != null;
-            } catch (Throwable tr) {
-                installed = true;
-            }
-            if (!installed) continue;
-            tokenxCheckpoint("TOKENX_HANDOFF_TARGET user=" + userId + " provider=" + MANAGER_APPLICATION_ID + ".shizuku");
-            if (sendBinderToUserApp(this, MANAGER_APPLICATION_ID, userId)) {
-                tokenxCheckpoint("TOKENX_HANDOFF_ACK user=" + userId);
-                success = true;
-            } else {
-                tokenxCheckpoint("TOKENX_HANDOFF_NO_ACK user=" + userId);
-            }
-        }
-        return success;
-    }
-
-    private static void sendBinderToManager(Binder binder) {
+    private static void sendBinderToManager(IBinder binder) {
         for (int userId : UserManagerApis.getUserIdsNoThrow()) {
             sendBinderToManager(binder, userId);
         }
     }
 
-    static void sendBinderToManager(Binder binder, int userId) {
+    static void sendBinderToManager(IBinder binder, int userId) {
+        tokenxTrace("TOKENX_HANDOFF_TARGET user=" + userId + " provider=" + MANAGER_APPLICATION_ID + ".shizuku");
         ServerLog.mark("handing the binder to " + MANAGER_APPLICATION_ID + " in user " + userId);
         boolean success = sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
+        tokenxTrace(success ? "TOKENX_HANDOFF_SENT user=" + userId : "TOKENX_HANDOFF_NO_ACK user=" + userId);
         ServerLog.mark(success
                 ? "the manager took the binder"
-                : "the manager did not take the binder: retrying, which force stops it first");
+                : "the manager did not take the binder: retrying without force-stop");
         if (!success) {
-            // Nothing to retry in a user the manager is not installed in, and the retry force
-            // stops it: on a device with a work profile that is a force stop, on every start,
-            // of an app that was never in that user. Only the missing app is skipped, which
-            // is exactly the case where the retry could not have worked anyway.
+            // Do NOT force-stop the manager here. On Android 17 a force-stop marks the
+            // package stopped, so the next getContentProviderExternal() cannot reliably
+            // bring the manager provider back. That turns a recoverable provider race into
+            // a permanent Binder handoff timeout while shizuku_server itself stays alive.
             boolean installed;
             try {
                 installed = Android17Compat.getApplicationInfo(MANAGER_APPLICATION_ID, 0, userId) != null;
             } catch (Throwable tr) {
-                // Not certain it is absent, so keep the retry rather than skip a user that
-                // needs it.
                 installed = true;
             }
             if (!installed) {
@@ -722,27 +826,40 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                 return;
             }
 
-            // For unknown reason, sometimes this could happens
-            // Kill Shizuku app and try again could work
-            try {
-                LOGGER.e("kill %s in user %d and try again", MANAGER_APPLICATION_ID, userId);
-                ActivityManagerApis.forceStopPackageNoThrow(MANAGER_APPLICATION_ID, userId);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {}
-                success = sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
-                if (success) {
-                    LOGGER.e("retry succeeded");
-                } else {
-                    LOGGER.e("retry failed");
-                }
-            } catch (Throwable tr) {
-                LOGGER.e(tr, "retry failed");
-            }
+            final long[] retryDelays = {250L, 750L, 1500L, 3000L};
+            scheduleManagerBinderRetry(binder, userId, retryDelays, 0);
         }
     }
 
-    static boolean sendBinderToUserApp(Binder binder, String packageName, int userId) {
+    /**
+     * Retry manager publication without sleeping on system_server's main looper.
+     * The embedded backend is constructed on that looper, so blocking it while the
+     * manager provider is starting can delay the framework itself.
+     */
+    private static void scheduleManagerBinderRetry(
+            IBinder binder, int userId, long[] retryDelays, int index) {
+        if (index >= retryDelays.length) {
+            ServerLog.mark("manager binder handoff retries exhausted; server remains alive");
+            LOGGER.e("manager binder handoff retries exhausted in user %d", userId);
+            return;
+        }
+
+        final long retryDelay = retryDelays[index];
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(() -> {
+            ServerLog.mark("manager binder handoff retry after " + retryDelay
+                    + "ms, serverUid=" + Process.myUid());
+            boolean success = sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
+            if (success) {
+                ServerLog.mark("manager binder handoff retry succeeded");
+                LOGGER.i("manager binder handoff retry succeeded in user %d", userId);
+                return;
+            }
+            scheduleManagerBinderRetry(binder, userId, retryDelays, index + 1);
+        }, retryDelay);
+    }
+
+    static boolean sendBinderToUserApp(IBinder binder, String packageName, int userId) {
         try {
             DeviceIdleControllerApis.addPowerSaveTempWhitelistApp(packageName, 30 * 1000, userId,
                     316/* PowerExemptionManager#REASON_SHELL */, "shell");
@@ -777,6 +894,10 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             }
 
             Bundle extra = new Bundle();
+            // TokenX 409: keep this transport IBinder-only. Never hand Parcel a
+            // concrete service/wrapper object from an embedded system_server backend.
+            tokenxTrace("TOKENX_IBINDER_HANDOFF class=" + binder.getClass().getName()
+                    + " alive=" + binder.isBinderAlive());
             extra.putParcelable("moe.shizuku.privileged.api.intent.extra.BINDER", new BinderContainer(binder));
 
             Bundle reply = IContentProviderUtils.callCompat(provider, null, name, "sendBinder", null, extra);
@@ -788,6 +909,54 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                 return false;
             }
         } catch (Throwable tr) {
+            /*
+             * Android 17 can reject the manager provider lookup when the provider is
+             * protected by INTERACT_ACROSS_USERS_FULL. The standalone root backend is
+             * UID 0, but Binder/provider permission checks can still observe the caller
+             * identity inherited from the manager start transaction. Clear it for the
+             * framework lookup/handoff and retry once under the backend identity.
+             *
+             * This is deliberately limited to the manager handoff. Client app routing
+             * and the UID-1000/Xposed RPC path are left untouched.
+             */
+            if (MANAGER_APPLICATION_ID.equals(packageName)) {
+                final long identity = Binder.clearCallingIdentity();
+                IContentProvider retryProvider = null;
+                try {
+                    tokenxTrace("TOKENX_HANDOFF_IDENTITY_RETRY user=" + userId
+                            + " serverUid=" + Process.myUid());
+                    retryProvider = ActivityManagerApis.getContentProviderExternal(name, userId, null, name);
+                    if (retryProvider != null && retryProvider.asBinder().pingBinder()) {
+                        Bundle retryExtra = new Bundle();
+                        retryExtra.putParcelable(
+                                "moe.shizuku.privileged.api.intent.extra.BINDER",
+                                new BinderContainer(binder));
+                        Bundle retryReply = IContentProviderUtils.callCompat(
+                                retryProvider, null, name, "sendBinder", null, retryExtra);
+                        if (retryReply != null) {
+                            tokenxTrace("TOKENX_HANDOFF_IDENTITY_RETRY_OK user=" + userId
+                                    + " serverUid=" + Process.myUid());
+                            LOGGER.i("manager binder identity retry succeeded in user %d", userId);
+                            return true;
+                        }
+                    }
+                    tokenxTrace("TOKENX_HANDOFF_IDENTITY_RETRY_NO_ACK user=" + userId
+                            + " serverUid=" + Process.myUid());
+                } catch (Throwable retryError) {
+                    tokenxTrace("TOKENX_HANDOFF_IDENTITY_RETRY_FAILED user=" + userId
+                            + " serverUid=" + Process.myUid() + " error="
+                            + retryError.getClass().getName());
+                    LOGGER.e(retryError, "manager binder identity retry failed in user %d", userId);
+                } finally {
+                    if (retryProvider != null) {
+                        try {
+                            ActivityManagerApis.removeContentProviderExternal(name, null);
+                        } catch (Throwable ignored) {
+                        }
+                    }
+                    Binder.restoreCallingIdentity(identity);
+                }
+            }
             LOGGER.e(tr, "failed to send binder to user app %s in user %d", packageName, userId);
             return false;
         } finally {

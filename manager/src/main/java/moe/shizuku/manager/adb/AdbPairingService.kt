@@ -38,15 +38,22 @@ class AdbPairingService : Service() {
         private const val launchRequestId = 4
         private const val startRequestId = 5
         private const val startAction = "start"
+        private const val manualAction = "manual_pair"
+        private const val manualCodeKey = "manual_pairing_code"
         private const val stopAction = "stop"
         private const val replyAction = "reply"
         private const val remoteInputResultKey = "paring_code"
-        private const val portKey = "paring_code"
+        private const val portKey = "port"
         private const val hostKey = "pairing_host"
 
         fun startIntent(context: Context): Intent {
             return Intent(context, AdbPairingService::class.java).setAction(startAction)
         }
+
+        fun manualPairIntent(context: Context, host: String, port: Int, code: String): Intent =
+            Intent(context, AdbPairingService::class.java).setAction(manualAction)
+                .putExtra(hostKey, host).putExtra(portKey, port)
+                .putExtra(manualCodeKey, code)
 
         fun stopIntent(context: Context): Intent {
             return Intent(context, AdbPairingService::class.java).setAction(stopAction)
@@ -101,6 +108,17 @@ class AdbPairingService : Service() {
         val notification = when (intent?.action) {
             startAction -> {
                 onStart()
+            }
+            manualAction -> {
+                val host = intent.getStringExtra(hostKey).orEmpty()
+                val port = intent.getIntExtra(portKey, -1)
+                val code = intent.getStringExtra(manualCodeKey).orEmpty()
+                if (host.isNotBlank() && port in 1..65535 && code.matches(Regex("[0-9]{6}"))) {
+                    onInput(code, host, port)
+                } else {
+                    Log.w(tag, "Invalid manual pairing parameters")
+                    onStart()
+                }
             }
             replyAction -> {
                 val code = RemoteInput.getResultsFromIntent(intent)?.getCharSequence(remoteInputResultKey) ?: ""
@@ -321,46 +339,23 @@ class AdbPairingService : Service() {
             .build()
     }
 
-    private val replyNotificationAction by unsafeLazy {
-        val remoteInput = RemoteInput.Builder(remoteInputResultKey).run {
-            setLabel(getString(R.string.dialog_adb_pairing_paring_code))
-            build()
-        }
-
+    private fun replyNotificationAction(host: String, port: Int): Notification.Action {
+        // Build the RemoteInput action against the actual discovered endpoint.
+        // Do not cache an action created with placeholder host/port.
+        val remoteInput = RemoteInput.Builder(remoteInputResultKey)
+            .setLabel("Enter code")
+            .build()
         val pendingIntent = PendingIntent.getForegroundService(
             this,
             replyRequestId,
-            replyIntent(this, "127.0.0.1", -1),
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            else
-                PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        Notification.Action.Builder(
-            null,
-            getString(R.string.notification_adb_pairing_input_paring_code),
-            pendingIntent
-        )
-            .addRemoteInput(remoteInput)
-            .build()
-    }
-
-    private fun replyNotificationAction(host: String, port: Int): Notification.Action {
-        // Ensure pending intent is created
-        val action = replyNotificationAction
-
-        PendingIntent.getForegroundService(
-            this,
-            replyRequestId,
             replyIntent(this, host, port),
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            else
-                PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-
-        return action
+        return Notification.Action.Builder(
+            null,
+            "Enter code",
+            pendingIntent
+        ).addRemoteInput(remoteInput).build()
     }
 
     private val searchingNotification by unsafeLazy {
@@ -375,7 +370,10 @@ class AdbPairingService : Service() {
     private fun createInputNotification(host: String, port: Int): Notification {
         return Notification.Builder(this, NOTIFICATION_CHANNEL)
             .setColor(getColor(R.color.notification))
-            .setContentTitle(getString(R.string.notification_adb_pairing_service_found_title))
+            .setContentTitle("Wireless pairing • Enter code")
+            .setContentText("Tap Enter code to enter the six-digit pairing code")
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setSmallIcon(R.drawable.ic_system_icon)
             .addAction(replyNotificationAction(host, port))
             .build()

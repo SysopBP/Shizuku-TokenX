@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.RemoteException;
+import android.os.Process;
 import android.text.TextUtils;
 
 import androidx.annotation.RequiresApi;
@@ -41,36 +42,25 @@ public class BinderSender {
 
     private static final String ROUTE_ROOT = "root";
     private static final String ROUTE_SYSTEM = "system";
-    private static final String ROUTE_SHELL = "shell";
     private static final String METHOD_GET_BACKEND_ROUTE = "getBackendRoute";
 
-    /**
-     * Ask the manager which live backend owns this client. Root is deliberately fail-safe:
-     * a missing manager/provider or malformed reply must never let the system backend steal
-     * every client during boot.
-     */
     private static boolean shouldServePackage(String packageName, int userId) {
         final boolean thisIsSystem = Process.myUid() == Process.SYSTEM_UID;
         final boolean thisIsRoot = Process.myUid() == 0;
-        final boolean thisIsShell = Process.myUid() == Process.SHELL_UID;
-        if (!thisIsSystem && !thisIsRoot && !thisIsShell) return true;
+        if (!thisIsSystem && !thisIsRoot) return true;
 
         String authority = ShizukuService.MANAGER_APPLICATION_ID + ".shizuku";
         IContentProvider provider = null;
         IBinder token = null;
         try {
             provider = ActivityManagerApis.getContentProviderExternal(authority, userId, token, authority);
-            if (provider == null || !provider.asBinder().pingBinder()) {
-                return thisIsRoot;
-            }
+            if (provider == null || !provider.asBinder().pingBinder()) return thisIsRoot;
             Bundle request = new Bundle();
             request.putString("packageName", packageName);
             Bundle reply = IContentProviderUtils.callCompat(
                     provider, null, authority, METHOD_GET_BACKEND_ROUTE, null, request);
             String route = reply != null ? reply.getString("route", ROUTE_ROOT) : ROUTE_ROOT;
-            boolean serve = thisIsSystem ? ROUTE_SYSTEM.equals(route)
-                    : thisIsShell ? ROUTE_SHELL.equals(route)
-                    : ROUTE_ROOT.equals(route);
+            boolean serve = thisIsSystem ? ROUTE_SYSTEM.equals(route) : !ROUTE_SYSTEM.equals(route);
             LOGGER.i("TokenX route package=%s route=%s serverUid=%d serve=%s",
                     packageName, route, Process.myUid(), Boolean.toString(serve));
             return serve;
@@ -79,10 +69,8 @@ public class BinderSender {
             return thisIsRoot;
         } finally {
             if (provider != null) {
-                try {
-                    ActivityManagerApis.removeContentProviderExternal(authority, token);
-                } catch (Throwable ignored) {
-                }
+                try { ActivityManagerApis.removeContentProviderExternal(authority, token); }
+                catch (Throwable ignored) {}
             }
         }
     }
@@ -229,6 +217,16 @@ public class BinderSender {
 
     public static void register(ShizukuService shizukuService) {
         sShizukuService = shizukuService;
+
+        // TokenX embedded system_server must keep the normal Shizuku process/UID
+        // observers active. The constructor's provider handoff only reaches clients that
+        // are already running when the UID-1000 backend starts. Apps launched later
+        // (for example Galaxy Island) need these observers so their .shizuku provider
+        // receives the current Binder and can call attachApplication().
+        if (Process.myUid() == Process.SYSTEM_UID) {
+            ServerLog.mark("embedded binder transport: registering AMS observers for late-start clients");
+            LOGGER.i("embedded system_server: registering process/UID observers for client binder delivery");
+        }
 
         try {
             ActivityManagerApis.registerProcessObserver(new ProcessObserver());

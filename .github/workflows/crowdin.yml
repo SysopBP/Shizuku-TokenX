@@ -30,25 +30,18 @@ on:
 
 jobs:
   upload:
-    # Secret values cannot be referenced directly in a job-level if expression. Promote the
-    # secret to a job environment value first; an unset repository secret becomes an empty
-    # string and cleanly skips the optional Crowdin job.
     if: github.event_name == 'push' || inputs.seed_translations
     runs-on: ubuntu-latest
-    env:
-      CROWDIN_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v6
-        if: env.CROWDIN_TOKEN != ''
       - name: Send the source strings
-        if: env.CROWDIN_TOKEN != ''
         uses: crowdin/github-action@v3
         with:
           config: crowdin.yml
           project_id: 935085
-          token: ${{ env.CROWDIN_TOKEN }}
+          token: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
           upload_sources: true
           # The repository is not where translations are written, so this is off for an
           # ordinary run. It is turned on by hand for a language the project does not have
@@ -63,21 +56,17 @@ jobs:
     # down in the same breath would only race the import it just asked for.
     if: github.event_name != 'push' && !inputs.seed_translations
     runs-on: ubuntu-latest
-    env:
-      CROWDIN_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
     permissions:
       contents: write
       pull-requests: write
     steps:
       - uses: actions/checkout@v6
-        if: env.CROWDIN_TOKEN != ''
       - name: Bring back whatever has been translated
-        if: env.CROWDIN_TOKEN != ''
         uses: crowdin/github-action@v3
         with:
           config: crowdin.yml
           project_id: 935085
-          token: ${{ env.CROWDIN_TOKEN }}
+          token: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
           # Belt and braces on the project setting of the same name: without it Crowdin writes
           # the source text into a language with no translation of its own, which is how ~200
           # English copies ended up in this repository looking translated.

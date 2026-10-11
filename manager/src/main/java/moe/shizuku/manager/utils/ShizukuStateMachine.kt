@@ -14,6 +14,10 @@ import moe.shizuku.manager.ShizukuApplication
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.start.grantWriteSecureSettingsIfNeeded
 import rikka.shizuku.Shizuku
+import moe.shizuku.manager.tokenx.TokenXBootOwner
+import moe.shizuku.manager.tokenx.TokenXBootSession
+import moe.shizuku.manager.tokenx.TokenXBootState
+import moe.shizuku.manager.tokenx.TokenXShizukuUserServiceClient
 
 private val appContext = ShizukuApplication.appContext
 
@@ -26,10 +30,16 @@ object ShizukuStateMachine {
 
     init {
         Shizuku.addBinderReceivedListenerSticky(
-            Shizuku.OnBinderReceivedListener { set(State.RUNNING) }
+            Shizuku.OnBinderReceivedListener {
+                set(State.RUNNING)
+                TokenXShizukuUserServiceClient.ensureBound()
+            }
         )
         Shizuku.addBinderDeadListener(
-            Shizuku.OnBinderDeadListener { setDead() }
+            Shizuku.OnBinderDeadListener {
+                TokenXShizukuUserServiceClient.onShizukuBinderDead()
+                setDead()
+            }
         )
     }
 
@@ -43,6 +53,29 @@ object ShizukuStateMachine {
             // later crash is auto-restarted by the watchdog.
             if (newState == State.RUNNING) {
                 ShizukuSettings.setManuallyStopped(false)
+
+                // Binder receipt is the authoritative completion signal for a TokenX
+                // boot claim. Only confirm a Root-owned session when the live server
+                // itself reports UID 0; this prevents an unrelated/fallback server
+                // from falsely confirming the Root generation.
+                runCatching {
+                    val boot = TokenXBootSession.current()
+                    if (boot.owner == TokenXBootOwner.ROOT && Shizuku.getUid() == 0) {
+                        when (boot.state) {
+                            TokenXBootState.SERVER_STARTING -> {
+                                TokenXBootSession.markBinderReady(TokenXBootOwner.ROOT)
+                                TokenXBootSession.confirm(TokenXBootOwner.ROOT)
+                            }
+                            TokenXBootState.BINDER_READY ->
+                                TokenXBootSession.confirm(TokenXBootOwner.ROOT)
+                            TokenXBootState.RECOVERY_CLAIMED ->
+                                TokenXBootSession.confirmRecovery(TokenXBootOwner.ROOT)
+                            else -> Unit
+                        }
+                    }
+                }.onFailure {
+                    Log.w("TokenXBoot", "Unable to confirm Root boot session", it)
+                }
                 // The server is up, so it can hand us the ADB-only permission the wireless
                 // flow needs the user shouldn't have to reach for a computer for it.
                 grantWriteSecureSettingsIfNeeded()
@@ -133,7 +166,10 @@ object ShizukuStateMachine {
         set(state)
         // Also covers a server that was already running when this process started, or a
         // permission that was revoked behind our back: there is no transition to hook then.
-        if (state == State.RUNNING) grantWriteSecureSettingsIfNeeded()
+        if (state == State.RUNNING) {
+            grantWriteSecureSettingsIfNeeded()
+            TokenXShizukuUserServiceClient.ensureBound()
+        }
         return state
     }
 

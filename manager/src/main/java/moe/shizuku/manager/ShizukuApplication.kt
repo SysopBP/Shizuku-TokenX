@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import com.topjohnwu.superuser.Shell
 import moe.shizuku.manager.ktx.logd
+import moe.shizuku.manager.authorization.AuthorizationManager
 import moe.shizuku.manager.service.WatchdogService
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import org.lsposed.hiddenapibypass.HiddenApiBypass
@@ -55,6 +56,14 @@ class ShizukuApplication : Application() {
         AppCompatDelegate.setDefaultNightMode(ShizukuSettings.getNightMode())
 
         if(ShizukuSettings.getWatchdog()) WatchdogService.start(context)
+
+        // App authorization is desired state, not server-process state. system_server,
+        // root or shell may be replaced while the user still expects the same
+        // enabled apps. Replay the persisted list every time a server Binder arrives.
+        Shizuku.addBinderReceivedListener {
+            runCatching { AuthorizationManager.restoreDesiredGrantsWithRetry() }
+                .onFailure { Log.w("TokenX", "Unable to restore app grants", it) }
+        }
     }
 
     override fun onCreate() {
@@ -62,6 +71,8 @@ class ShizukuApplication : Application() {
         application = this
         appContext = applicationContext
         init(this)
+        moe.shizuku.manager.shell.SystemUidProvisioning.initialize(this)
     }
 
 }
+

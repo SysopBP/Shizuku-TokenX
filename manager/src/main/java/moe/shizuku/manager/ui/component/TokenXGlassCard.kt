@@ -1,0 +1,74 @@
+package moe.shizuku.manager.ui.component
+
+import android.os.Build
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.unit.dp
+import moe.shizuku.manager.ui.theme.LocalTokenXGlass
+
+/**
+ * Reusable TokenX glass surface. The translucent gradient is the reliable base
+ * on every Android version; blur is deliberately subtle and can be disabled by
+ * the appearance editor for performance/accessibility.
+ */
+@Composable
+fun TokenXGlassCard(
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val glass = LocalTokenXGlass.current
+    val shape = RoundedCornerShape(glass.cornerRadiusDp.dp)
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val base = if (dark) Color(0xFF101216) else Color.White
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(
+                if (glass.enabled) {
+                    Brush.linearGradient(
+                        listOf(
+                            base.copy(alpha = glass.opacity),
+                            base.copy(alpha = (glass.opacity * 0.86f).coerceIn(0f, 1f)),
+                            Color.Black.copy(alpha = (glass.opacity * 0.32f).coerceIn(0f, 1f)),
+                        )
+                    )
+                } else {
+                    Brush.linearGradient(listOf(base, base))
+                }
+            )
+            .border(
+                BorderStroke(
+                    1.dp,
+                    Color.White.copy(alpha = if (glass.enabled) glass.borderOpacity else 0f)
+                ),
+                shape
+            ),
+        content = {
+            // This surface is drawn manually rather than with Material3 Surface, so it
+            // must also provide the matching foreground color. Without this, Compose
+            // can inherit the light-theme LocalContentColor (black) on dark glass.
+            CompositionLocalProvider(
+                LocalContentColor provides MaterialTheme.colorScheme.onSurface
+            ) {
+                content()
+            }
+        }
+    )
+}

@@ -27,7 +27,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -51,6 +50,7 @@ import moe.shizuku.manager.ui.component.ExpressiveSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -128,6 +128,7 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
     var version by remember { mutableIntStateOf(0) }
     var sortMenu by remember { mutableStateOf(false) }
     var filter by remember { mutableStateOf(AppFilter.ALL) }
+    var backendFilter by remember { mutableStateOf<String?>(null) }
     // The kind of app, from the same set of filters the app-ops and Labs lists use.
     var kind by remember { mutableStateOf(ManageFilter.ALL) }
     var pendingBatch by remember { mutableStateOf<Boolean?>(null) }
@@ -233,7 +234,7 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
     }
 
     val shown = remember(
-        all, query, sortOrder, filter, kind,
+        all, query, sortOrder, filter, kind, backendFilter,
         userPackages, systemPackages, disabledPackages, launcherless, grantedNames
     ) {
         val q = query.trim()
@@ -249,10 +250,13 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
             AppFilter.GRANTED -> byKind.filter { it.packageName in grantedNames }
             AppFilter.REVOKED -> byKind.filter { it.packageName !in grantedNames }
         }
+        val byBackend = backendFilter?.let { route ->
+            byFilter.filter { it.packageName in grantedNames && ShizukuSettings.getBackendRoute(it.packageName) == route }
+        } ?: byFilter
         val filtered = if (q.isBlank()) {
-            byFilter
+            byBackend
         } else {
-            byFilter.filter {
+            byBackend.filter {
                 val label = runCatching { it.applicationInfo?.loadLabel(pm)?.toString() ?: "" }.getOrDefault("")
                 label.contains(q, ignoreCase = true) || it.packageName.contains(q, ignoreCase = true)
             }
@@ -330,6 +334,7 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
         if (selectionMode) {
             TopAppBar(
                 title = { Text(stringResource(R.string.batch_selected_count, selected.size)) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0f)),
                 windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
                 navigationIcon = {
                     IconButton(onClick = { selected = emptySet() }) {
@@ -351,6 +356,7 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
         } else {
             TopAppBar(
                 title = { Text(stringResource(R.string.tab_apps)) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0f)),
                 windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
                 actions = {
                     // Long-press and Select all exist for picking individual apps; this is
@@ -371,17 +377,6 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
                                 pendingToggleAll = !allGranted
                             }
                         }) { Text(stringResource(R.string.app_management_toggle_all)) }
-                    }
-                    IconButton(
-                        enabled = !refreshing,
-                        onClick = {
-                            refreshing = true
-                            derivedFor = null
-                            loadedFor = null
-                            refreshKey++
-                        }
-                    ) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Refresh app bindings and permissions")
                     }
                     IconButton(onClick = { sortMenu = true }) {
                         Icon(Icons.Filled.Sort, contentDescription = null)
@@ -472,6 +467,40 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
             )
         }
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val rootCount = grantedNames.count {
+                ShizukuSettings.getBackendRoute(it) == ShizukuSettings.BACKEND_ROOT
+            }
+            val systemCount = grantedNames.count {
+                ShizukuSettings.getBackendRoute(it) == ShizukuSettings.BACKEND_SYSTEM
+            }
+            AppFilterChip(
+                modifier = Modifier.weight(1f),
+                label = "Root",
+                count = rootCount,
+                selected = backendFilter == ShizukuSettings.BACKEND_ROOT,
+                onClick = {
+                    backendFilter = if (backendFilter == ShizukuSettings.BACKEND_ROOT) null
+                    else ShizukuSettings.BACKEND_ROOT
+                }
+            )
+            AppFilterChip(
+                modifier = Modifier.weight(1f),
+                label = "System UID",
+                count = systemCount,
+                selected = backendFilter == ShizukuSettings.BACKEND_SYSTEM,
+                onClick = {
+                    backendFilter = if (backendFilter == ShizukuSettings.BACKEND_SYSTEM) null
+                    else ShizukuSettings.BACKEND_SYSTEM
+                }
+            )
+        }
+
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
@@ -516,11 +545,11 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
         ) {
             items(shown, key = { it.packageName }) { pi ->
                 val uid = pi.applicationInfo!!.uid
-                val granted = remember(pi.packageName, version, refreshKey) {
+                val granted = remember(pi.packageName, version) {
                     runCatching { AuthorizationManager.granted(pi.packageName, uid) }.getOrDefault(false)
                 }
                 val isSelected = pi.packageName in selected
-                val backendRoute = remember(pi.packageName, version, refreshKey) {
+                val backendRoute = remember(pi.packageName, version) {
                     ShizukuSettings.getBackendRoute(pi.packageName)
                 }
 
@@ -539,14 +568,19 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
                             if (selectionMode) {
                                 selected = if (isSelected) selected - pi.packageName else selected + pi.packageName
                             } else {
-                                val result = runCatching {
-                                    if (granted) AuthorizationManager.revoke(pi.packageName, uid)
-                                    else AuthorizationManager.grant(pi.packageName, uid)
+                                // Permission changes are Binder round trips. Never block the
+                                // Compose/main thread here: under the UID 1000 bridge a slow or
+                                // reconnecting client can otherwise freeze the Enabled Apps UI.
+                                scope.launch {
+                                    val error = withContext(Dispatchers.IO) {
+                                        runCatching {
+                                            if (granted) AuthorizationManager.revoke(pi.packageName, uid)
+                                            else AuthorizationManager.grant(pi.packageName, uid)
+                                        }.exceptionOrNull()
+                                    }
+                                    if (error is SecurityException) permissionLimited = true
+                                    version++
                                 }
-                                if (result.exceptionOrNull() is SecurityException) {
-                                    permissionLimited = true
-                                }
-                                version++
                             }
                         },
                         onLongClick = {
@@ -578,21 +612,17 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
                                 TextButton(
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                                     onClick = {
-                                        val next = when (backendRoute) {
-                                            ShizukuSettings.BACKEND_ROOT -> ShizukuSettings.BACKEND_SYSTEM
-                                            ShizukuSettings.BACKEND_SYSTEM -> ShizukuSettings.BACKEND_SHELL
-                                            else -> ShizukuSettings.BACKEND_ROOT
+                                        val next = if (backendRoute == ShizukuSettings.BACKEND_SYSTEM) {
+                                            ShizukuSettings.BACKEND_ROOT
+                                        } else {
+                                            ShizukuSettings.BACKEND_SYSTEM
                                         }
                                         ShizukuSettings.setBackendRoute(pi.packageName, next)
                                         version++
                                     }
                                 ) {
                                     Text(
-                                        when (backendRoute) {
-                                            ShizukuSettings.BACKEND_SYSTEM -> "System"
-                                            ShizukuSettings.BACKEND_SHELL -> "Shell"
-                                            else -> "Root"
-                                        },
+                                        if (backendRoute == ShizukuSettings.BACKEND_SYSTEM) "System" else "Root",
                                         maxLines = 1
                                     )
                                 }
@@ -604,14 +634,16 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
                                 ExpressiveSwitch(
                                     checked = granted,
                                     onCheckedChange = { checked ->
-                                        val result = runCatching {
-                                            if (checked) AuthorizationManager.grant(pi.packageName, uid)
-                                            else AuthorizationManager.revoke(pi.packageName, uid)
+                                        scope.launch {
+                                            val error = withContext(Dispatchers.IO) {
+                                                runCatching {
+                                                    if (checked) AuthorizationManager.grant(pi.packageName, uid)
+                                                    else AuthorizationManager.revoke(pi.packageName, uid)
+                                                }.exceptionOrNull()
+                                            }
+                                            if (error is SecurityException) permissionLimited = true
+                                            version++
                                         }
-                                        if (result.exceptionOrNull() is SecurityException) {
-                                            permissionLimited = true
-                                        }
-                                        version++
                                     }
                                 )
                             }
@@ -658,7 +690,7 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
 
                     // A filter can legitimately hold nothing (Hidden often does), which is
                     // not the same as there being no apps at all.
-                    filter != AppFilter.ALL || kind != ManageFilter.ALL -> Text(
+                    filter != AppFilter.ALL || kind != ManageFilter.ALL || backendFilter != null -> Text(
                         text = stringResource(R.string.apps_filter_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center

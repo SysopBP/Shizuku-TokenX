@@ -24,6 +24,8 @@ import stub.dalvik.system.VMRuntimeHidden;
 
 public class ShizukuShellLoader {
 
+    private static final int TOKENX_RISH_PROTOCOL = 3;
+
     private static String[] args;
     private static String callingPackage;
     private static Handler handler;
@@ -36,8 +38,16 @@ public class ShizukuShellLoader {
                 IBinder binder = data.readStrongBinder();
 
                 String sourceDir = data.readString();
+                long tokenxSessionId = data.dataAvail() >= 8 ? data.readLong() : 0L;
+                String tokenxSessionBackend = data.dataAvail() > 0 ? data.readString() : null;
+                int tokenxBackendUid = data.dataAvail() >= 4 ? data.readInt() : -1;
+                if (tokenxSessionId > 0) {
+                    System.out.println("TokenX session " + tokenxSessionId + " attached" +
+                            (tokenxSessionBackend != null ? " backend=" + tokenxSessionBackend : ""));
+                }
                 if (binder != null) {
-                    handler.post(() -> onBinderReceived(binder, sourceDir));
+                    final int routedUid = tokenxBackendUid;
+                    handler.post(() -> onBinderReceived(binder, sourceDir, routedUid));
                 } else {
                     System.err.println("Server is not running");
                     System.err.flush();
@@ -58,12 +68,25 @@ public class ShizukuShellLoader {
             managerApplicationId = BuildConfig.MANAGER_APPLICATION_ID;
         }
 
+        String tokenXBackend = System.getenv("TOKENX_RISH_BACKEND");
         Intent intent = new Intent("rikka.shizuku.intent.action.REQUEST_BINDER")
                 .setPackage(managerApplicationId)
                 .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
                 .putExtra("data", data)
-                .putExtra("tokenx_backend", System.getenv("TOKENX_RISH_BACKEND"))
-                .putExtra("tokenx_calling_package", callingPackage);
+                .putExtra("tokenx_package", callingPackage);
+
+        // Keep the proven default REQUEST_BINDER path byte-for-byte compatible.
+        // Explicit route metadata is carried in the data Bundle instead of as a
+        // top-level Intent extra. Samsung Android 17 was dropping the explicit
+        // broadcasts before BinderRequestReceiver while the otherwise identical
+        // default request continued to arrive.
+        if (!TextUtils.isEmpty(tokenXBackend)) {
+            data.putString("tokenx_backend", tokenXBackend);
+            System.out.println("TOKENX_RISH_REQUEST backend=" + tokenXBackend +
+                    " manager=" + managerApplicationId +
+                    " delivery=default-compatible-bundle" +
+                    " package=" + callingPackage);
+        }
 
         IBinder amBinder = ServiceManager.getService("activity");
         IActivityManager am;
@@ -103,15 +126,32 @@ public class ShizukuShellLoader {
         }
     }
 
-    private static void onBinderReceived(IBinder binder, String sourceDir) {
+    private static void onBinderReceived(IBinder binder, String sourceDir, int routedUid) {
         String requested = System.getenv("TOKENX_RISH_BACKEND");
+        int expectedUid = -1;
+        String backendName = null;
         if ("sserver".equals(requested) || "system".equals(requested)) {
-            // The manager has already resolved an explicit System request from its
-            // retained BACKEND_SYSTEM slot. Do not re-identify that binder with a
-            // private/raw transaction here: System Server transports can legitimately
-            // reject that probe even though the binder is alive and fully usable by
-            // the normal Shizuku/Rish handshake.
-            System.out.println("TokenX System route accepted; continuing with manager-selected System binder");
+            expectedUid = 1000;
+            backendName = "System";
+        } else if ("root".equals(requested)) {
+            expectedUid = 0;
+            backendName = "Root";
+        } else if ("shell".equals(requested)) {
+            expectedUid = 2000;
+            backendName = "Shell";
+        }
+        if (expectedUid >= 0) {
+            // Explicit routes are selected and classified by the manager before this
+            // callback. Trust only that routed UID here. Re-probing IShizukuService with
+            // a raw transaction is redundant and can return -1 on Android 17 even when
+            // the selected backend Binder is healthy and usable.
+            if (routedUid != expectedUid) {
+                abort("TokenX " + backendName + " Binder is not active (expected UID " +
+                        expectedUid + ", routed UID " + routedUid + ").");
+                return;
+            }
+            System.out.println("TokenX " + backendName + " Binder verified: UID " + routedUid +
+                    " (manager-classified route)");
         }
         var base = sourceDir.substring(0, sourceDir.lastIndexOf('/'));
         String librarySearchPath = base + "/lib/" + VMRuntimeHidden.getRuntime().vmInstructionSet();
@@ -140,6 +180,7 @@ public class ShizukuShellLoader {
 
     public static void main(String[] args) {
         ShizukuShellLoader.args = args;
+        System.out.println("TOKENX_RISH_PROTOCOL=" + TOKENX_RISH_PROTOCOL);
 
         String packageName;
         var pkg = PackageManagerApis.getPackagesForUidNoThrow(Os.getuid());
