@@ -45,6 +45,27 @@ data class TokenXSystemProbe(
 object TokenXXposedSystemServerClient {
     @Volatile private var injectedBinder: IBinder? = null
     fun isInjectionAlive(): Boolean = injectedBinder?.isBinderAlive == true
+    /** Test provisioning never falls back to an unverified activity-service hook. */
+    fun uidTestSigning(action: Int, certificate: ByteArray): android.os.Bundle {
+        require(action in 20..22)
+        val candidate = injectedBinder?.takeIf { it.isBinderAlive }
+            ?: error("Provision System Server injection first; native TokenX endpoint unavailable")
+        val identity = identity(candidate) ?: error("System Server identity unavailable")
+        check(identity.verifiedSystemServer && systemProbe(candidate)?.verified == true &&
+            challenge(candidate, moe.shizuku.manager.BuildConfig.VERSION_CODE)) {
+            "TokenX System Server handshake failed; no signing change requested"
+        }
+        val data = Parcel.obtain()
+        val reply = Parcel.obtain()
+        try {
+            data.writeInterfaceToken(DESCRIPTOR)
+            data.writeInt(action)
+            data.writeByteArray(certificate)
+            check(candidate.transact(TRANSACTION, data, reply, 0)) { "Signing transaction unsupported" }
+            reply.readException()
+            return reply.readBundle(javaClass.classLoader) ?: error("Missing signing result")
+        } finally { data.recycle(); reply.recycle() }
+    }
     private fun transport(): IBinder? = injectedBinder?.takeIf { it.isBinderAlive }
         ?: ServiceManager.getService("activity")
 

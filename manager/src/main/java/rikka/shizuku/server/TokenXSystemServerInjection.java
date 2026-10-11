@@ -180,6 +180,14 @@ public final class TokenXSystemServerInjection {
                     reply.writeInt(4);
                     reply.writeInt(BuildConfig.VERSION_CODE);
                     reply.writeLong(challenge);
+                } else if (action >= 20 && action <= 22) {
+                    byte[] certificate = data.createByteArray();
+                    if (data.dataAvail() != 0) throw new IllegalArgumentException("Unexpected signing arguments");
+                    long token = Binder.clearCallingIdentity();
+                    Bundle result;
+                    try { result = TokenXUidTestSigning.run(context, action, certificate); }
+                    finally { Binder.restoreCallingIdentity(token); }
+                    reply.writeNoException(); reply.writeBundle(result);
                 } else throw new IllegalArgumentException("Unsupported TokenX action");
                 return true;
             } catch (Throwable e) {

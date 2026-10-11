@@ -262,3 +262,20 @@ dependencies {
 }
 
 apply from: rootProject.file("signing.gradle")
+
+// Keep both identities source-built and tied to this manager build.
+def uidTestAssets = tasks.register("prepareUidTestAssets", Copy) {
+    dependsOn(":uid-test:assembleOrdinaryDebug", ":uid-test:assembleSystemDebug")
+    from(project(":uid-test").layout.buildDirectory.dir("outputs/apk/ordinary/debug")) {
+        include "*.apk"
+        rename { "ordinary.apk" }
+    }
+    from(project(":uid-test").layout.buildDirectory.dir("outputs/apk/system/debug")) {
+        include "*.apk"
+        rename { "system.apk" }
+    }
+    into(layout.buildDirectory.dir("generated/uidTestAssets/tokenx-uid-test"))
+}
+android.sourceSets.main.assets.srcDir(layout.buildDirectory.dir("generated/uidTestAssets"))
+tasks.named("preBuild").configure { dependsOn(uidTestAssets) }
+

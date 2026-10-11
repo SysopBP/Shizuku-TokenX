@@ -1,0 +1,31 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace = "moe.shizuku.uidtest"
+    defaultConfig {
+        applicationId = "moe.shizuku.tokenx.uidtest"
+        minSdk = 36
+        versionCode = rootProject.ext.versionCode
+        versionName = rootProject.ext.versionName + "-uid-test"
+    }
+    buildFeatures { buildConfig = true }
+    flavorDimensions += "identity"
+    productFlavors {
+        ordinary { dimension = "identity" }
+        system { dimension = "identity" }
+    }
+    signingConfigs {
+        uidTest {
+            storeFile = rootProject.file("uid-test.keystore")
+            storePassword = "tokenx-test-only"
+            keyAlias = "uid-test"
+            keyPassword = "tokenx-test-only"
+        }
+    }
+    buildTypes {
+        debug { signingConfig = signingConfigs.uidTest }
+        release { signingConfig = signingConfigs.uidTest }
+    }
+}

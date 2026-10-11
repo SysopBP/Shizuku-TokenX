@@ -28,6 +28,9 @@ fun SystemServerProvisionCard() {
             Button(onClick = { confirm = true }, enabled = !status.busy, modifier = Modifier.fillMaxWidth()) {
                 Text("Provision System Server UID 1000")
             }
+            TextButton(onClick = {
+                context.startActivity(android.content.Intent(context, moe.shizuku.manager.ui.UidTestActivity::class.java))
+            }, modifier = Modifier.fillMaxWidth()) { Text("UID 1000 test companion") }
         }
     }
     if (confirm) AlertDialog(
