@@ -135,14 +135,11 @@ object ManagerUidMigration {
             while (binder() == null && android.os.SystemClock.elapsedRealtime() < deadline) Thread.sleep(250)
         }
         val endpoint = binder() ?: error("Companion server Binder did not connect; app UID change alone is not server readiness")
-        val data = android.os.Parcel.obtain()
-        val reply = android.os.Parcel.obtain()
-        try {
-            data.writeInterfaceToken("moe.shizuku.server.IShizukuService")
-            check(endpoint.transact(3, data, reply, 0)) { "Companion server identity transaction unavailable" }
-            reply.readException()
-            check(reply.readInt() == 1000) { "Companion server must answer as UID 1000" }
-        } finally { data.recycle(); reply.recycle() }
+        val service = moe.shizuku.server.IShizukuService.Stub.asInterface(endpoint)
+        val actualUid = service.getUid()
+        check(actualUid == Process.SYSTEM_UID) {
+            "Companion server must answer as UID 1000; received UID $actualUid"
+        }
     }
 
     private fun root(script: String) {
