@@ -252,7 +252,7 @@ final class TokenXUidTestSigning {
     private static void validateDirectory() throws Exception {
         if (Files.isSymbolicLink(DIRECTORY.toPath()) || Files.isSymbolicLink(RECEIPT.toPath()))
             throw new SecurityException("Symlink recovery path rejected");
-        if (DIRECTORY.exists() && (Os.stat(DIRECTORY.getPath()).st_uid != 1000 ||
+        if (DIRECTORY.exists() && (!DIRECTORY.isDirectory() || Os.stat(DIRECTORY.getPath()).st_uid != 1000 ||
                 (Os.stat(DIRECTORY.getPath()).st_mode & 077) != 0))
             throw new SecurityException("Recovery directory ownership/mode rejected");
         if (RECEIPT.exists() && Os.stat(RECEIPT.getPath()).st_uid != 1000)
@@ -269,7 +269,7 @@ final class TokenXUidTestSigning {
         try {
             stream.write(record.toString().getBytes(StandardCharsets.UTF_8));
             atomic.finishWrite(stream); Os.chmod(RECEIPT.getPath(), 0600);
-            java.io.FileDescriptor directory = Os.open(DIRECTORY.getPath(), OsConstants.O_RDONLY | OsConstants.O_DIRECTORY, 0);
+            java.io.FileDescriptor directory = Os.open(DIRECTORY.getPath(), OsConstants.O_RDONLY, 0);
             try { Os.fsync(directory); } finally { Os.close(directory); }
             String actual = new String(atomic.readFully(), StandardCharsets.UTF_8);
             if (!actual.equals(record.toString())) throw new IllegalStateException("Recovery record readback failed");
