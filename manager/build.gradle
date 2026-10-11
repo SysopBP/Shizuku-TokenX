@@ -263,19 +263,31 @@ dependencies {
 
 apply from: rootProject.file("signing.gradle")
 
-// Keep both identities source-built and tied to this manager build.
-def uidTestAssets = tasks.register("prepareUidTestAssets", Copy) {
-    dependsOn(":uid-test:assembleOrdinaryDebug", ":uid-test:assembleSystemDebug")
-    from(project(":uid-test").layout.buildDirectory.dir("outputs/apk/ordinary/debug")) {
-        include "*.apk"
-        rename { "ordinary.apk" }
+abstract class UidTestAssetTask extends DefaultTask {
+    @org.gradle.api.tasks.InputFiles
+    abstract org.gradle.api.file.ConfigurableFileCollection getOrdinaryApks()
+    @org.gradle.api.tasks.InputFiles
+    abstract org.gradle.api.file.ConfigurableFileCollection getSystemApks()
+    @org.gradle.api.tasks.OutputDirectory
+    abstract org.gradle.api.file.DirectoryProperty getOutputDirectory()
+
+    @org.gradle.api.tasks.TaskAction
+    void generate() {
+        def destination = outputDirectory.dir("tokenx-uid-test").get().asFile
+        destination.mkdirs()
+        new File(destination, "ordinary.apk").bytes = ordinaryApks.singleFile.bytes
+        new File(destination, "system.apk").bytes = systemApks.singleFile.bytes
     }
-    from(project(":uid-test").layout.buildDirectory.dir("outputs/apk/system/debug")) {
-        include "*.apk"
-        rename { "system.apk" }
-    }
-    into(layout.buildDirectory.dir("generated/uidTestAssets/tokenx-uid-test"))
 }
-android.sourceSets.main.assets.srcDir(layout.buildDirectory.dir("generated/uidTestAssets"))
-tasks.named("preBuild").configure { dependsOn(uidTestAssets) }
+
+// Keep both identities source-built and tied to this manager build.
+def uidTestAssets = tasks.register("prepareUidTestAssets", UidTestAssetTask) {
+    dependsOn(":uid-test:assembleOrdinaryDebug", ":uid-test:assembleSystemDebug")
+    ordinaryApks.from(project(":uid-test").fileTree("build/outputs/apk/ordinary/debug") { include "*.apk" })
+    systemApks.from(project(":uid-test").fileTree("build/outputs/apk/system/debug") { include "*.apk" })
+    outputDirectory.set(layout.buildDirectory.dir("generated/uidTestAssets"))
+}
+androidComponents.onVariants(androidComponents.selector().all()) { variant ->
+    variant.sources.assets.addGeneratedSourceDirectory(uidTestAssets) { it.outputDirectory }
+}
 
