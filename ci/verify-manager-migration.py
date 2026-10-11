@@ -20,9 +20,10 @@ assert identity(ordinary)[0] == "moe.shizuku.privileged.api"
 certificates = []
 for apk in [ordinary, system]:
     verified = output(signer, "verify", "--verbose", "--print-certs", apk)
-    certs = re.findall(r"Signer #\d+ certificate SHA-256 digest: ([0-9a-fA-F]+)", verified)
-    assert len(certs) == 1, "Exactly one verified signer is required"
-    certificates.append(certs[0].lower())
+    certs = {digest.lower() for digest in re.findall(
+        r"(?:Signer #\d+|V\d+(?:\.\d+)? Signer):? certificate SHA-256 digest: ([0-9a-fA-F]+)", verified)}
+    assert re.search(r"Number of signers: 1(?:\n|$)", verified) and len(certs) == 1, verified
+    certificates.append(next(iter(certs)))
 assert certificates[0] == certificates[1], "Manager APK signers differ"
 normal_manifest = output(aapt, "dump", "xmltree", ordinary, "--file", "AndroidManifest.xml")
 system_manifest = output(aapt, "dump", "xmltree", system, "--file", "AndroidManifest.xml")
