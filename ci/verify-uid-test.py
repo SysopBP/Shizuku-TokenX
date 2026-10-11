@@ -16,9 +16,12 @@ system, = Path('uid-test/build/outputs/apk/system/debug').glob('*.apk')
 
 def certificate(apk):
     output = run(sdk / 'apksigner', 'verify', '--verbose', '--print-certs', apk)
-    digests = re.findall(r'Signer #\d+ certificate SHA-256 digest: ([0-9a-f]+)', output)
-    assert len(digests) == 1, (apk, output)
-    return digests[0]
+    # Build Tools 37 identifies verified certificates by scheme ("V2 Signer")
+    # instead of the older "Signer #1" label. Multiple schemes may repeat the
+    # same certificate; multiple signer identities must still fail.
+    digests = set(re.findall(r'(?:Signer #\d+|V\d+(?:\.\d+)? Signer):? certificate SHA-256 digest: ([0-9a-f]+)', output))
+    assert re.search(r'Number of signers: 1(?:\n|$)', output) and len(digests) == 1, (apk, output)
+    return next(iter(digests))
 
 assert certificate(ordinary) == certificate(system), 'Companion flavors have different signers'
 assert certificate(manager) != certificate(ordinary), 'Manager signing identity must not gain shared UID trust'
