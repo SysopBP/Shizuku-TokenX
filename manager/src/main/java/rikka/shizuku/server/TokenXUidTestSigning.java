@@ -29,13 +29,26 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 /** Experimental, fixed-package shared-UID enrollment. Invoked only by the manager endpoint. */
-final class TokenXUidTestSigning {
+public final class TokenXUidTestSigning {
     static final String PACKAGE = "moe.shizuku.tokenx.uidtest";
     private static final File DIRECTORY = new File("/data/system/tokenx_uid_test");
     private static final File RECEIPT = new File(DIRECTORY, "signing-recovery.json");
     private static final int SHARED_USER_ID = 2;
 
     static Bundle run(Context context, int action, byte[] certificate) throws Exception {
+        return runFixed(context, action, certificate, PACKAGE, DIRECTORY, RECEIPT);
+    }
+
+    /** Fixed manager package only; called by the authenticated LSPosed RPC. */
+    public static Bundle runManager(Context context, int action, byte[] certificate) throws Exception {
+        if (action < 30 || action > 32) throw new IllegalArgumentException("Unsupported manager migration action");
+        File directory = new File("/data/system/tokenx_manager_signing");
+        return runFixed(context, action - 10, certificate, "moe.shizuku.privileged.api",
+                directory, new File(directory, "signing-recovery.json"));
+    }
+
+    private static Bundle runFixed(Context context, int action, byte[] certificate,
+                                  String PACKAGE, File DIRECTORY, File RECEIPT) throws Exception {
         if (Build.VERSION.SDK_INT < 36 || Process.myUid() != 1000)
             throw new IllegalStateException("Shared UID test requires Android 16+ System Server");
         if (certificate == null || certificate.length < 128 || certificate.length > 16384)
@@ -76,7 +89,7 @@ final class TokenXUidTestSigning {
             if (current == null || current.length != 1) throw new IllegalStateException("Unsupported platform signing layout");
             if (before != null && (before.length == 0 || before.length > 32))
                 throw new IllegalStateException("Unsupported existing platform signing lineage");
-            validateDirectory();
+            validateDirectory(DIRECTORY, RECEIPT);
             JSONObject receipt = RECEIPT.exists() ? new JSONObject(new String(
                     new AtomicFile(RECEIPT).readFully(), StandardCharsets.UTF_8)) : null;
             if (receipt != null && (receipt.getInt("version") != 1 || !receipt.getString("certificate").equals(encoded(certificate))))
@@ -124,7 +137,7 @@ final class TokenXUidTestSigning {
                 JSONObject journal = new JSONObject().put("version", 1).put("certificate", encoded(certificate))
                         .put("platform", encoded(current[0].toByteArray()))
                         .put("before", encode(before, flagsGet)).put("after", encode(after, flagsGet));
-                persist(journal); // durable recovery BEFORE the first signing-state modification
+                persist(journal, DIRECTORY, RECEIPT); // durable recovery BEFORE the first signing-state modification
                 try {
                     detailsField.set(signatures, replacement);
                     changed.invoke(shared);
@@ -250,7 +263,7 @@ final class TokenXUidTestSigning {
         }
         if (!Objects.equals(actual, expected)) throw new IllegalStateException("Persisted signing lineage readback mismatch; recovery record retained");
     }
-    private static void validateDirectory() throws Exception {
+    private static void validateDirectory(File DIRECTORY, File RECEIPT) throws Exception {
         if (Files.isSymbolicLink(DIRECTORY.toPath()) || Files.isSymbolicLink(RECEIPT.toPath()))
             throw new SecurityException("Symlink recovery path rejected");
         if (DIRECTORY.exists() && (!DIRECTORY.isDirectory() || Os.stat(DIRECTORY.getPath()).st_uid != 1000 ||
@@ -259,12 +272,12 @@ final class TokenXUidTestSigning {
         if (RECEIPT.exists() && Os.stat(RECEIPT.getPath()).st_uid != 1000)
             throw new SecurityException("Recovery record ownership rejected");
     }
-    private static void persist(JSONObject record) throws Exception {
+    private static void persist(JSONObject record, File DIRECTORY, File RECEIPT) throws Exception {
         if (!DIRECTORY.exists()) {
             if (!DIRECTORY.mkdir()) throw new IllegalStateException("Cannot create recovery directory");
             Os.chmod(DIRECTORY.getPath(), 0700);
         }
-        validateDirectory();
+        validateDirectory(DIRECTORY, RECEIPT);
         AtomicFile atomic = new AtomicFile(RECEIPT);
         FileOutputStream stream = atomic.startWrite();
         try {

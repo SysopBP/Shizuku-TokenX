@@ -38,6 +38,11 @@ android {
         sign {}
     }
     buildTypes {
+        systemUid {
+            initWith debug
+            signingConfig = signingConfigs.sign
+            matchingFallbacks = ["debug"]
+        }
         debug {
             signingConfig = signingConfigs.sign
         }

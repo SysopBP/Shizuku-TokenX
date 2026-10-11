@@ -210,6 +210,13 @@ jobs:
           # into manager assets as rish_shizuku.dex, guaranteeing rish + dex match.
           ./gradlew :shell:assembleDebug
           test -s manager/src/main/assets/rish_shizuku.dex
+          # Build the same-package system identity with the same manager signing key.
+          # Only debug assets embed it, so the system variant cannot recursively embed itself.
+          ./gradlew :manager:assembleSystemUid --stacktrace
+          mkdir -p manager/src/debug/assets/tokenx-manager
+          SYSTEM_APK="$(find manager/build/outputs/apk/systemUid -maxdepth 1 -name '*.apk' | head -n 1)"
+          test -n "$SYSTEM_APK" && test -s "$SYSTEM_APK"
+          cp "$SYSTEM_APK" manager/src/debug/assets/tokenx-manager/system.apk
           ./gradlew :manager:assembleDebug --stacktrace
 
       - name: Run manager unit tests
@@ -222,6 +229,7 @@ jobs:
         run: |
           python3 ci/test-provision-preflight.py
           python3 ci/test-direct-injection.py
+          python3 ci/test-manager-migration.py
 
       - name: Verify companion APK identities, certificates and packaged endpoints
         shell: bash
@@ -372,6 +380,8 @@ jobs:
           test -n "$FILE"
           mkdir -p tokenx-artifacts
           cp "$FILE" tokenx-artifacts/Shizuku-TokenX-debug.apk
+          cp manager/src/debug/assets/tokenx-manager/system.apk tokenx-artifacts/Shizuku-TokenX-system-uid1000.apk
+          python3 ci/verify-manager-migration.py "$FILE" tokenx-artifacts/Shizuku-TokenX-system-uid1000.apk "$ANDROID_HOME/build-tools/37.0.0/aapt2" "$ANDROID_HOME/build-tools/37.0.0/apksigner"
           cp uid-test/build/outputs/apk/ordinary/debug/*.apk tokenx-artifacts/TokenX-UID-test-ordinary.apk
           cp uid-test/build/outputs/apk/system/debug/*.apk tokenx-artifacts/TokenX-UID-test-system.apk
           echo "apk=tokenx-artifacts/Shizuku-TokenX-debug.apk" >> "$GITHUB_OUTPUT"

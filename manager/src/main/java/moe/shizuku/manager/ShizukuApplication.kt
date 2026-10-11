@@ -72,6 +72,7 @@ class ShizukuApplication : Application() {
         appContext = applicationContext
         init(this)
         moe.shizuku.manager.shell.SystemUidProvisioning.initialize(this)
+        moe.shizuku.manager.shell.ManagerUidMigration.initialize(this)
     }
 
 }

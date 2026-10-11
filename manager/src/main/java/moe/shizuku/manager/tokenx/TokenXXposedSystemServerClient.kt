@@ -66,6 +66,25 @@ object TokenXXposedSystemServerClient {
             return reply.readBundle(javaClass.classLoader) ?: error("Missing signing result")
         } finally { data.recycle(); reply.recycle() }
     }
+    /** Manager migration uses the existing LSPosed route, never the native endpoint. */
+    fun managerUidSigning(action: Int, certificate: ByteArray): android.os.Bundle {
+        require(action in 30..32)
+        val candidate = ServiceManager.getService("activity") ?: error("Activity Binder unavailable")
+        check(identity(candidate)?.verifiedSystemServer == true && systemProbe(candidate)?.verified == true) {
+            "Enable TokenX in LSPosed System Framework and reconnect before provisioning"
+        }
+        val data = Parcel.obtain()
+        val reply = Parcel.obtain()
+        try {
+            data.writeInterfaceToken(DESCRIPTOR)
+            data.writeInt(action)
+            data.writeByteArray(certificate)
+            check(candidate.transact(TRANSACTION, data, reply, 0)) { "Manager migration RPC unavailable; reboot with the updated Xposed module" }
+            reply.readException()
+            return reply.readBundle(javaClass.classLoader) ?: error("Missing manager signing result")
+        } finally { data.recycle(); reply.recycle() }
+    }
+
     private fun transport(): IBinder? = injectedBinder?.takeIf { it.isBinderAlive }
         ?: ServiceManager.getService("activity")
 
