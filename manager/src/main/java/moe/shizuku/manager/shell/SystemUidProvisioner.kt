@@ -77,7 +77,20 @@ object SystemUidProvisioner {
             val script = """
                 set -e
                 [ "$(sha256sum ${q(archive.path)} | cut -d ' ' -f 1)" = '$archiveHash' ] || exit 3
-                '$KSUD' module install ${q(archive.path)}
+                echo TOKENX_INSTALLER=ksud
+                echo TOKENX_ARCHIVE_SHA256=$archiveHash
+                echo TOKENX_KSUD_PATH=$KSUD
+                echo TOKENX_KSUD_VERSION_START
+                '$KSUD' debug version || exit 3
+                echo TOKENX_KSUD_VERSION_END
+                echo TOKENX_MODULE_INSTALL_START
+                if '$KSUD' module install ${q(archive.path)}; then
+                    echo TOKENX_MODULE_INSTALL_SUCCESS
+                else
+                    echo TOKENX_MODULE_INSTALL_FAILED
+                    echo 'KernelSU module install failed; no reboot requested.'
+                    exit 3
+                fi
                 staged='/data/adb/modules_update/$MODULE_ID'
                 test -d "${'$'}staged" || staged='$MODULE_DIR'
                 test ! -L "${'$'}staged" || exit 3
@@ -211,7 +224,7 @@ object SystemUidProvisioner {
         return runRoot(command)
     }
 
-    private fun runRoot(script: String): Result {
+    internal fun runRoot(script: String): Result {
         val command = listOf("su", "-c", script)
         return try {
             val process = ProcessBuilder(command)
@@ -252,4 +265,3 @@ object SystemUidProvisioner {
     private fun q(value: String): String =
         "'" + value.replace("'", "'\\''") + "'"
 }
-

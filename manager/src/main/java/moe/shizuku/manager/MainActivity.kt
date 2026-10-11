@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
         line("AFTER REBOOT", 11f, Color.rgb(210, 104, 139), true, 22)
         line("Get a reminder to review the System backend and reconnect when needed.",
             14f, Color.rgb(225, 225, 231), false, 8)
-        line("Injection and soft reboot require your explicit confirmation.",
+        line("Live System Server injection requires your confirmation.",
             12f, Color.rgb(160, 160, 171), false, 14)
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -121,9 +121,9 @@ class MainActivity : ComponentActivity() {
         panel.addView(actions)
         line("SYSTEM SERVER LAB", 11f, Color.rgb(210, 104, 139), true, 22)
         line("Provision System Server UID 1000", 16f, Color.WHITE, true, 8)
-        line("Device will soft reboot after successful provisioning. Save your work before continuing.",
+        line("Inject into the running System Server and verify its UID 1000 Binder connection.",
             12f, Color.rgb(231, 183, 190), false, 8)
-        line("Requires KernelSU and an enabled Zygisk API v4 runtime. TokenX verifies installation before reboot and checks its Binder afterward.",
+        line("Requires root and ARM64. Uses the supplied JBCompanion native injector with the TokenX payload.",
             12f, Color.rgb(160, 160, 171), false, 8)
         val provisionButton = TextView(this).apply {
             text = "Provision System Server UID 1000"
@@ -135,10 +135,10 @@ class MainActivity : ComponentActivity() {
                 if (moe.shizuku.manager.shell.SystemUidProvisioning.status.value.busy) return@setOnClickListener
                 dialog.dismiss()
                 com.google.android.material.dialog.MaterialAlertDialogBuilder(this@MainActivity)
-                    .setTitle("Provision & soft reboot?")
-                    .setMessage("Android will soft reboot after TokenX's injection module installs and verifies. Open apps will close and unsaved work may be lost.\n\nSave your work before continuing. Missing prerequisites or failed installation will stop without rebooting.")
+                    .setTitle("Inject into System Server?")
+                    .setMessage("TokenX will load its native payload into the running System Server and verify its UID 1000 Binder connection.\n\nRequires root and ARM64. This action does not request a soft reboot or change the Zygisk module state.")
                     .setNegativeButton("Cancel", null)
-                    .setPositiveButton("Provision & soft reboot") { _, _ ->
+                    .setPositiveButton("Inject & verify") { _, _ ->
                         moe.shizuku.manager.shell.SystemUidProvisioning.start(this@MainActivity)
                     }.show()
             }

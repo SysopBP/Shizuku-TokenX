@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit
 
 data class ProvisionStatus(val phase: String = "idle", val detail: String = "", val busy: Boolean = false)
 
-/** User-confirmed work, persisted before reboot and resumed without requesting another reboot. */
+/** User-confirmed live injection. Recovery verifies the recorded request without repeating injection. */
 object SystemUidProvisioning {
     private const val WORK = "tokenx-system-server-provision"
     private const val CHANNEL = "tokenx-system-server-provision"
@@ -43,10 +43,10 @@ object SystemUidProvisioning {
         }
     }
 
-    /** Call only after the explicit soft reboot confirmation. */
+    /** Call only after the explicit live injection confirmation. */
     fun start(context: Context) {
         if (status.value.busy) return
-        report(context, "checking", "Checking KernelSU and injection prerequisites", true)
+        report(context, "checking", "Checking root and live injection prerequisites", true)
         WorkManager.getInstance(context).enqueueUniqueWork(WORK, ExistingWorkPolicy.KEEP,
             OneTimeWorkRequestBuilder<SystemUidProvisionWorker>().build())
     }
@@ -95,48 +95,55 @@ class SystemUidProvisionWorker(context: Context, parameters: WorkerParameters) :
         }
         try {
             setForeground(SystemUidProvisioning.foreground(applicationContext))
+            if (prefs.getBoolean("pending", false) && prefs.getString("mode", "") != "direct")
+                return@withContext fail("A previous module/reboot operation is pending. Start live injection again; no reboot or automatic injection was requested.")
             if (!prefs.getBoolean("pending", false)) {
-                report("checking", "Checking KernelSU, Zygisk and the packaged injection payload")
-                val check = SystemUidProvisioner.preflight(applicationContext)
-                if (!check.success) return@withContext fail(check.output.trim() + "\nNo soft reboot requested.")
-                val installation = SystemUidProvisioner.install(applicationContext) { report("installing", it) }
-                if (!installation.success || !installation.output.contains("TOKENX_INSTALL_VERIFIED"))
-                    return@withContext fail(installation.output.trim() + "\nInstallation did not verify. No soft reboot requested.")
-                val previousPid = Regex("TOKENX_PREVIOUS_PID=([0-9]+)").findAll(installation.output)
-                    .lastOrNull()?.groupValues?.get(1)?.toIntOrNull() ?: 0
-                if (previousPid <= 0) return@withContext fail("Cannot establish reboot verification identity. No soft reboot requested.")
-                // Commit synchronously before KernelSU can terminate this process.
-                if (!prefs.edit().putBoolean("pending", true).putInt("previousPid", previousPid)
+                report("checking", "Checking root and the running System Server")
+                val check = DirectSystemServerProvisioner.preflight(applicationContext)
+                if (!check.success) return@withContext fail(check.output.trim())
+                val targetPid = Regex("TOKENX_PREVIOUS_PID=([0-9]+)").find(check.output)
+                    ?.groupValues?.get(1)?.toIntOrNull() ?: 0
+                if (targetPid <= 0) return@withContext fail("Cannot establish live System Server identity.")
+                val request = java.security.SecureRandom().nextLong().and(Long.MAX_VALUE).let { if (it == 0L) 1L else it }
+                // Save before invoking the native injector. A restarted worker may only verify.
+                if (!prefs.edit().putBoolean("pending", true).putString("mode", "direct")
+                        .putInt("previousPid", targetPid).putLong("directRequest", request)
                         .putInt("expectedBuild", BuildConfig.VERSION_CODE)
                         .putLong("requestedAt", System.currentTimeMillis()).commit())
-                    return@withContext fail("Cannot persist recovery state. No soft reboot requested.")
-                report("rebooting", "Installation verified. Soft rebooting Android; verification will resume automatically.")
-                // The same work request survives a soft reboot. A retry enters verification only.
-                val reboot = SystemUidProvisioner.softReboot()
-                if (!reboot.success) return@withContext fail("KernelSU declined the soft reboot: " + reboot.output.trim())
+                    return@withContext fail("Cannot persist injection verification state.")
+                report("injecting", "Loading TokenX into the running System Server")
+                val injection = DirectSystemServerProvisioner.inject(applicationContext, targetPid, request) { report("injecting", it) }
+                if (!injection.success || !injection.output.contains("TOKENX_DIRECT_INJECTION_RETURNED"))
+                    return@withContext fail(injection.output.trim() + "\nLive injection failed. No soft reboot requested.")
             }
             if (prefs.getInt("expectedBuild", -1) != BuildConfig.VERSION_CODE)
-                return@withContext fail("TokenX changed during provisioning. Provision the installed APK again.")
-            report("verifying", "Waiting for the new System Server to complete the TokenX Binder handshake")
-            val previousPid = prefs.getInt("previousPid", 0)
+                return@withContext fail("TokenX changed during injection. Start again using the installed APK.")
+            report("verifying", "Waiting for the live UID 1000 System Server Binder handshake")
+            val targetPid = prefs.getInt("previousPid", 0)
+            val request = prefs.getLong("directRequest", 0L)
             val expectedBuild = prefs.getInt("expectedBuild", -1)
             val deadline = android.os.SystemClock.elapsedRealtime() + TimeUnit.MINUTES.toMillis(2)
             do {
-                val identity = TokenXXposedSystemServerClient.verifyInjection(expectedBuild, previousPid)
-                if (identity != null && ProvisionPolicy.accepts(previousPid, identity.pid, expectedBuild,
-                        BuildConfig.VERSION_CODE, identity.verifiedSystemServer,
+                val identity = TokenXXposedSystemServerClient.verifyDirectInjection(expectedBuild, targetPid, request)
+                if (identity != null && ProvisionPolicy.acceptsDirect(targetPid, identity.pid, expectedBuild,
+                        BuildConfig.VERSION_CODE, request, request, identity.verifiedSystemServer,
                         TokenXXposedSystemServerClient.systemProbe()?.verified == true)) {
                     prefs.edit().putBoolean("pending", false).commit()
-                    report("verified", "Verified UID 1000 • system_server PID ${identity.pid} • TokenX Binder handshake and framework services passed", false)
+                    report("verified", "Live injection verified • UID 1000 • system_server PID ${identity.pid} • matching build and request • framework services passed", false)
                     return@withContext Result.success()
                 }
                 delay(1000)
             } while (android.os.SystemClock.elapsedRealtime() < deadline)
-            fail("System Server injection did not verify within 2 minutes. Root and System routes remain available. No additional reboot will be triggered. Review Zygisk compatibility or disable TokenX System Server in KernelSU.")
+            val diagnostics = SystemUidProvisioner.runRoot(
+                "logcat -d -v threadtime -s 'TokenX/DirectInjection:*' 'TokenX/Injection:*' | tail -n 60"
+            ).output.trim()
+            fail("Live injection did not verify within 2 minutes. No retry or soft reboot was requested." +
+                if (diagnostics.isBlank()) "\nNo payload logs were captured; check native loading and SELinux denials."
+                else "\nRecent payload diagnostics:\n$diagnostics")
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
-            fail("Provisioning failed: ${e.message}. No additional reboot requested.")
+            fail("Live injection failed: ${e.message}. No retry or reboot requested.")
         }
     }
 }

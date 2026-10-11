@@ -68,3 +68,6 @@
 
 -dontwarn androidx.window.extensions.**
 -dontwarn androidx.window.sidecar.**
+
+# The LSPosed migration bridge invokes this fixed-package entry through reflection.
+-keep class rikka.shizuku.server.TokenXUidTestSigning { public static android.os.Bundle runManager(android.content.Context,int,byte[]); }

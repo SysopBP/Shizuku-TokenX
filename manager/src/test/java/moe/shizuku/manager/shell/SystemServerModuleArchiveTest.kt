@@ -45,6 +45,39 @@ class SystemServerModuleArchiveTest {
         }
     }
 
+    private fun dexNames(count: Int) = (1..count).map {
+        if (it == 1) "classes.dex" else "classes${it}.dex"
+    }
+
+    @Test fun twentyDexDebugApkIsAccepted() = acceptsDexCount(20)
+
+    @Test fun maximumDexCountIsAccepted() = acceptsDexCount(SystemServerModuleArchive.MAX_DEX)
+
+    private fun acceptsDexCount(count: Int) = fixture(dexNames(count)) { apk, archive ->
+        val manifest = SystemServerModuleArchive.create(apk, archive, "arm64-v8a", "test", 700,
+            "installer".byteInputStream())
+        ZipFile(archive).use { zip ->
+            assertEquals("$count\n", zip.getInputStream(zip.getEntry("payload/dex.count"))
+                .use { it.readBytes().toString(Charsets.UTF_8) })
+            for (name in dexNames(count)) {
+                val entry = zip.getEntry("payload/$name")
+                assertNotNull(entry)
+                assertArrayEquals("fixture payload for $name".toByteArray(),
+                    zip.getInputStream(entry).use { it.readBytes() })
+                assertTrue(manifest.contains("  payload/$name\n"))
+            }
+        }
+    }
+
+    @Test fun excessiveDexCountIsRejectedWithUsefulError() =
+        fixture(dexNames(SystemServerModuleArchive.MAX_DEX + 1)) { apk, archive ->
+            val error = assertThrows(IllegalArgumentException::class.java) {
+                SystemServerModuleArchive.create(apk, archive, "arm64-v8a", "test", 700,
+                    "installer".byteInputStream())
+            }
+            assertTrue(error.message.orEmpty().contains("maximum supported is"))
+        }
+
     @Test fun missingDexSequenceIsRejected() = fixture(listOf("classes.dex", "classes3.dex")) { apk, archive ->
         assertThrows(IllegalArgumentException::class.java) {
             SystemServerModuleArchive.create(apk, archive, "arm64-v8a", "test", 700, "installer".byteInputStream())
@@ -57,3 +90,4 @@ class SystemServerModuleArchiveTest {
         }
     }
 }
+

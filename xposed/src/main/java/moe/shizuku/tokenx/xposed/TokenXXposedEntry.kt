@@ -209,6 +209,28 @@ class TokenXXposedEntry : XposedModule() {
                                 log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID package=$packageName user=$callingUserId uid=$resolvedUid callingUid=${Binder.getCallingUid()}")
                                 consumed = true
                             }
+                            in 30..32 -> {
+                                check(reply != null && (flags and IBinder.FLAG_ONEWAY) == 0) { "Synchronous manager request required" }
+                                val caller = Binder.getCallingUid()
+                                check(caller == resolvePackageUidFromSystem("moe.shizuku.privileged.api", 0)) {
+                                    "Only the installed TokenX manager may request UID migration"
+                                }
+                                val certificate = data.createByteArray()
+                                require(certificate != null && certificate.size in 128..16384 && data.dataAvail() == 0)
+                                val token = Binder.clearCallingIdentity()
+                                try {
+                                    val activityThread = Class.forName("android.app.ActivityThread")
+                                    val current = activityThread.getDeclaredMethod("currentActivityThread").invoke(null)
+                                    val context = activityThread.getDeclaredMethod("getSystemContext").invoke(current) as Context
+                                    val signing = Class.forName("rikka.shizuku.server.TokenXUidTestSigning", true, javaClass.classLoader)
+                                    val result = signing.getMethod("runManager", Context::class.java,
+                                        Int::class.javaPrimitiveType, ByteArray::class.java)
+                                        .invoke(null, context, action, certificate) as android.os.Bundle
+                                    reply.writeNoException()
+                                    reply.writeBundle(result)
+                                } finally { Binder.restoreCallingIdentity(token) }
+                                consumed = true
+                            }
                             else -> log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_REJECT reason=unknown_action action=$action")
                         }
                     } catch (t: Throwable) {

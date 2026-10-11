@@ -88,6 +88,7 @@
 
     <queries>
         <package android:name="moe.shizuku.privileged.api" />
+        <package android:name="moe.shizuku.tokenx.uidtest" />
         <!-- TokenX only uses these for framework-presence discovery. An installed manager is not an active bridge. -->
         <package android:name="org.lsposed.manager" />
         <package android:name="org.meowcat.edxposed.manager" />
@@ -111,6 +112,7 @@
         tools:ignore="GoogleAppIndexingWarning"
         tools:remove="android:appComponentFactory"
         tools:targetApi="33">
+        <activity android:name=".ui.UidTestActivity" android:exported="false" />
 
         <activity
             android:name=".MainActivity"
