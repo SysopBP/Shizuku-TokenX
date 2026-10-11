@@ -8,9 +8,6 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.security.MessageDigest
 import java.security.DigestInputStream
-import java.util.zip.ZipFile
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 /**
  * Helpers for the current TokenX System UID / System Server backend.
@@ -68,36 +65,9 @@ object SystemUidProvisioner {
         val archive = File(directory, "module.zip")
         return try {
             onStatus("Preparing the TokenX injection payload")
-            val checksums = StringBuilder()
-            ZipFile(context.applicationInfo.sourceDir).use { apk ->
-                val dex = apk.entries().asSequence().filter { it.name.matches(Regex("classes([2-9]|[1-9][0-9]+)?\\.dex")) }
-                    .sortedBy { it.name.removePrefix("classes").removeSuffix(".dex").toIntOrNull() ?: 1 }.toList()
-                require(dex.isNotEmpty() && dex.size <= 16 && dex.sumOf { it.size } <= 128L * 1024 * 1024)
-                dex.forEachIndexed { i, entry ->
-                    require(entry.size > 8 && entry.name == if (i == 0) "classes.dex" else "classes${i + 1}.dex")
-                }
-                val abi = Build.SUPPORTED_64_BIT_ABIS.first()
-                val library = apk.getEntry("lib/$abi/libtokenx_injector.so")
-                    ?: error("Packaged System Server injector missing for $abi")
-                ZipOutputStream(archive.outputStream()).use { zip ->
-                    fun add(name: String, input: java.io.InputStream) {
-                        val digest = MessageDigest.getInstance("SHA-256")
-                        zip.putNextEntry(ZipEntry(name))
-                        DigestInputStream(input, digest).use { it.copyTo(zip) }
-                        zip.closeEntry()
-                        checksums.append(digest.digest().joinToString("") { "%02x".format(it) }).append("  ").append(name).append('\n')
-                    }
-                    fun text(name: String, value: String) = add(name, value.byteInputStream())
-                    text("module.prop", "id=$MODULE_ID\nname=TokenX System Server\nversion=${BuildConfig.VERSION_NAME}\nversionCode=${BuildConfig.VERSION_CODE}\nauthor=SysopBP\ndescription=TokenX native UID 1000 Binder injection\ntokenxInstaller=kernel-v1\n")
-                    text("skip_mount", "")
-                    add("customize.sh", context.assets.open("tokenx-system-server/customize.sh"))
-                    add("zygisk/$abi.so", apk.getInputStream(library))
-                    text("payload/dex.count", "${dex.size}\n")
-                    for (entry in dex) add("payload/${entry.name}", apk.getInputStream(entry))
-                    zip.putNextEntry(ZipEntry("payload.sha256"))
-                    zip.write(checksums.toString().toByteArray())
-                    zip.closeEntry()
-                }
+            val checksums = context.assets.open("tokenx-system-server/customize.sh").use { customize ->
+                SystemServerModuleArchive.create(File(context.applicationInfo.sourceDir), archive,
+                    Build.SUPPORTED_64_BIT_ABIS.first(), BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, customize)
             }
             onStatus("Installing the checked payload with KernelSU")
             val manifest = File(directory, "payload.sha256").apply { writeText(checksums.toString()) }

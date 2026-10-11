@@ -21,6 +21,9 @@ The module contains the injector compiled with this APK and DEX extracted from
 this APK. SHA-256 checks validate the archive, installer payload, and staged files.
 After installation verifies, the confirmed operation invokes ksud soft-reboot.
 There is no reboot fallback and no retry of the reboot on recovery.
+KernelSU deletes customize.sh after sourcing it: the complete ZIP hash protects
+that installer, and the installed checksum manifest covers the files that persist.
+A module-archive regression test exercises that cleanup and DEX/ABI rejection.
 
 Zygisk runs TokenX only in the System Server specialization callback. A root
 companion transfers DEX into native memory; InMemoryDexClassLoader starts a bounded
