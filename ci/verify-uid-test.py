@@ -36,7 +36,8 @@ for apk, shared in [(manager, False), (ordinary, False), (system, True)]:
     versions.append(re.search(r"versionCode='(\d+)'", badging)[1])
     if apk != manager:
         assert "name='moe.shizuku.tokenx.uidtest'" in badging
-        assert "sdkVersion:'36'" in badging
+        minimum = re.search(r"^(?:minSdkVersion|sdkVersion):'(\d+)'$", badging, re.MULTILINE)
+        assert minimum and int(minimum[1]) == 36, (apk, badging)
         with zipfile.ZipFile(apk) as archive:
             dex = b''.join(archive.read(n) for n in archive.namelist() if re.fullmatch(r'classes\d*\.dex', n))
             assert b'moe/shizuku/uidtest/ProbeService' in dex
