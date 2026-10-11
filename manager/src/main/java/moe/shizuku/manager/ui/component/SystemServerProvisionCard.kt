@@ -36,16 +36,16 @@ fun SystemServerProvisionCard() {
     if (confirm) AlertDialog(
         onDismissRequest = { confirm = false },
         icon = { Icon(Icons.Outlined.RestartAlt, contentDescription = null) },
-        title = { Text("Provision & soft reboot?") },
+        title = { Text("Inject into System Server?") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Android will soft reboot after TokenX's injection module is installed and verified. Open apps will close and unsaved work may be lost.")
-                Text("Save your work before continuing. TokenX will check KernelSU and Zygisk first, then verify the new UID 1000 backend after Android restarts.")
-                Text("If preparation or installation fails, TokenX will stop without rebooting.",
+                Text("TokenX will load its native payload into the running System Server, then verify its UID 1000 Binder connection.")
+                Text("Requires root and an ARM64 device. Uses the supplied JBCompanion native injector with the TokenX payload.")
+                Text("This action does not request a soft reboot or change the Zygisk module state.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
-        confirmButton = { Button(onClick = { confirm = false; SystemUidProvisioning.start(context) }) { Text("Provision & soft reboot") } },
+        confirmButton = { Button(onClick = { confirm = false; SystemUidProvisioning.start(context) }) { Text("Inject & verify") } },
         dismissButton = { TextButton(onClick = { confirm = false }) { Text("Cancel") } },
     )
 }

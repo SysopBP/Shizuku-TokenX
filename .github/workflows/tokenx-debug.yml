@@ -219,7 +219,9 @@ jobs:
         run: ./gradlew :manager:testDebugUnitTest
 
       - name: Test provisioning failure gates
-        run: python3 ci/test-provision-preflight.py
+        run: |
+          python3 ci/test-provision-preflight.py
+          python3 ci/test-direct-injection.py
 
       - name: Verify companion APK identities, certificates and packaged endpoints
         shell: bash

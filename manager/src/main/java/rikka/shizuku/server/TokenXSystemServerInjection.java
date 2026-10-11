@@ -31,6 +31,14 @@ public final class TokenXSystemServerInjection {
     private static volatile Endpoint endpoint;
     private static volatile IBinder managerLifetime;
     private static final AtomicBoolean PUBLISHING = new AtomicBoolean();
+    private static volatile long directRequest;
+
+    /** Fresh request identity is supplied by the root-staged live injector payload. */
+    public static void startDirect(long request) {
+        if (request <= 0) return;
+        directRequest = request;
+        start();
+    }
 
     public static void start() {
         if (Process.myUid() != Process.SYSTEM_UID ||
@@ -180,6 +188,9 @@ public final class TokenXSystemServerInjection {
                     reply.writeInt(4);
                     reply.writeInt(BuildConfig.VERSION_CODE);
                     reply.writeLong(challenge);
+                } else if (action == 7) {
+                    reply.writeNoException();
+                    reply.writeLong(directRequest);
                 } else if (action >= 20 && action <= 22) {
                     byte[] certificate = data.createByteArray();
                     if (data.dataAvail() != 0) throw new IllegalArgumentException("Unexpected signing arguments");

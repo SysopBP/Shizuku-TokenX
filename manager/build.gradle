@@ -58,6 +58,8 @@ android {
     packagingOptions {
         jniLibs {
             useLegacyPackaging = true
+            // Preserve the exact user-supplied JBCompanion injector bytes and checksum.
+            keepDebugSymbols += ["**/libtokenx_direct_inject.so"]
         }
         resources {
             // Upstream stripped every Java resource from the APK. TokenX's modern

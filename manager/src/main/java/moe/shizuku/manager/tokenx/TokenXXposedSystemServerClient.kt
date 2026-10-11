@@ -93,6 +93,26 @@ object TokenXXposedSystemServerClient {
         }
     }
 
+    /** Proves THIS live injection answered in the original System Server process. */
+    fun verifyDirectInjection(expectedBuild: Int, targetPid: Int, request: Long): TokenXXposedIdentity? {
+        val candidate = injectedBinder?.takeIf { it.isBinderAlive } ?: return null
+        val identity = identity(candidate) ?: return null
+        val probe = systemProbe(candidate) ?: return null
+        if (request <= 0 || !identity.verifiedSystemServer || !probe.verified ||
+            probe.pid != identity.pid || identity.pid != targetPid || !challenge(candidate, expectedBuild)) return null
+        return runCatching {
+            val data = Parcel.obtain()
+            val reply = Parcel.obtain()
+            try {
+                data.writeInterfaceToken(DESCRIPTOR)
+                data.writeInt(7)
+                if (!candidate.transact(TRANSACTION, data, reply, 0)) return null
+                reply.readException()
+                identity.takeIf { reply.readLong() == request }
+            } finally { data.recycle(); reply.recycle() }
+        }.getOrNull()
+    }
+
     private fun challenge(candidate: IBinder, expectedBuild: Int): Boolean = runCatching {
         val nonce = java.security.SecureRandom().nextLong()
         val data = Parcel.obtain()

@@ -5,7 +5,18 @@ Build 675 built an older manager graph which omitted the modern Xposed project a
 client while retaining checks for their DEX markers. The recovery merge restores
 the Build 674 tree and modern packaging; no backend verification is skipped.
 
-## New injection path
+## Current live native injection
+
+The Home button now uses the JBCompanion-compatible ARM64 live native injector.
+It stages the installed TokenX APK and verifies its Binder in the existing
+System Server process, without a requested reboot or KernelSU module install.
+See [the live injection implementation and reference provenance](jbcompanion-live-injection.md).
+
+The module-based installer described below is retained for compatibility but is
+no longer called by the Home provisioning action. Its old reboot verification
+rules apply only to that former path.
+
+## Retained module installer
 
 The Home button **Provision System Server UID 1000** installs a KernelSU module
 using the supported ksud module installer. Prerequisites are Android 8.1 or newer,

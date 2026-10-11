@@ -224,7 +224,7 @@ object SystemUidProvisioner {
         return runRoot(command)
     }
 
-    private fun runRoot(script: String): Result {
+    internal fun runRoot(script: String): Result {
         val command = listOf("su", "-c", script)
         return try {
             val process = ProcessBuilder(command)
