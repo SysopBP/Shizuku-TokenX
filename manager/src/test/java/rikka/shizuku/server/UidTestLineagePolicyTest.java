@@ -42,4 +42,12 @@ public class UidTestLineagePolicyTest {
                 List.of(new Certificate("test", 0), platform), "test"));
         assertThrows(IllegalStateException.class, () -> UidTestLineagePolicy.enroll(platform, null, "platform"));
     }
+    @Test public void enrollmentNeverCreatesALineageTooLargeForRecovery() {
+        java.util.ArrayList<Certificate> max = new java.util.ArrayList<>();
+        for (int i = 0; i < 30; i++) max.add(new Certificate("old" + i, i));
+        max.add(platform);
+        assertEquals(32, UidTestLineagePolicy.enroll(platform, max, "test").size());
+        max.add(0, new Certificate("one-too-many", 2));
+        assertThrows(IllegalStateException.class, () -> UidTestLineagePolicy.enroll(platform, max, "test"));
+    }
 }

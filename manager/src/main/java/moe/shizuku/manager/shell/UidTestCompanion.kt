@@ -41,15 +41,19 @@ object UidTestCompanion {
     fun initialize(context: Context) {
         val saved = prefs(context)
         mutableStatus.value = ProvisionStatus(saved.getString("phase", "idle").orEmpty(),
-            saved.getString("detail", "Install the ordinary test app first.").orEmpty(), false)
+            saved.getString("detail", "Install the ordinary test app first.").orEmpty(), saved.getBoolean("busy", false))
     }
     fun start(context: Context, operation: String) {
         require(operation in setOf("ordinary", "provision", "verify", "remove"))
+        if (Build.VERSION.SDK_INT < 36) {
+            mutableStatus.value = ProvisionStatus("failed", "UID companion experiment requires Android 16+", false)
+            return
+        }
         WorkManager.getInstance(context).enqueueUniqueWork(WORK, ExistingWorkPolicy.KEEP,
             OneTimeWorkRequestBuilder<UidTestWorker>().setInputData(workDataOf("operation" to operation)).build())
     }
     internal fun report(context: Context, phase: String, detail: String, busy: Boolean) {
-        check(prefs(context).edit().putString("phase", phase).putString("detail", detail).commit())
+        check(prefs(context).edit().putString("phase", phase).putString("detail", detail).putBoolean("busy", busy).commit())
         mutableStatus.value = ProvisionStatus(phase, detail, busy)
         val manager = context.getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(NotificationChannel(CHANNEL, "UID 1000 test companion", NotificationManager.IMPORTANCE_LOW))

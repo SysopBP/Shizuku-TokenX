@@ -10,7 +10,7 @@ public final class UidTestLineagePolicy {
 
     public static List<Certificate> enroll(Certificate current, List<Certificate> before, String test) {
         if (test.equals(current.value())) throw new IllegalStateException("Test must not use the platform certificate");
-        if (before != null && (before.isEmpty() || before.size() > 32 ||
+        if (before != null && (before.isEmpty() || before.size() > 31 ||
                 !before.get(before.size() - 1).value().equals(current.value())))
             throw new IllegalStateException("Unsupported platform signing lineage");
         if (before != null && before.stream().anyMatch(c -> c.value().equals(test)))

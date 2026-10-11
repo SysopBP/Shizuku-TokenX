@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.Process;
 import android.os.ServiceManager;
 import android.system.Os;
+import android.system.OsConstants;
 import android.util.AtomicFile;
 import android.util.Base64;
 import java.io.File;
@@ -101,7 +102,7 @@ final class TokenXUidTestSigning {
                     return result;
                 }
                 PackageInfo installed = context.getPackageManager().getPackageInfo(PACKAGE, PackageManager.GET_SIGNING_CERTIFICATES);
-                if (installed.applicationInfo.uid == 1000 || installed.signingInfo == null ||
+                if (installed.applicationInfo.uid < 10000 || installed.applicationInfo.uid >= 100000 || installed.signingInfo == null ||
                         installed.signingInfo.getApkContentsSigners().length != 1 ||
                         !installed.signingInfo.getApkContentsSigners()[0].equals(target))
                     throw new SecurityException("Matching ordinary test app must be installed first");
@@ -268,6 +269,8 @@ final class TokenXUidTestSigning {
         try {
             stream.write(record.toString().getBytes(StandardCharsets.UTF_8));
             atomic.finishWrite(stream); Os.chmod(RECEIPT.getPath(), 0600);
+            java.io.FileDescriptor directory = Os.open(DIRECTORY.getPath(), OsConstants.O_RDONLY | OsConstants.O_DIRECTORY, 0);
+            try { Os.fsync(directory); } finally { Os.close(directory); }
             String actual = new String(atomic.readFully(), StandardCharsets.UTF_8);
             if (!actual.equals(record.toString())) throw new IllegalStateException("Recovery record readback failed");
         } catch (Exception failure) { atomic.failWrite(stream); throw failure; }
