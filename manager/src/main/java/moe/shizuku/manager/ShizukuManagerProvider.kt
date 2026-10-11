@@ -116,22 +116,10 @@ class ShizukuManagerProvider : ShizukuProvider() {
     }
 
     private fun probeServerUid(binder: IBinder): Int = runCatching {
-        // IShizukuService.aidl assigns getUid() the stable explicit transaction 3.
-        // Probe the incoming Binder itself so ROOT and embedded UID-1000 backends
-        // can be classified before either one is allowed to touch the compatibility
-        // Shizuku global Binder.
-        val data = Parcel.obtain()
-        val reply = Parcel.obtain()
-        try {
-            data.writeInterfaceToken("moe.shizuku.server.IShizukuService")
-            if (!binder.transact(3, data, reply, 0)) return@runCatching -1
-            reply.readException()
-            reply.readInt()
-        } finally {
-            data.recycle()
-            reply.recycle()
-        }
-    }.getOrDefault(-1)
+        // Use generated AIDL so explicit method IDs are translated to wire codes.
+        // getUid() = 3 means FIRST_CALL_TRANSACTION + 3, not raw transaction 3.
+        moe.shizuku.server.IShizukuService.Stub.asInterface(binder).getUid()
+    }.getOrDefault(-1).getOrDefault(-1)
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         if (extras == null) return null
