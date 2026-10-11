@@ -68,12 +68,10 @@ public final class TokenXUidTestSigning {
         if (service == null) throw new IllegalStateException("Local Package Manager contract unavailable");
         Object lock = field(service.getClass(), "mLock").get(service);
         Object settings = field(service.getClass(), "mSettings").get(service);
-        Method sharedLookup = method(settings.getClass(), "getSharedUserLPw",
-                String.class, int.class, int.class, boolean.class);
         Method write = method(service.getClass(), "writeSettings", boolean.class);
         synchronized (lock) {
             // create=false: never invent or replace the platform's shared user.
-            Object shared = sharedLookup.invoke(settings, "android.uid.system", 0, 0, false);
+            Object shared = existingSystemSharedUser(settings);
             if (shared == null) throw new IllegalStateException("System shared user missing");
             Object signatures = field(shared.getClass(), "signatures").get(shared);
             Field detailsField = field(signatures.getClass(), "mSigningDetails");
@@ -193,6 +191,27 @@ public final class TokenXUidTestSigning {
         }
     }
 
+    /** Read the existing record only; never call a create-capable lookup with create=true. */
+    private static Object existingSystemSharedUser(Object settings) throws Exception {
+        Method lookup;
+        try {
+            lookup = method(settings.getClass(), "getSharedUserLPw", String.class);
+        } catch (NoSuchMethodException absentReadOnlyLookup) {
+            try {
+                lookup = method(settings.getClass(), "getSharedUserLPw",
+                        String.class, int.class, int.class, boolean.class);
+            } catch (NoSuchMethodException absentLegacyLookup) {
+                // Recent platform builds expose the existing records through a
+                // watched map rather than the legacy four-argument method.
+                Object sharedUsers = field(settings.getClass(), "mSharedUsers").get(settings);
+                return method(sharedUsers.getClass(), "get", Object.class)
+                        .invoke(sharedUsers, "android.uid.system");
+            }
+            return lookup.invoke(settings, "android.uid.system", 0, 0, false);
+        }
+        return lookup.invoke(settings, "android.uid.system");
+    }
+
     private static JSONArray encode(Signature[] signatures, Method flags) throws Exception {
         JSONArray array = new JSONArray();
         if (signatures == null) { array.put(JSONObject.NULL); return array; }
@@ -304,3 +323,4 @@ public final class TokenXUidTestSigning {
         throw new NoSuchMethodException(name);
     }
 }
+
