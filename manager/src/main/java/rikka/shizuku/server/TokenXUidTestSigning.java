@@ -75,12 +75,19 @@ final class TokenXUidTestSigning {
             if (current == null || current.length != 1) throw new IllegalStateException("Unsupported platform signing layout");
             if (before != null && (before.length == 0 || before.length > 32 || !before[before.length - 1].equals(current[0])))
                 throw new IllegalStateException("Unsupported existing platform signing lineage");
-            verifyDisk(policy(encode(before, flagsGet)));
             validateDirectory();
             JSONObject receipt = RECEIPT.exists() ? new JSONObject(new String(
                     new AtomicFile(RECEIPT).readFully(), StandardCharsets.UTF_8)) : null;
             if (receipt != null && (receipt.getInt("version") != 1 || !receipt.getString("certificate").equals(encoded(certificate))))
                 throw new IllegalStateException("Another test build has a recovery record; remove it using that build first");
+            if (receipt == null) verifyDisk(policy(encode(before, flagsGet)));
+            else {
+                // A failed persistence call may leave memory and disk on different
+                // sides of the recorded transaction. Only those two known states
+                // are recoverable; an independent third state is rejected.
+                try { verifyDisk(policy(receipt.getJSONArray("before"))); }
+                catch (Exception mismatch) { verifyDisk(policy(receipt.getJSONArray("after"))); }
+            }
             boolean authorized = (Boolean) capability.invoke(details, target, SHARED_USER_ID);
             Bundle result = new Bundle();
             result.putBoolean("authorized", authorized);
