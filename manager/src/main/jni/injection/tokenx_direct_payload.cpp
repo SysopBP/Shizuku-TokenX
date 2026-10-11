@@ -47,7 +47,7 @@ void *load(void *) {
         return nullptr;
     }
     JNIEnv *env = nullptr;
-    if (vm->functions->AttachCurrentThread(vm, reinterpret_cast<void **>(&env), nullptr) != JNI_OK) {
+    if (vm->AttachCurrentThread(&env, nullptr) != JNI_OK) {
         if (art) dlclose(art);
         return nullptr;
     }
