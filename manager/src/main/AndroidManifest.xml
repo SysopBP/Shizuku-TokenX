@@ -41,15 +41,15 @@
         android:required="false" />
 
     <permission-group
-        android:name="moe.shizuku.manager.permission-group.API"
+        android:name="com.sysopbp.tokenx.permission-group.API"
         android:description="@string/permission_group_description"
         android:icon="@drawable/ic_system_icon"
         android:label="@string/permission_group_label" />
 
     <permission
-        android:name="moe.shizuku.manager.permission.MANAGER"
+        android:name="com.sysopbp.tokenx.permission.MANAGER"
         android:protectionLevel="signature" />
-    <uses-permission android:name="moe.shizuku.manager.permission.MANAGER" />
+    <uses-permission android:name="com.sysopbp.tokenx.permission.MANAGER" />
 
     <!-- Android 11+ package visibility: without this the app cannot see other apps'
          launchers at all, so "does this app have a launcher entry" answered no for every
@@ -68,14 +68,14 @@
     </queries>
 
     <permission
-        android:name="moe.shizuku.manager.permission.API_V23"
+        android:name="com.sysopbp.tokenx.permission.API_V23"
         android:description="@string/permission_description"
         android:icon="@drawable/ic_system_icon"
         android:label="@string/permission_label"
-        android:permissionGroup="moe.shizuku.manager.permission-group.API"
+        android:permissionGroup="com.sysopbp.tokenx.permission-group.API"
         android:protectionLevel="dangerous" />
     <uses-permission
-        android:name="moe.shizuku.manager.permission.API_V23"
+        android:name="com.sysopbp.tokenx.permission.API_V23"
         tools:node="remove" />
 
     <permission
@@ -87,7 +87,7 @@
         tools:node="remove" />
 
     <queries>
-        <package android:name="moe.shizuku.privileged.api" />
+        <package android:name="com.sysopbp.tokenx" />
         <!-- TokenX only uses these for framework-presence discovery. An installed manager is not an active bridge. -->
         <package android:name="org.lsposed.manager" />
         <package android:name="org.meowcat.edxposed.manager" />
@@ -170,7 +170,7 @@
             android:name=".legacy.LegacyIsNotSupportedActivity"
             android:excludeFromRecents="true"
             android:exported="true"
-            android:permission="moe.shizuku.manager.permission.API"
+            android:permission="com.sysopbp.tokenx.permission.API"
             android:theme="@style/GrantPermissions">
             <intent-filter>
                 <action android:name="${applicationId}.intent.action.REQUEST_AUTHORIZATION" />

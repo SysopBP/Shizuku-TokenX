@@ -24,7 +24,7 @@ if [ $(getprop ro.build.version.sdk) -ge 34 ]; then
   fi
 fi
 
-# Replace "PKG" with the application id of your terminal app and "MANAGER_PKG" with the application id of Shizuku
+# Replace "PKG" with the application id of your terminal app and "MANAGER_PKG" with the application id of TokenX
 [ -z "$RISH_APPLICATION_ID" ] && export RISH_APPLICATION_ID="PKG" && export MANAGER_APPLICATION_ID="MANAGER_PKG"
 # TokenX per-session backend override. Consume the selector here so it never reaches /system/bin/sh.
 case "$1" in

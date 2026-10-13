@@ -53,10 +53,10 @@ jobs:
             mkdir -p diagnostics
             APK="$(find apk -name '*.apk' | head -1)"
             adb install -r "$APK" > diagnostics/install.txt 2>&1
-            adb shell am start -n moe.shizuku.privileged.api/moe.shizuku.manager.MainActivity > diagnostics/launch.txt 2>&1 || true
+            adb shell am start -n com.sysopbp.tokenx/moe.shizuku.manager.MainActivity > diagnostics/launch.txt 2>&1 || true
             sleep 8
             adb shell dumpsys activity activities > diagnostics/activity.txt
-            adb shell dumpsys package moe.shizuku.privileged.api > diagnostics/package.txt
+            adb shell dumpsys package com.sysopbp.tokenx > diagnostics/package.txt
             adb shell settings put global development_settings_enabled 1 || true
             adb shell settings put global adb_wifi_enabled 1 || true
             sleep 5
@@ -64,7 +64,7 @@ jobs:
             adb shell dumpsys adb > diagnostics/adb-service.txt 2>&1 || true
             adb shell ss -ltn > diagnostics/tcp-listeners.txt 2>&1 || true
             adb shell dumpsys notification --noredact > diagnostics/notifications.txt 2>&1 || true
-            adb shell am start -n moe.shizuku.privileged.api/moe.shizuku.manager.adb.AdbPairingTutorialActivity > diagnostics/pairing-screen.txt 2>&1 || true
+            adb shell am start -n com.sysopbp.tokenx/moe.shizuku.manager.adb.AdbPairingTutorialActivity > diagnostics/pairing-screen.txt 2>&1 || true
             sleep 4
             adb shell uiautomator dump /sdcard/tokenx-ui.xml > diagnostics/uiautomator.txt 2>&1 || true
             adb pull /sdcard/tokenx-ui.xml diagnostics/tokenx-ui.xml || true

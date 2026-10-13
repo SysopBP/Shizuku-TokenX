@@ -24,7 +24,7 @@ import java.io.File
 
 private const val TAG = "ApkUtils"
 
-const val ORIGINAL_PACKAGE_NAME = "moe.shizuku.privileged.api"
+const val ORIGINAL_PACKAGE_NAME = "com.sysopbp.tokenx"
 
 private val app = ShizukuApplication.application
 private val appContext = ShizukuApplication.appContext

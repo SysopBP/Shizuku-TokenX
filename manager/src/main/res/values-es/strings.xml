@@ -18,7 +18,7 @@
     <string name="dialog_adb_pairing_paring_code">Clave de emparejamiento</string>
     <string name="paring_code_is_wrong">Clave de emparejamiento errónea.</string>
     <string name="cannot_connect_port">No puedo conectarme al servicio de depuración
-        inalámbrica.\n\nPor favor, asegúrate de que Shizuku esté en la lista blanca de todas las
+        inalámbrica.\n\nPor favor, asegúrate de que TokenX esté en la lista blanca de todas las
         aplicaciones de firewall, bloqueador de anuncios, VPN u similares que puedan restringir el
         acceso a la red.</string>
     <string name="dialog_adb_pairing_message">Comience el emparejamiento realizando los siguientes
@@ -27,18 +27,18 @@
         dispositivo con código de emparejamiento\"\n- Ingrese el código de emparejamiento en la
         notificación</string>
     <string name="dialog_adb_pairing_accessibility_permission">En Android 14, instalar o actualizar
-        Shizuku con el instalador de paquetes revoca el permiso ^1, que es necesario para habilitar
+        TokenX con el instalador de paquetes revoca el permiso ^1, que es necesario para habilitar
         el servicio de accesibilidad para el emparejamiento.\n\nPara otorgarlo, ejecute el siguiente
         comando ADB:\n\n^2\n\nDespués de ejecutar el comando, puede continuar con el proceso de
-        emparejamiento.\n\nNota: puede omitir esto instalando o actualizando Shizuku con ADB.</string>
+        emparejamiento.\n\nNota: puede omitir esto instalando o actualizando TokenX con ADB.</string>
     <string name="dialog_adb_pairing_accessibility_enable">Habilita el servicio de accesibilidad
-        para iniciar el proceso de emparejamiento. Esto permite que Shizuku detecte el código de
+        para iniciar el proceso de emparejamiento. Esto permite que TokenX detecte el código de
         emparejamiento.\n\nEl servicio de accesibilidad se desactivará cuando se encuentre el código
         o después de 1 minuto para ahorrar energía.</string>
     <string name="dialog_adb_pairing_accessibility_navigate">Para iniciar el emparejamiento, siga
         estos pasos:\n- Vaya a \"Opciones de desarrollador\"\n- Habilite \"Depuración USB\" y
         \"Depuración inalámbrica\"\n- Toque el lado izquierdo de \"Depuración inalámbrica\"\n- Toque
-        \"Emparejar dispositivo con código de emparejamiento\". Shizuku detectará automáticamente el
+        \"Emparejar dispositivo con código de emparejamiento\". TokenX detectará automáticamente el
         código de emparejamiento.</string>
     <string name="adb_pairing_requires_multi_window">Favor entre en modo de pantalla dividida
         (multiventana) primero.</string>
@@ -52,7 +52,7 @@
     <string name="enable">Permitir</string>
     <string name="development_settings">Opciones para desarrolladores</string>
     <string name="notification_settings">Opciones de notificación</string>
-    <string name="adb_pairing_tutorial_content_notification">Una notificación de Shizuku te ayudará
+    <string name="adb_pairing_tutorial_content_notification">Una notificación de TokenX te ayudará
         a completar la vinculación.</string>
     <string name="adb_pairing_tutorial_content_steps">Vaya a “Opciones de desarrollador”, luego
         habilite “Depuración USB” y “Depuración inalámbrica”.</string>
@@ -60,23 +60,23 @@
         \"Depuración inalámbrica\" y luego \"Emparejar dispositivo con código de emparejamiento\".
         Introduce el código en la notificación para completar el emparejamiento.</string>
     <string name="adb_pairing_tutorial_content_notification_blocked">El proceso de vinculación
-        requiere que usted interactúe con las notificaciones de Shizuku. Por favor, permita que
-        Shizuku pueda lanzar notificaciones.</string>
+        requiere que usted interactúe con las notificaciones de TokenX. Por favor, permita que
+        TokenX pueda lanzar notificaciones.</string>
     <string name="adb_pairing_tutorial_content_miui">Usuarios de MIUI podrían necesitar cambiar el
         estilo de notificaciones por \"Android\" en \"Notificaciones\" - \"Barra de notificaciones\"
         dentro de los ajustes de sistema.</string>
     <string name="adb_pairing_tutorial_content_miui_2">De lo contrario, puede que no puedas
         introducir el código de emparejamiento desde la notificación.</string>
-    <string name="adb_pairing_tutorial_content_finish">Vuelve con Shizuku y empieza con Shizuku.</string>
-    <string name="adb_pairing_tutorial_content_network">Shizuku necesita acceder a la red local.
+    <string name="adb_pairing_tutorial_content_finish">Vuelve con TokenX y empieza con TokenX.</string>
+    <string name="adb_pairing_tutorial_content_network">TokenX necesita acceder a la red local.
         Está controlada por el permiso de la red.</string>
     <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Algunos sistemas
         (como MIUI) impiden que las aplicaciones accedan a la red cuando no son visibles, incluso si
         la app utiliza un servicio en primer plano. Por favor, desactiva las funciones de
-        optimización de batería para Shizuku en estos sistemas.</string>
+        optimización de batería para TokenX en estos sistemas.</string>
     <!-- Home - Root -->
     <string name="home_root_title"><![CDATA[Iniciar (dispositivo rooteado)]]></string>
-    <string name="home_root_description"><![CDATA[Si usas Magisk, puedes probar %1$s. Para usuarios root, eventualmente reemplazará a Shizuku. Ten en cuenta que las aplicaciones existentes deben modificarse ligeramente para usar %2$s.]]></string>
+    <string name="home_root_description"><![CDATA[Si usas Magisk, puedes probar %1$s. Para usuarios root, eventualmente reemplazará a TokenX. Ten en cuenta que las aplicaciones existentes deben modificarse ligeramente para usar %2$s.]]></string>
     <string name="home_root_button_start">Iniciar</string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
@@ -98,7 +98,7 @@
     <string name="terminal_tutorial_miui">Los usuarios han informado que MIUI rompe el Storage
         Access Framework, que es utilizado por la función de exportación.</string>
     <string name="terminal_tutorial_miui_2">Si está utilizando MIUI, es posible que tenga que
-        extraer el archivo de la carpeta de activos en el APK de Shizuku.</string>
+        extraer el archivo de la carpeta de activos en el APK de TokenX.</string>
     <string name="terminal_tutorial_1">Exportar los archivos a una nueva carpeta.</string>
     <string name="terminal_tutorial_1_description">Se exportarán dos archivos: %1$s y %2$s. Si los
         archivos ya existen en la carpeta seleccionada, se eliminarán.</string>
@@ -113,16 +113,16 @@
     <!-- Settings -->
     <string name="settings_start_on_boot">Iniciar al arrancar</string>
     <string name="settings_watchdog">Perro guardián</string>
-    <string name="settings_watchdog_summary">Reiniciar automáticamente Shizuku si falla</string>
+    <string name="settings_watchdog_summary">Reiniciar automáticamente TokenX si falla</string>
     <string name="settings_tcp_mode">Modo TCP</string>
-    <string name="settings_tcp_mode_summary">"Permite que Shizuku se reinicie sin Wi-Fi. (Shizuku
+    <string name="settings_tcp_mode_summary">"Permite que TokenX se reinicie sin Wi-Fi. (TokenX
         debe haberse iniciado una vez desde el reinicio)."</string>
     <string name="settings_tcp_mode_dialog_close_port">"El puerto TCP se cerrará inmediatamente.
         Necesitará Wi-Fi para volver a activar el modo TCP. ¿Continuar?"</string>
     <string name="settings_restart_dialog_title">Reinicio necesario</string>
-    <string name="settings_restart_dialog_message">Shizuku necesita reiniciar para poder aplicar
+    <string name="settings_restart_dialog_message">TokenX necesita reiniciar para poder aplicar
         esta configuración.</string>
-    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Se requiere Wi-Fi. Shizuku seguirá funcionando y esperará a que se conecte Wi-Fi antes de reiniciar en segundo plano.</b>]]></string>
+    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Se requiere Wi-Fi. TokenX seguirá funcionando y esperará a que se conecte Wi-Fi antes de reiniciar en segundo plano.</b>]]></string>
     <string name="settings_tcp_port">Puerto TCP</string>
     <string name="settings_language">Idioma</string>
     <string name="settings_black_night_theme">Tema Noche cerrada</string>
@@ -152,7 +152,7 @@
     <!-- Updates -->
     <!-- Toast -->
     <string name="toast_no_email_app">No se encontró ninguna aplicación de correo electrónico</string>
-    <string name="toast_pairing_timeout">El servicio de emparejamiento de Shizuku se agotó.</string>
+    <string name="toast_pairing_timeout">El servicio de emparejamiento de TokenX se agotó.</string>
     <!-- Dark Mode Setting Override -->
     <string name="dark_theme_off">Siempre ligero</string>
     <string name="dark_theme_on">Siempre oscuro</string>
@@ -168,12 +168,12 @@
     <string name="notification_adb_pairing_stop_searching">Detener búsqueda</string>
     <string name="notification_adb_pairing_working_title">Emparejamiento en proceso</string>
     <string name="notification_adb_pairing_succeed_title">Emparejado completo</string>
-    <string name="notification_adb_pairing_succeed_text">Puede iniciar el servicio Shizuku ahora.</string>
+    <string name="notification_adb_pairing_succeed_text">Puede iniciar el servicio TokenX ahora.</string>
     <string name="notification_adb_pairing_failed_title">Fallo de emparejamiento</string>
     <string name="notification_adb_pairing_retry">Reintentar</string>
     <!-- Permission related, appears in system permission UI -->
-    <string name="permission_label">acceso Shizuku</string>
-    <string name="permission_description">Permitir que la aplicación use Shizuku.</string>
+    <string name="permission_label">acceso TokenX</string>
+    <string name="permission_description">Permitir que la aplicación use TokenX.</string>
     <string name="permission_warning_template"><![CDATA[Permitir <b>%1$s</b> en %2$s\?]]></string>
     <string name="grant_dialog_button_allow_always">Permitir siempre</string>
     <string name="grant_dialog_button_deny">"Denegar"</string>
@@ -182,20 +182,20 @@
     <string name="start_with_root_failed">No es posible iniciar el servicio porque no tienes
         permisos de root o este dispositivo no está rooteado.</string>
     <!-- WADB Starter -->
-    <string name="wadb_notification_title">Iniciando Shizuku…</string>
+    <string name="wadb_notification_title">Iniciando TokenX…</string>
     <string name="wadb_notification_wifi_required">Esperando conexión Wi-Fi antes de continuar</string>
     <string name="wadb_notification_retry">Esperando para volver a intentarloEnglish
         Sell_adb Suzuki running</string>
     <string name="wadb_error_title">Error al iniciar en el arranque</string>
     <string name="wadb_error_notify_dev">Toque para notificar al desarrollador.</string>
     <string name="wadb_permission_error_notification_title">Error de permiso</string>
-    <string name="wadb_permission_error_notification_content">Shizuku necesita WRITE_SECURE_SETTINGS
+    <string name="wadb_permission_error_notification_content">TokenX necesita WRITE_SECURE_SETTINGS
         para iniciarse al arrancar. Pulsa para saber cómo habilitarlo.</string>
     <!-- Shell -->
     <!-- Watchdog -->
     <string name="watchdog_running">El perro guardián está en marcha</string>
     <string name="watchdog_turn_off">Apaga</string>
-    <string name="watchdog_shizuku_crashed_title">Shizuku se estrelló recientemente</string>
+    <string name="watchdog_shizuku_crashed_title">TokenX se estrelló recientemente</string>
     <string name="watchdog_shizuku_crashed_text">El servicio de vigilancia se reinició. Toca para
         conocer posibles soluciones para evitar futuras fallas.</string>
     <string name="watchdog_shizuku_crashed_action_turn_off_alerts">Desactivar alertas</string>
@@ -204,15 +204,15 @@
     <string name="toast_copied_to_clipboard">Copiado al portapapeles</string>
     <string name="accessibility_service_description">Proporciona compatibilidad con dispositivos (p.
         ej., televisores con Android 14 o superior) donde no se pueden usar las notificaciones ni la
-        pantalla dividida.\n\nPermite que Shizuku extraiga el código de emparejamiento de la
+        pantalla dividida.\n\nPermite que TokenX extraiga el código de emparejamiento de la
         pantalla de depuración inalámbrica. Se desactivará automáticamente una vez encontrado el
         código de emparejamiento.</string>
     <!-- Messages for legacy -->
-    <string name="dialog_legacy_not_support_title">%1$s no soporta Shizuku moderno</string>
-    <string name="dialog_legacy_not_support_message"><![CDATA[Legacy Shizuku ha quedado obsoleto desde marzo de 2019. Además, Legacy Shizuku no funciona en los sistemas Android más nuevos.<p>Pida al desarrollador de <b>%1$s</b> que actualice.]]></string>
-    <string name="dialog_requesting_legacy_title">%1$s está solicitando el legado de Shizuku</string>
-    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> tiene compatibilidad moderna con Shizuku, pero solicita Shizuku heredada. Esto podría deberse a que Shizuku no se está ejecutando, verifique en la aplicación Shizuku. <p> Legacy Shizuku está obsoleto desde marzo de 2019.]]></string>
-    <string name="dialog_requesting_legacy_button_open_shizuku">Abrir Shizuku</string>
+    <string name="dialog_legacy_not_support_title">%1$s no soporta TokenX moderno</string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[Legacy TokenX ha quedado obsoleto desde marzo de 2019. Además, Legacy TokenX no funciona en los sistemas Android más nuevos.<p>Pida al desarrollador de <b>%1$s</b> que actualice.]]></string>
+    <string name="dialog_requesting_legacy_title">%1$s está solicitando el legado de TokenX</string>
+    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> tiene compatibilidad moderna con TokenX, pero solicita TokenX heredada. Esto podría deberse a que TokenX no se está ejecutando, verifique en la aplicación TokenX. <p> Legacy TokenX está obsoleto desde marzo de 2019.]]></string>
+    <string name="dialog_requesting_legacy_button_open_shizuku">Abrir TokenX</string>
     <string name="wadb_notification_attempt_now">Reintentar</string>
     <!-- Manage tab -->
     <!-- One app, and what it may do on the device -->

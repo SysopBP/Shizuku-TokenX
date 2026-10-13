@@ -18,25 +18,25 @@
     <string name="dialog_adb_pairing_paring_code">Parituskoodi</string>
     <string name="paring_code_is_wrong">Parituskoodi on väärä.</string>
     <string name="cannot_connect_port">Langattomaan virheenkorjauspalveluun ei saada
-        yhteyttä.\n\nVarmista, että Shizuku on sallittu kaikissa palomuuri-, mainostenesto-, VPN-
+        yhteyttä.\n\nVarmista, että TokenX on sallittu kaikissa palomuuri-, mainostenesto-, VPN-
         tai vastaavissa sovelluksissa, jotka voivat rajoittaa verkkoyhteyttä.</string>
     <string name="dialog_adb_pairing_message">Aloita pariliitos suorittamalla seuraavat vaiheet:\n-
         Siirry kohtaan \"Kehittäjäasetukset\"\n- Ota käyttöön \"USB-virheenkorjaus\" ja \"Langaton
         virheenkorjaus\"\n- Napauta \"Langaton virheenkorjaus\" -kohdan vasenta puolta\n- Napauta
         \"Yhdistä laite pariliitoskoodilla\"\n- Syötä pariliitoskoodi ilmoitukseen</string>
-    <string name="dialog_adb_pairing_accessibility_permission">Android 14:ssä Shizukun
+    <string name="dialog_adb_pairing_accessibility_permission">Android 14:ssä TokenXn
         asentaminen/päivittäminen pakettiasentajalla peruuttaa ^1-käyttöoikeuden, jota tarvitaan
         pariliitoksen esteettömyyspalvelun käyttöönottoon.\n\nMyöntääksesi käyttöoikeuden, suorita
         seuraava ADB-komento:\n\n^2\n\nKomennon suorittamisen jälkeen voit jatkaa pariliitoksen
-        muodostamista.\n\nHuomautus: voit ohittaa tämän asentamalla/päivittämällä Shizukun ADB:llä.</string>
+        muodostamista.\n\nHuomautus: voit ohittaa tämän asentamalla/päivittämällä TokenXn ADB:llä.</string>
     <string name="dialog_adb_pairing_accessibility_enable">Ole hyvä ja ota saavutettavuuspalvelu
-        käyttöön aloittaaksesi paritusprosessin. Tämä mahdollistaa Shizukun tunnistaa
+        käyttöön aloittaaksesi paritusprosessin. Tämä mahdollistaa TokenXn tunnistaa
         parituskoodin.\n\nEsteettömyyspalvelu kytketään pois päältä, kun koodi löytyy, tai minuutin
         kuluttua energian säästämiseksi.</string>
     <string name="dialog_adb_pairing_accessibility_navigate">Aloita pariliitos suorittamalla
         seuraavat vaiheet:\n- Siirry kohtaan \"Kehittäjäasetukset\"\n- Ota käyttöön
         \"USB-virheenkorjaus\" ja \"Langaton virheenkorjaus\"\n- Napauta \"Langaton virheenkorjaus\"
-        -kohdan vasenta puolta\n- Napauta \"Yhdistä laite pariliitoskoodilla\". Shizuku tunnistaa
+        -kohdan vasenta puolta\n- Napauta \"Yhdistä laite pariliitoskoodilla\". TokenX tunnistaa
         pariliitoskoodin automaattisesti.</string>
     <string name="adb_pairing_requires_multi_window">Siirry ensin jaetun ruudun (moniikkuna) tilaan.</string>
     <string name="adb_pairing_requires_multi_window_reason">Järjestelmä vaatii, että
@@ -49,7 +49,7 @@
     <string name="enable">Ottaa käyttöön</string>
     <string name="development_settings">Kehittäjävaihtoehdot</string>
     <string name="notification_settings">Ilmoitusvaihtoehdot</string>
-    <string name="adb_pairing_tutorial_content_notification">Shizukun ilmoitus auttaa sinua
+    <string name="adb_pairing_tutorial_content_notification">TokenXn ilmoitus auttaa sinua
         täydentämään parituksen.</string>
     <string name="adb_pairing_tutorial_content_steps">Siirry kohtaan \"Kehittäjäasetukset\" ja ota
         sitten käyttöön \"USB-virheenkorjaus\" ja \"Langaton virheenkorjaus\".</string>
@@ -57,23 +57,23 @@
         virheenkorjaus\" -kohdan vasenta puolta ja napauta sitten \"Yhdistä laite
         pariliitoskoodilla\". Syötä ilmoituksessa oleva koodi pariliitoksen viimeistelemiseksi.</string>
     <string name="adb_pairing_tutorial_content_notification_blocked">Paritusprosessi vaatii, että
-        olet vuorovaikutuksessa Shizukun ilmoituksen kanssa. Sallithan Shizukun lähettää
+        olet vuorovaikutuksessa TokenXn ilmoituksen kanssa. Sallithan TokenXn lähettää
         ilmoituksia.</string>
     <string name="adb_pairing_tutorial_content_miui">MIUI:n käyttäjät saattavat joutua vaihtamaan
         ilmoitustyylin \"Android\"-muotoon \"Notification\" - \"Notification shade\" -asetuksista
         järjestelmäasetuksista.</string>
     <string name="adb_pairing_tutorial_content_miui_2">Muussa tapauksessa et ehkä pysty syöttämään
         ilmoituksessa näkyvää pariliitoskoodia.</string>
-    <string name="adb_pairing_tutorial_content_finish">Mene takaisin Shizukuun ja aloita Shizuku.</string>
-    <string name="adb_pairing_tutorial_content_network">Shizukun on käytettävä paikallisverkkoa.
+    <string name="adb_pairing_tutorial_content_finish">Mene takaisin TokenXun ja aloita TokenX.</string>
+    <string name="adb_pairing_tutorial_content_network">TokenXn on käytettävä paikallisverkkoa.
         Sitä hallitsee verkkokäyttöoikeus.</string>
     <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Jotkin järjestelmät
         (kuten MIUI) estävät sovelluksia käyttämästä verkkoa, kun ne eivät ole näkyvissä, vaikka
-        sovellus käyttäisi etualalla olevaa palvelua. Poista Shizukun akun optimointiominaisuudet
+        sovellus käyttäisi etualalla olevaa palvelua. Poista TokenXn akun optimointiominaisuudet
         käytöstä tällaisissa järjestelmissä.</string>
     <!-- Home - Root -->
     <string name="home_root_title"><![CDATA[Start (rootatuille laitteille)]]></string>
-    <string name="home_root_description"><![CDATA[Jos käytät Magiskia, voit kokeilla %1$s. Pääkäyttäjille se korvaa lopulta Shizukun. Huomaa, että olemassa olevia sovelluksia on muutettava hieman, jotta ne voivat käyttää %2$s.]]></string>
+    <string name="home_root_description"><![CDATA[Jos käytät Magiskia, voit kokeilla %1$s. Pääkäyttäjille se korvaa lopulta TokenXn. Huomaa, että olemassa olevia sovelluksia on muutettava hieman, jotta ne voivat käyttää %2$s.]]></string>
     <string name="home_root_button_start">Aloittaa</string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
@@ -95,7 +95,7 @@
     <string name="terminal_tutorial_miui">Käyttäjät ovat raportoineet, että MIUI rikkoo
         vientitoiminnon käyttämän Storage Access Frameworkin.</string>
     <string name="terminal_tutorial_miui_2">Jos käytät MIUI-käyttöjärjestelmää, sinun on ehkä
-        purettava tiedosto Shizukun APK:n resurssikansiosta.</string>
+        purettava tiedosto TokenXn APK:n resurssikansiosta.</string>
     <string name="terminal_tutorial_1">Vie tiedostot uuteen kansioon.</string>
     <string name="terminal_tutorial_1_description">Kaksi tiedostoa viedään: %1$s ja %2$s. Jos
         tiedostot ovat jo valitussa kansiossa, ne poistetaan.</string>
@@ -110,17 +110,17 @@
     <!-- Settings -->
     <string name="settings_start_on_boot">Aloita käynnistyksestä</string>
     <string name="settings_watchdog">Vahtikoira</string>
-    <string name="settings_watchdog_summary">Käynnistä Shizuku automaattisesti uudelleen, jos se
+    <string name="settings_watchdog_summary">Käynnistä TokenX automaattisesti uudelleen, jos se
         kaatuu</string>
     <string name="settings_tcp_mode">TCP-tila</string>
-    <string name="settings_tcp_mode_summary">"Sallii Shizukun aloittaa uudelleen ilman Wi-Fiä.
-        (Shizuku on varmaan aloittanut kerran uudelleenkäynnistyksen jälkeen)"</string>
+    <string name="settings_tcp_mode_summary">"Sallii TokenXn aloittaa uudelleen ilman Wi-Fiä.
+        (TokenX on varmaan aloittanut kerran uudelleenkäynnistyksen jälkeen)"</string>
     <string name="settings_tcp_mode_dialog_close_port">"TCP-portti suljetaan välittömästi. Tarvitset
         Wi-Fi-yhteyden ottaaksesi TCP-tilan uudelleen käyttöön. Jatketaanko?"</string>
     <string name="settings_restart_dialog_title">Uudelleenkäynnistys vaaditaan</string>
-    <string name="settings_restart_dialog_message">Shizuku on käynnistettävä uudelleen, jotta tämä
+    <string name="settings_restart_dialog_message">TokenX on käynnistettävä uudelleen, jotta tämä
         asetus otetaan käyttöön.</string>
-    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Wi-Fi-yhteys vaaditaan. Shizuku jatkaa toimintaansa ja odottaa Wi-Fi-yhteyttä ennen uudelleenkäynnistystä taustalla.</b>]]></string>
+    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Wi-Fi-yhteys vaaditaan. TokenX jatkaa toimintaansa ja odottaa Wi-Fi-yhteyttä ennen uudelleenkäynnistystä taustalla.</b>]]></string>
     <string name="settings_tcp_port">TCP-portti</string>
     <string name="settings_language">Kieli</string>
     <string name="settings_black_night_theme">Mustan yön teema</string>
@@ -149,7 +149,7 @@
     <!-- Updates -->
     <!-- Toast -->
     <string name="toast_no_email_app">Sähköpostisovellusta ei löytynyt</string>
-    <string name="toast_pairing_timeout">Shizukun pariliitospalvelu aikakatkaistiin.</string>
+    <string name="toast_pairing_timeout">TokenXn pariliitospalvelu aikakatkaistiin.</string>
     <!-- Dark Mode Setting Override -->
     <string name="dark_theme_off">Aina kevyt</string>
     <string name="dark_theme_on">Aina synkkä</string>
@@ -164,12 +164,12 @@
     <string name="notification_adb_pairing_stop_searching">Lopeta etsintä</string>
     <string name="notification_adb_pairing_working_title">Parittaminen käynnissä</string>
     <string name="notification_adb_pairing_succeed_title">Paritus onnistui</string>
-    <string name="notification_adb_pairing_succeed_text">Voit aloittaa Shizuku-palvelun nyt.</string>
+    <string name="notification_adb_pairing_succeed_text">Voit aloittaa TokenX-palvelun nyt.</string>
     <string name="notification_adb_pairing_failed_title">Paritus epäonnistui</string>
     <string name="notification_adb_pairing_retry">Yritä</string>
     <!-- Permission related, appears in system permission UI -->
-    <string name="permission_label">pääsy Shizukuun</string>
-    <string name="permission_description">Salli sovelluksen käyttää Shizukua.</string>
+    <string name="permission_label">pääsy TokenXun</string>
+    <string name="permission_description">Salli sovelluksen käyttää TokenXa.</string>
     <string name="permission_warning_template"><![CDATA[Sallia <b>%1$s</b> jotta %2$s?]]></string>
     <string name="grant_dialog_button_allow_always">Anna koko ajan</string>
     <string name="grant_dialog_button_deny">"Kieltää"</string>
@@ -178,19 +178,19 @@
     <string name="start_with_root_failed">Palvelua ei voi käynnistää, koska root-oikeutta ei
         myönnetä tai laite ei ole rootattu.</string>
     <!-- WADB Starter -->
-    <string name="wadb_notification_title">Shizukun aloittaminen…</string>
+    <string name="wadb_notification_title">TokenXn aloittaminen…</string>
     <string name="wadb_notification_wifi_required">Odotan Wi-Fi-yhteyttä ennen kuin jatkan</string>
     <string name="wadb_notification_retry">Odotetaan uudelleenyritystä</string>
     <string name="wadb_error_title">Virhe käynnistyksen yhteydessä</string>
     <string name="wadb_error_notify_dev">Napauta ilmoittaaksesi kehittäjälle.</string>
     <string name="wadb_permission_error_notification_title">Lupavirhe</string>
-    <string name="wadb_permission_error_notification_content">Shizukun täytyy WRITE_SECURE_SETTINGS
+    <string name="wadb_permission_error_notification_content">TokenXn täytyy WRITE_SECURE_SETTINGS
         käynnistyäkseen. Napauta oppiaksesi, miten se myönnetään.</string>
     <!-- Shell -->
     <!-- Watchdog -->
     <string name="watchdog_running">Vahtikoira on juoksemassa</string>
     <string name="watchdog_turn_off">Sammuta</string>
-    <string name="watchdog_shizuku_crashed_title">Shizuku kaatui äskettäin</string>
+    <string name="watchdog_shizuku_crashed_title">TokenX kaatui äskettäin</string>
     <string name="watchdog_shizuku_crashed_text">Watchdog käynnisti palvelun uudelleen. Napauta
         oppiaksesi mahdollisista korjauksista tulevien kaatumisten estämiseksi.</string>
     <string name="watchdog_shizuku_crashed_action_turn_off_alerts">Sammuta hälytykset</string>
@@ -199,14 +199,14 @@
     <string name="toast_copied_to_clipboard">Kopioitu leikepöydälle</string>
     <string name="accessibility_service_description">Tarjoaa paritustuen laitteille (esim. Android
         14+ -televisioille), joissa ilmoituksia tai jaettua näyttöä ei voi käyttää.\n\nMahdollistaa
-        Shizukun poimia parituskoodin langattoman debuggauksen paritusnäytöltä. Se poistuu käytöstä,
+        TokenXn poimia parituskoodin langattoman debuggauksen paritusnäytöltä. Se poistuu käytöstä,
         kun parituskoodi löytyy.</string>
     <!-- Messages for legacy -->
-    <string name="dialog_legacy_not_support_title">%1$s ei tue nykyaikaista Shizukua</string>
-    <string name="dialog_legacy_not_support_message"><![CDATA[Legacy Shizuku on ollut vanhentunut maaliskuusta 2019 lähtien. Lisäksi vanha Shizuku ei toimi uudemmissa Android-järjestelmissä.<p>Kysy kehittäjältä <b>%1$s</b> Päivitys.]]></string>
-    <string name="dialog_requesting_legacy_title">%1$s pyytää perintöä Shizukua</string>
-    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> Siinä on moderni Shizuku-tuki, mutta se pyytää perinteistä Shizukua. Tämä voi johtua siitä, että Shizuku ei ole käynnissä, tarkista Shizuku-sovelluksesta.<p>Legacy Shizuku on ollut vanhentunut maaliskuusta 2019 lähtien.]]></string>
-    <string name="dialog_requesting_legacy_button_open_shizuku">Avaa Shizuku</string>
+    <string name="dialog_legacy_not_support_title">%1$s ei tue nykyaikaista TokenXa</string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[Legacy TokenX on ollut vanhentunut maaliskuusta 2019 lähtien. Lisäksi vanha TokenX ei toimi uudemmissa Android-järjestelmissä.<p>Kysy kehittäjältä <b>%1$s</b> Päivitys.]]></string>
+    <string name="dialog_requesting_legacy_title">%1$s pyytää perintöä TokenXa</string>
+    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> Siinä on moderni TokenX-tuki, mutta se pyytää perinteistä TokenXa. Tämä voi johtua siitä, että TokenX ei ole käynnissä, tarkista TokenX-sovelluksesta.<p>Legacy TokenX on ollut vanhentunut maaliskuusta 2019 lähtien.]]></string>
+    <string name="dialog_requesting_legacy_button_open_shizuku">Avaa TokenX</string>
     <string name="wadb_notification_attempt_now">Yritä</string>
     <!-- Manage tab -->
     <!-- One app, and what it may do on the device -->

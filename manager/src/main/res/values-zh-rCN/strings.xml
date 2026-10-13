@@ -17,17 +17,17 @@
     <string name="dialog_adb_pairing_discovery">正在搜索配对服务</string>
     <string name="dialog_adb_pairing_paring_code">配对码</string>
     <string name="paring_code_is_wrong">配对码错误。</string>
-    <string name="cannot_connect_port">无法连接到无线调试服务。\n\n请确保将 Shizuku 添加到所有防火墙、广告拦截器、VPN
+    <string name="cannot_connect_port">无法连接到无线调试服务。\n\n请确保将 TokenX 添加到所有防火墙、广告拦截器、VPN
         或类似可能限制网络访问的应用程序中的白名单。</string>
     <string name="dialog_adb_pairing_message">请按照以下步骤开始配对：\n- 打开“开发者选项”\n- 启用“USB调试”和“无线调试”\n-
         点击“无线调试”左侧\n- 点击“使用配对码配对设备”\n- 在通知栏中输入配对码</string>
-    <string name="dialog_adb_pairing_accessibility_permission">在 Android 14上，安装/更新Shizuku 软件包安装程序撤销了
+    <string name="dialog_adb_pairing_accessibility_permission">在 Android 14上，安装/更新TokenX 软件包安装程序撤销了
         ^1 权限，这是启用配对辅助辅助功能所必需的。\n\n要授予它，请运行以下ADB 命令：\n\n^2\n\n运行命令后， 您可以继续配对。\n\n注意：您可以通过 ADB
-        安装/更新Shizuku 来绕过此操作。</string>
-    <string name="dialog_adb_pairing_accessibility_enable">请启用辅助功能服务以开始配对过程。这将使 Shizuku
+        安装/更新TokenX 来绕过此操作。</string>
+    <string name="dialog_adb_pairing_accessibility_enable">请启用辅助功能服务以开始配对过程。这将使 TokenX
         能够检测到配对码。\n\n辅助功能服务将在找到配对码后或1分钟后关闭以节省电量。</string>
     <string name="dialog_adb_pairing_accessibility_navigate">请按照以下步骤开始配对：\n- 进入“开发者选项”\n-
-        启用“USB调试”和“无线调试”\n- 点击“无线调试”左侧\n- 点击“使用配对码配对设备”。Shizuku 将自动检测配对码。</string>
+        启用“USB调试”和“无线调试”\n- 点击“无线调试”左侧\n- 点击“使用配对码配对设备”。TokenX 将自动检测配对码。</string>
     <string name="adb_pairing_requires_multi_window">请先进入分屏（多窗口）模式。</string>
     <string name="adb_pairing_requires_multi_window_reason">系统要求配对对话框始终可见。只有使用分屏模式才能让此应用和系统对话框同时可见。</string>
     <string name="adb_error_key_store">无法生成无线调试密钥。\n这可能是因为此设备的密钥库机制已损坏。</string>
@@ -36,22 +36,22 @@
     <string name="enable">启用</string>
     <string name="development_settings">开发者选项</string>
     <string name="notification_settings">通知设置</string>
-    <string name="adb_pairing_tutorial_content_notification">一条来自 Shizuku 的通知将帮助您完成配对。</string>
+    <string name="adb_pairing_tutorial_content_notification">一条来自 TokenX 的通知将帮助您完成配对。</string>
     <string name="adb_pairing_tutorial_content_steps">进入“开发者选项”，然后启用“USB调试”和“无线调试”。</string>
     <string name="adb_pairing_tutorial_content_enter_pairing_code">
         点击“无线调试”左侧，然后点击“使用配对码配对设备”。输入通知中的代码以完成配对。</string>
-    <string name="adb_pairing_tutorial_content_notification_blocked">配对过程需要您与 Shizuku 的通知交互。请允许
-        Shizuku 发布通知。</string>
+    <string name="adb_pairing_tutorial_content_notification_blocked">配对过程需要您与 TokenX 的通知交互。请允许
+        TokenX 发布通知。</string>
     <string name="adb_pairing_tutorial_content_miui">MIUI
         用户可能需要在系统设置中从“通知管理”-“通知显示设置”将通知样式切换为“原生样式”。</string>
     <string name="adb_pairing_tutorial_content_miui_2">否则，您可能无法输入通知中的配对码。</string>
-    <string name="adb_pairing_tutorial_content_finish">回到 Shizuku 并启动 Shizuku。</string>
-    <string name="adb_pairing_tutorial_content_network">Shizuku 需要访问本地网络。这受网络权限控制。</string>
+    <string name="adb_pairing_tutorial_content_finish">回到 TokenX 并启动 TokenX。</string>
+    <string name="adb_pairing_tutorial_content_network">TokenX 需要访问本地网络。这受网络权限控制。</string>
     <string name="adb_pairing_tutorial_content_network_limation_not_foreground">某些系统（例如
-        MIUI）会禁止应用在不可见时访问网络，即使该应用使用了前台服务。请在这些系统上为 Shizuku 关闭电池优化功能。</string>
+        MIUI）会禁止应用在不可见时访问网络，即使该应用使用了前台服务。请在这些系统上为 TokenX 关闭电池优化功能。</string>
     <!-- Home - Root -->
     <string name="home_root_title"><![CDATA[启动（针对已 root 设备）]]></string>
-    <string name="home_root_description"><![CDATA[如果您正在使用 Magisk，可以尝试使用 %1$s。对于 root 用户，它最终会取代 Shizuku。请注意，现有应用程序需要稍作修改才能使用 %2$s。]]></string>
+    <string name="home_root_description"><![CDATA[如果您正在使用 Magisk，可以尝试使用 %1$s。对于 root 用户，它最终会取代 TokenX。请注意，现有应用程序需要稍作修改才能使用 %2$s。]]></string>
     <string name="home_root_button_start">启动</string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
@@ -66,11 +66,11 @@
     <string name="app_management_dialog_adb_is_limited_title">adb 权限受限</string>
     <string name="app_management_dialog_adb_is_limited_message"><![CDATA[这极有可能是你的设备制造商限制了 adb 的权限。<p><b><a href="%1$s">此文档</a></b>中可能有针对你的系统的解决方案。]]></string>
     <string name="app_management_toggle_all">切换全部</string>
-    <string name="action_start">启动 Shizuku</string>
+    <string name="action_start">启动 TokenX</string>
     <string name="intents_start">启动</string>
     <!-- Terminal -->
     <string name="terminal_tutorial_miui">用户反映 MIUI 破坏了导出功能所使用的存储访问框架。</string>
-    <string name="terminal_tutorial_miui_2">如果您使用的是 MIUI 系统，则可能需要从 Shizuku 的 APK 的 assets 文件夹中提取该文件。</string>
+    <string name="terminal_tutorial_miui_2">如果您使用的是 MIUI 系统，则可能需要从 TokenX 的 APK 的 assets 文件夹中提取该文件。</string>
     <string name="terminal_tutorial_1">将文件导出到新文件夹。</string>
     <string name="terminal_tutorial_1_description">将导出两个文件： %1$s 和 %2$s。如果所选文件夹中已存在这些文件，则会将其删除。</string>
     <string name="terminal_tutorial_2">使用终端应用程序将文件复制到其私有文件目录。</string>
@@ -81,13 +81,13 @@
     <!-- Settings -->
     <string name="settings_start_on_boot">自启动</string>
     <string name="settings_use_system_color">使用系统主题颜色</string>
-    <string name="settings_watchdog_summary">如果 Shizuku 崩溃，则自动重启</string>
+    <string name="settings_watchdog_summary">如果 TokenX 崩溃，则自动重启</string>
     <string name="settings_tcp_mode">TCP 模式</string>
-    <string name="settings_tcp_mode_summary">"允许 Shizuku 在没有 Wi-Fi 的情况下重启。（Shizuku 必须在重启后启动过一次）"</string>
+    <string name="settings_tcp_mode_summary">"允许 TokenX 在没有 Wi-Fi 的情况下重启。（TokenX 必须在重启后启动过一次）"</string>
     <string name="settings_tcp_mode_dialog_close_port">"TCP 端口将立即关闭。您需要连接 Wi-Fi 才能重新启用 TCP 模式。是否继续？"</string>
     <string name="settings_restart_dialog_title">需要重启</string>
-    <string name="settings_restart_dialog_message">Shizuku 需要重启才能应用此设置。</string>
-    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>需要 Wi-Fi。Shizuku 会在后台继续运行并等待 Wi-Fi 连接，连接成功后才会重启。</b>]]></string>
+    <string name="settings_restart_dialog_message">TokenX 需要重启才能应用此设置。</string>
+    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>需要 Wi-Fi。TokenX 会在后台继续运行并等待 Wi-Fi 连接，连接成功后才会重启。</b>]]></string>
     <string name="settings_tcp_port">TCP 端口</string>
     <string name="settings_language">语言</string>
     <string name="settings_black_night_theme">黑色夜间主题</string>
@@ -113,7 +113,7 @@
     <!-- Updates -->
     <!-- Toast -->
     <string name="toast_no_email_app">未找到电子邮件应用</string>
-    <string name="toast_pairing_timeout">Shizuku配对服务超时</string>
+    <string name="toast_pairing_timeout">TokenX配对服务超时</string>
     <!-- Dark Mode Setting Override -->
     <string name="dark_theme">主题</string>
     <string name="dark_theme_off">浅色主题</string>
@@ -122,7 +122,7 @@
     <!-- About -->
     <!-- Start/Stop -->
     <string name="start">启动</string>
-    <string name="action_stop">停止 Shizuku</string>
+    <string name="action_stop">停止 TokenX</string>
     <!-- Notification -->
     <string name="notification_channel_adb_pairing">无线调试配对</string>
     <string name="notification_adb_pairing_input_paring_code">输入配对码</string>
@@ -131,12 +131,12 @@
     <string name="notification_adb_pairing_stop_searching">停止搜索</string>
     <string name="notification_adb_pairing_working_title">正在进行配对</string>
     <string name="notification_adb_pairing_succeed_title">配对成功</string>
-    <string name="notification_adb_pairing_succeed_text">您现在可以启动 Shizuku 服务了。</string>
+    <string name="notification_adb_pairing_succeed_text">您现在可以启动 TokenX 服务了。</string>
     <string name="notification_adb_pairing_failed_title">配对失败</string>
     <string name="notification_adb_pairing_retry">重试</string>
     <!-- Permission related, appears in system permission UI -->
-    <string name="permission_label">使用 Shizuku</string>
-    <string name="permission_description">允许应用使用 Shizuku。</string>
+    <string name="permission_label">使用 TokenX</string>
+    <string name="permission_description">允许应用使用 TokenX。</string>
     <string name="permission_warning_template"><![CDATA[要允许<b>%1$s</b>%2$s吗？]]></string>
     <string name="grant_dialog_button_allow_always">始终允许</string>
     <string name="grant_dialog_button_deny">"拒绝"</string>
@@ -144,32 +144,32 @@
     <string name="starter">启动程序</string>
     <string name="start_with_root_failed">未授予 root 权限或是该设备没有 root，因此无法启动服务。</string>
     <!-- WADB Starter -->
-    <string name="wadb_notification_title">正在启动 Shizuku…</string>
+    <string name="wadb_notification_title">正在启动 TokenX…</string>
     <string name="wadb_notification_wifi_required">正在等待 Wi-Fi 连接，连接成功后才能继续</string>
     <string name="wadb_notification_retry">等待重试</string>
     <string name="wadb_error_title">在系统启动时启动出现错误</string>
     <string name="wadb_error_notify_dev">点击通知开发者。</string>
     <string name="wadb_permission_error_notification_title">权限错误</string>
-    <string name="wadb_permission_error_notification_content">Shizuku 需要 WRITE_SECURE_SETTINGS
+    <string name="wadb_permission_error_notification_content">TokenX 需要 WRITE_SECURE_SETTINGS
         权限才能开机启动。点击了解如何授予此权限。</string>
     <!-- Shell -->
     <!-- Watchdog -->
     <string name="watchdog_running">Watchdog 正在运行</string>
     <string name="watchdog_turn_off">关</string>
-    <string name="watchdog_shizuku_crashed_title">Shizuku 最近崩溃了</string>
+    <string name="watchdog_shizuku_crashed_title">TokenX 最近崩溃了</string>
     <string name="watchdog_shizuku_crashed_text">Watchdog 已重启服务。点击了解可防止未来崩溃的潜在修复方案。</string>
     <string name="watchdog_shizuku_crashed_action_turn_off_alerts">关闭提醒</string>
     <!-- Misc -->
     <string name="dialog_cannot_open_browser_title">无法启动浏览器</string>
     <string name="toast_copied_to_clipboard">已复制到剪贴板</string>
     <string name="accessibility_service_description">为无法使用通知或分屏功能的设备（例如，运行 Android 14
-        及更高版本的电视）提供配对支持。\n\n使 Shizuku 能够从无线调试配对屏幕中提取配对码。找到配对码后，它将自动禁用。</string>
+        及更高版本的电视）提供配对支持。\n\n使 TokenX 能够从无线调试配对屏幕中提取配对码。找到配对码后，它将自动禁用。</string>
     <!-- Messages for legacy -->
-    <string name="dialog_legacy_not_support_title">%1$s 不支持现代 Shizuku</string>
-    <string name="dialog_legacy_not_support_message"><![CDATA[旧式 Shizuku 已于 2019 年 3 月被弃用。此外，旧式 Shizuku 无法在较新版本的 Android 系统上工作。<p>请要求 <b>%1$s</b> 的开发者进行更新。]]></string>
-    <string name="dialog_requesting_legacy_title">%1$s 正在请求旧式 Shizuku</string>
-    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> 支持现代 Shizuku，但它正在请求旧式 Shizuku。这可能是因为 Shizuku 没有运行，请在 Shizuku 应用内检查。<p>旧式 Shizuku 已于 2019 年 3 月被弃用。]]></string>
-    <string name="dialog_requesting_legacy_button_open_shizuku">打开 Shizuku</string>
+    <string name="dialog_legacy_not_support_title">%1$s 不支持现代 TokenX</string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[旧式 TokenX 已于 2019 年 3 月被弃用。此外，旧式 TokenX 无法在较新版本的 Android 系统上工作。<p>请要求 <b>%1$s</b> 的开发者进行更新。]]></string>
+    <string name="dialog_requesting_legacy_title">%1$s 正在请求旧式 TokenX</string>
+    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> 支持现代 TokenX，但它正在请求旧式 TokenX。这可能是因为 TokenX 没有运行，请在 TokenX 应用内检查。<p>旧式 TokenX 已于 2019 年 3 月被弃用。]]></string>
+    <string name="dialog_requesting_legacy_button_open_shizuku">打开 TokenX</string>
     <string name="wadb_notification_attempt_now">现在尝试</string>
     <!-- Manage tab -->
     <!-- One app, and what it may do on the device -->

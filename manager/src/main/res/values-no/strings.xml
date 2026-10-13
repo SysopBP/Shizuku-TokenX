@@ -18,25 +18,25 @@
     <string name="dialog_adb_pairing_paring_code">Paringskode</string>
     <string name="paring_code_is_wrong">Paringskoden er feil.</string>
     <string name="cannot_connect_port">Kan ikke koble til trådløs feilsøkingstjeneste.\n\nVennligst
-        sørg for at Shizuku er hvitelistet i alle brannmur-, annonseblokkerings-, VPN- eller
+        sørg for at TokenX er hvitelistet i alle brannmur-, annonseblokkerings-, VPN- eller
         lignende apper som kan begrense nettverkstilgang.</string>
     <string name="dialog_adb_pairing_message">Start paringen ved å utføre følgende trinn:\n- Naviger
         til \"Utvikleralternativer\"\n- Aktiver \"USB-feilsøking\" og \"Trådløs feilsøking\"\n-
         Trykk på venstre side av \"Trådløs feilsøking\"\n- Trykk på \"Par enhet med paringskode\"\n-
         Skriv inn paringskoden i varselet</string>
     <string name="dialog_adb_pairing_accessibility_permission">På Android 14 vil
-        installasjon/oppdatering av Shizuku med pakkeinstallasjonsprogrammet oppheve ^1-tillatelsen,
+        installasjon/oppdatering av TokenX med pakkeinstallasjonsprogrammet oppheve ^1-tillatelsen,
         som er nødvendig for å aktivere tilgjengelighetstjenesten for paring.\n\nFor å gi den, kjør
         følgende ADB-kommando:\n\n^2\n\nEtter at du har kjørt kommandoen, kan du fortsette med
-        paringsprosessen.\n\nMerk: Du kan omgå dette ved å installere/oppdatere Shizuku med ADB.</string>
+        paringsprosessen.\n\nMerk: Du kan omgå dette ved å installere/oppdatere TokenX med ADB.</string>
     <string name="dialog_adb_pairing_accessibility_enable">Vennligst aktiver
-        tilgjengelighetstjenesten for å starte paringsprosessen. Dette lar Shizuku oppdage
+        tilgjengelighetstjenesten for å starte paringsprosessen. Dette lar TokenX oppdage
         paringskoden.\n\nTilgjengelighetstjenesten slås av når koden blir funnet, eller etter 1
         minutt for å spare energi.</string>
     <string name="dialog_adb_pairing_accessibility_navigate">Start paringen ved å utføre følgende
         trinn:\n– Naviger til «Utvikleralternativer»\n– Aktiver «USB-feilsøking» og «Trådløs
         feilsøking»\n– Trykk på venstre side av «Trådløs feilsøking»\n– Trykk på «Par enhet med
-        paringskode». Shizuku vil automatisk oppdage paringskoden.</string>
+        paringskode». TokenX vil automatisk oppdage paringskoden.</string>
     <string name="adb_pairing_requires_multi_window">Vennligst aktiver delt skjermmodus (flere
         vinduer) først.</string>
     <string name="adb_pairing_requires_multi_window_reason">Systemet krever at paringsdialogen
@@ -49,7 +49,7 @@
     <string name="enable">Aktivere</string>
     <string name="development_settings">Utvikleralternativer</string>
     <string name="notification_settings">Varslingsalternativer</string>
-    <string name="adb_pairing_tutorial_content_notification">En varsling fra Shizuku vil hjelpe deg
+    <string name="adb_pairing_tutorial_content_notification">En varsling fra TokenX vil hjelpe deg
         å fullføre paringen.</string>
     <string name="adb_pairing_tutorial_content_steps">Naviger til «Utvikleralternativer», og aktiver
         deretter «USB-feilsøking» og «Trådløs feilsøking».</string>
@@ -57,21 +57,21 @@
         feilsøking», og trykk deretter på «Koble sammen enhet med paringskode». Skriv inn koden i
         varselet for å fullføre paringen.</string>
     <string name="adb_pairing_tutorial_content_notification_blocked">Paringsprosessen krever at du
-        interagerer med en varsling fra Shizuku. Vennligst la Shizuku poste varsler.</string>
+        interagerer med en varsling fra TokenX. Vennligst la TokenX poste varsler.</string>
     <string name="adb_pairing_tutorial_content_miui">MIUI-brukere kan måtte bytte varslingsstil til
         \"Android\" fra \"Notification\" - \"Notification shade\" i systeminnstillingene.</string>
     <string name="adb_pairing_tutorial_content_miui_2">Ellers kan det hende du ikke kan skrive inn
         paringskoden fra varslingen.</string>
-    <string name="adb_pairing_tutorial_content_finish">Gå tilbake til Shizuku og start Shizuku.</string>
-    <string name="adb_pairing_tutorial_content_network">Shizuku må få tilgang til det lokale
+    <string name="adb_pairing_tutorial_content_finish">Gå tilbake til TokenX og start TokenX.</string>
+    <string name="adb_pairing_tutorial_content_network">TokenX må få tilgang til det lokale
         nettverket. Den styres av nettverkstillatelsen.</string>
     <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Noen systemer (som
         MIUI) tillater ikke apper å få tilgang til nettverket når de ikke er synlige, selv om appen
         bruker en forgrunnstjeneste. Vennligst deaktiver batterioptimaliseringsfunksjonene for
-        Shizuku på slike systemer.</string>
+        TokenX på slike systemer.</string>
     <!-- Home - Root -->
     <string name="home_root_title"><![CDATA[Start (for rootede enheter)]]></string>
-    <string name="home_root_description"><![CDATA[Hvis du bruker Magisk, kan du prøve %1$s. For root-brukere vil det etter hvert erstatte Shizuku. Merk at eksisterende applikasjoner må endres litt for å bruke %2$s.]]></string>
+    <string name="home_root_description"><![CDATA[Hvis du bruker Magisk, kan du prøve %1$s. For root-brukere vil det etter hvert erstatte TokenX. Merk at eksisterende applikasjoner må endres litt for å bruke %2$s.]]></string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
         <item quantity="one"><![CDATA[Autorisert %d -applikasjon]]></item>
@@ -90,7 +90,7 @@
     <string name="terminal_tutorial_miui">Brukere har rapportert at MIUI bryter Storage Access
         Framework, som brukes av eksportfunksjonen.</string>
     <string name="terminal_tutorial_miui_2">Hvis du bruker MIUI, må du kanskje pakke ut filen fra
-        mappen med ressurser i Shizukus APK.</string>
+        mappen med ressurser i TokenXs APK.</string>
     <string name="terminal_tutorial_1">Eksporter filene til en ny mappe.</string>
     <string name="terminal_tutorial_1_description">To filer vil bli eksportert: %1$s og %2$s. Hvis
         filene allerede finnes i den valgte mappen, vil de bli slettet.</string>
@@ -104,16 +104,16 @@
     <!-- Stealth -->
     <!-- Settings -->
     <string name="settings_start_on_boot">Start på oppstart</string>
-    <string name="settings_watchdog_summary">Start Shizuku automatisk på nytt hvis den krasjer</string>
+    <string name="settings_watchdog_summary">Start TokenX automatisk på nytt hvis den krasjer</string>
     <string name="settings_tcp_mode">TCP-modus</string>
-    <string name="settings_tcp_mode_summary">"Lar Shizuku starte på nytt uten Wi-Fi. (Shizuku må ha
+    <string name="settings_tcp_mode_summary">"Lar TokenX starte på nytt uten Wi-Fi. (TokenX må ha
         startet én gang siden omstarten)"</string>
     <string name="settings_tcp_mode_dialog_close_port">"TCP-porten vil bli stengt umiddelbart. Du
         trenger Wi-Fi for å slå på TCP-modus igjen. Vil du fortsette?"</string>
     <string name="settings_restart_dialog_title">Omstart kreves</string>
-    <string name="settings_restart_dialog_message">Shizuku må starte på nytt for å kunne bruke denne
+    <string name="settings_restart_dialog_message">TokenX må starte på nytt for å kunne bruke denne
         innstillingen.</string>
-    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Wi-Fi er påkrevd. Shizuku fortsetter å kjøre og venter på Wi-Fi-tilkobling før han starter på nytt i bakgrunnen.</b>]]></string>
+    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Wi-Fi er påkrevd. TokenX fortsetter å kjøre og venter på Wi-Fi-tilkobling før han starter på nytt i bakgrunnen.</b>]]></string>
     <string name="settings_tcp_port">TCP-port</string>
     <string name="settings_language">Språk</string>
     <string name="settings_black_night_theme">Svart natt-tema</string>
@@ -142,7 +142,7 @@
     <!-- Updates -->
     <!-- Toast -->
     <string name="toast_no_email_app">Ingen e-postapp funnet</string>
-    <string name="toast_pairing_timeout">Shizuku-paringstjenesten gikk ut.</string>
+    <string name="toast_pairing_timeout">TokenX-paringstjenesten gikk ut.</string>
     <!-- Dark Mode Setting Override -->
     <string name="dark_theme_off">Alltid lett</string>
     <string name="dark_theme_on">Alltid mørkt</string>
@@ -156,12 +156,12 @@
     <string name="notification_adb_pairing_stop_searching">Slutt å lete</string>
     <string name="notification_adb_pairing_working_title">Paring pågår</string>
     <string name="notification_adb_pairing_succeed_title">Vellykket paring</string>
-    <string name="notification_adb_pairing_succeed_text">Du kan starte Shizuku-tjenesten nå.</string>
+    <string name="notification_adb_pairing_succeed_text">Du kan starte TokenX-tjenesten nå.</string>
     <string name="notification_adb_pairing_failed_title">Paringen mislyktes</string>
     <string name="notification_adb_pairing_retry">Prøve</string>
     <!-- Permission related, appears in system permission UI -->
-    <string name="permission_label">tilgang til Shizuku</string>
-    <string name="permission_description">La appen bruke Shizuku.</string>
+    <string name="permission_label">tilgang til TokenX</string>
+    <string name="permission_description">La appen bruke TokenX.</string>
     <string name="permission_warning_template"><![CDATA[Tillate <b>%1$s</b> til %2$s?]]></string>
     <string name="grant_dialog_button_allow_always">Gi all tid</string>
     <string name="grant_dialog_button_deny">"Benekte"</string>
@@ -170,19 +170,19 @@
     <string name="start_with_root_failed">Kan ikke starte tjenesten fordi root-tillatelse ikke er
         gitt, eller denne enheten ikke er rootet.</string>
     <!-- WADB Starter -->
-    <string name="wadb_notification_title">Starter Shizuku…</string>
+    <string name="wadb_notification_title">Starter TokenX…</string>
     <string name="wadb_notification_wifi_required">Venter på Wi-Fi-tilkobling før jeg fortsetter</string>
     <string name="wadb_notification_retry">Venter på å prøve på nytt</string>
     <string name="wadb_error_title">Feil ved oppstart ved oppstart</string>
     <string name="wadb_error_notify_dev">Trykk for å varsle utvikleren.</string>
     <string name="wadb_permission_error_notification_title">Tillatelsesfeil</string>
-    <string name="wadb_permission_error_notification_content">Shizuku trenger WRITE_SECURE_SETTINGS
+    <string name="wadb_permission_error_notification_content">TokenX trenger WRITE_SECURE_SETTINGS
         for å starte på oppstart. Trykk for å lære hvordan du gir det.</string>
     <!-- Shell -->
     <!-- Watchdog -->
     <string name="watchdog_running">Vakthunden er i gang</string>
     <string name="watchdog_turn_off">Slå av</string>
-    <string name="watchdog_shizuku_crashed_title">Shizuku krasjet nylig</string>
+    <string name="watchdog_shizuku_crashed_title">TokenX krasjet nylig</string>
     <string name="watchdog_shizuku_crashed_text">Vakthunden startet tjenesten på nytt. Trykk for å
         lære om mulige løsninger som kan forhindre fremtidige krasj.</string>
     <string name="watchdog_shizuku_crashed_action_turn_off_alerts">Slå av varsler</string>
@@ -191,14 +191,14 @@
     <string name="toast_copied_to_clipboard">Kopiert til utklippstavlen</string>
     <string name="accessibility_service_description">Gir støtte for paring for enheter (f.eks. TV-er
         som kjører Android 14+) der varsler eller delt skjerm ikke kan brukes.\n\nGjør det mulig for
-        Shizuku å trekke ut paringskoden fra feilsøkingsskjermen for trådløs paring. Den vil
+        TokenX å trekke ut paringskoden fra feilsøkingsskjermen for trådløs paring. Den vil
         deaktivere seg selv når paringskoden er funnet.</string>
     <!-- Messages for legacy -->
-    <string name="dialog_legacy_not_support_title">%1$s støtter ikke moderne Shizuku</string>
-    <string name="dialog_legacy_not_support_message"><![CDATA[Legacy Shizuku har vært avviklet siden mars 2019. Legacy Shizuku fungerer heller ikke på nyere Android-systemer.<p>Be utvikleren av <b>%1$s</b> om å oppdatere.]]></string>
-    <string name="dialog_requesting_legacy_title">%1$s ber om eldre Shizuku</string>
-    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> har støtte for moderne Shizuku, men den ber om den eldre versjonen av Shizuku. Dette kan være fordi Shizuku ikke kjører. Sjekk det i Shizuku-appen.<p>Den eldre versjonen av Shizuku har vært avviklet siden mars 2019.]]></string>
-    <string name="dialog_requesting_legacy_button_open_shizuku">Åpne Shizuku</string>
+    <string name="dialog_legacy_not_support_title">%1$s støtter ikke moderne TokenX</string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[Legacy TokenX har vært avviklet siden mars 2019. Legacy TokenX fungerer heller ikke på nyere Android-systemer.<p>Be utvikleren av <b>%1$s</b> om å oppdatere.]]></string>
+    <string name="dialog_requesting_legacy_title">%1$s ber om eldre TokenX</string>
+    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> har støtte for moderne TokenX, men den ber om den eldre versjonen av TokenX. Dette kan være fordi TokenX ikke kjører. Sjekk det i TokenX-appen.<p>Den eldre versjonen av TokenX har vært avviklet siden mars 2019.]]></string>
+    <string name="dialog_requesting_legacy_button_open_shizuku">Åpne TokenX</string>
     <string name="wadb_notification_attempt_now">Prøve</string>
     <!-- Manage tab -->
     <!-- One app, and what it may do on the device -->

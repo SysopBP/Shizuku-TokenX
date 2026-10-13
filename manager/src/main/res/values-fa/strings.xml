@@ -25,10 +25,10 @@
         روی سمت چپ «اشکال‌زدایی بی‌سیم» ضربه بزنید\n- روی «جفت کردن دستگاه با کد جفت‌سازی» ضربه
         بزنید\n- کد جفت‌سازی را در اعلان وارد کنید</string>
     <string name="dialog_adb_pairing_accessibility_permission">در اندروید ۱۴، نصب/به‌روزرسانی
-        Shizuku با استفاده از Package Installer، مجوز ^1 را که برای فعال کردن سرویس دسترسی برای
+        TokenX با استفاده از Package Installer، مجوز ^1 را که برای فعال کردن سرویس دسترسی برای
         جفت‌سازی لازم است، لغو می‌کند.\n\nبرای اعطای آن، دستور ADB زیر را اجرا کنید:\n\n^2\n\nپس از
         اجرای دستور، می‌توانید فرآیند جفت‌سازی را ادامه دهید.\n\nتوجه: می‌توانید با نصب/به‌روزرسانی
-        Shizuku با ADB، از این مرحله عبور کنید.</string>
+        TokenX با ADB، از این مرحله عبور کنید.</string>
     <string name="dialog_adb_pairing_accessibility_enable">لطفاً برای شروع فرآیند جفت‌سازی، سرویس
         دسترسی را فعال کنید. این به شیزوکو اجازه می‌دهد تا کد جفت‌سازی را تشخیص دهد.\n\nسرویس دسترسی
         هنگام یافتن کد یا پس از ۱ دقیقه برای صرفه‌جویی در مصرف انرژی خاموش می‌شود.</string>
@@ -48,7 +48,7 @@
     <string name="enable">فعال کردن</string>
     <string name="development_settings">گزینه های توسعه دهنده</string>
     <string name="notification_settings">گزینه های اعلان</string>
-    <string name="adb_pairing_tutorial_content_notification">یک اعلان از Shizuku به شما امکان می دهد
+    <string name="adb_pairing_tutorial_content_notification">یک اعلان از TokenX به شما امکان می دهد
         مرتبط کردن را تکمیل کنید.</string>
     <string name="adb_pairing_tutorial_content_steps">به «گزینه‌های توسعه‌دهنده» بروید، سپس
         «اشکال‌زدایی USB» و «اشکال‌زدایی بی‌سیم» را فعال کنید.</string>
@@ -56,7 +56,7 @@
         ضربه بزنید، سپس روی «جفت کردن دستگاه با کد جفت‌سازی» ضربه بزنید. کد را در اعلان وارد کنید تا
         جفت‌سازی تکمیل شود.</string>
     <string name="adb_pairing_tutorial_content_notification_blocked">فرآیند مرتبط شدن به شما نیاز
-        دارد که با اعلان Shizuku تعامل داشته باشید. لطفاً به Shizuku اجازه دهید تا اعلان‌ها را ارسال
+        دارد که با اعلان TokenX تعامل داشته باشید. لطفاً به TokenX اجازه دهید تا اعلان‌ها را ارسال
         کند.</string>
     <string name="adb_pairing_tutorial_content_miui">کاربران MIUI ممکن است نیاز داشته باشند که در
         تنظیمات دستگاه، سبک اعلان را به \"اندروید\" از \"اعلان ها\" - \"سایه اعلان\" تغییر دهند.</string>
@@ -71,7 +71,7 @@
         چنین سیستم هایی غیرفعال کنید.</string>
     <!-- Home - Root -->
     <string name="home_root_title"><![CDATA[راه‌اندازی (برای دستگاه‌هایی با دسترسی ریشه)]]></string>
-    <string name="home_root_description"><![CDATA[اگر از Magisk استفاده می‌کنید، می‌توانید %1$sرا امتحان کنید. برای کاربران روت، در نهایت جایگزین Shizuku خواهد شد. توجه داشته باشید، برنامه‌های موجود برای استفاده از %2$sباید کمی تغییر کنند.]]></string>
+    <string name="home_root_description"><![CDATA[اگر از Magisk استفاده می‌کنید، می‌توانید %1$sرا امتحان کنید. برای کاربران روت، در نهایت جایگزین TokenX خواهد شد. توجه داشته باشید، برنامه‌های موجود برای استفاده از %2$sباید کمی تغییر کنند.]]></string>
     <string name="home_root_button_start">راه‌اندازی</string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
@@ -110,8 +110,8 @@
     <string name="settings_watchdog_summary">در صورت خرابی، شیزوکو را به طور خودکار مجدداً راه
         اندازی کنید</string>
     <string name="settings_tcp_mode">حالت TCP</string>
-    <string name="settings_tcp_mode_summary">"به Shizuku اجازه می‌دهد بدون Wi-Fi دوباره راه‌اندازی
-        شود. (Shizuku باید یک بار از زمان راه‌اندازی مجدد شروع شده باشد)"</string>
+    <string name="settings_tcp_mode_summary">"به TokenX اجازه می‌دهد بدون Wi-Fi دوباره راه‌اندازی
+        شود. (TokenX باید یک بار از زمان راه‌اندازی مجدد شروع شده باشد)"</string>
     <string name="settings_tcp_mode_dialog_close_port">"پورت TCP فوراً بسته خواهد شد. برای فعال کردن
         مجدد حالت TCP به وای‌فای نیاز خواهید داشت. ادامه می‌دهید؟"</string>
     <string name="settings_restart_dialog_title">راه اندازی مجدد مورد نیاز است</string>
@@ -163,13 +163,13 @@
     <string name="notification_adb_pairing_stop_searching">توقف جستجو</string>
     <string name="notification_adb_pairing_working_title">مرتبط سازی در حال انجام است</string>
     <string name="notification_adb_pairing_succeed_title">مرتبط سازی با موفقیت انجام شد</string>
-    <string name="notification_adb_pairing_succeed_text">اکنون می توانید خدمات Shizuku را راه اندازی
+    <string name="notification_adb_pairing_succeed_text">اکنون می توانید خدمات TokenX را راه اندازی
         کنید.</string>
     <string name="notification_adb_pairing_failed_title">مرتبط سازی انجام نشد</string>
     <string name="notification_adb_pairing_retry">سعی مجدد</string>
     <!-- Permission related, appears in system permission UI -->
-    <string name="permission_label">دسترسی Shizuku</string>
-    <string name="permission_description">به برنامه اجازه دهید از Shizuku استفاده کند.</string>
+    <string name="permission_label">دسترسی TokenX</string>
+    <string name="permission_description">به برنامه اجازه دهید از TokenX استفاده کند.</string>
     <string name="permission_warning_template"><![CDATA[اجازه <b>%1$s</b> برای %2$s؟]]></string>
     <string name="grant_dialog_button_allow_always">همیشه اجازه داده شود</string>
     <string name="grant_dialog_button_deny">"رد"</string>
@@ -199,14 +199,14 @@
     <string name="toast_copied_to_clipboard">در کلیپ بورد کپی شد</string>
     <string name="accessibility_service_description">پشتیبانی از جفت‌سازی را برای دستگاه‌هایی (مثلاً
         تلویزیون‌های دارای اندروید ۱۴+) که در آن‌ها نمی‌توان از اعلان‌ها یا تقسیم صفحه استفاده کرد،
-        فراهم می‌کند.\n\nبه Shizuku این امکان را می‌دهد که کد جفت‌سازی را از صفحه جفت‌سازی
+        فراهم می‌کند.\n\nبه TokenX این امکان را می‌دهد که کد جفت‌سازی را از صفحه جفت‌سازی
         اشکال‌زدایی بی‌سیم استخراج کند. پس از یافتن کد جفت‌سازی، خود را غیرفعال می‌کند.</string>
     <!-- Messages for legacy -->
     <string name="dialog_legacy_not_support_title">%1$s از شیزوکوی جدید پشتیبانی نمی کند</string>
-    <string name="dialog_legacy_not_support_message"><![CDATA[شیزوکوی قدیمی از مارس ۲۰۱۹ منسوخ شده است. همچنین، Shizuku قدیمی در دستگاه‌های اندروید جدید کار نمی‌کند.<p>لطفاً از توسعه‌دهنده <b>%1$s</b> بخواهید که به‌روزرسانی کند.]]></string>
-    <string name="dialog_requesting_legacy_title">%1$s در حال درخواست Shizuku قدیمی است</string>
-    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> پشتیبانی نسخه جدید شیزوکو دارد، اما شیزوکو قدیمی را درخواست می‌کند. این ممکن است به این دلیل باشد که Shizuku در حال اجرا نیست، لطفاً در برنامه Shizuku بررسی کنید.<p>Shizuku قدیمی از مارس ۲۰۱۹ منسوخ شده است.]]></string>
-    <string name="dialog_requesting_legacy_button_open_shizuku">باز کردن Shizuku</string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[شیزوکوی قدیمی از مارس ۲۰۱۹ منسوخ شده است. همچنین، TokenX قدیمی در دستگاه‌های اندروید جدید کار نمی‌کند.<p>لطفاً از توسعه‌دهنده <b>%1$s</b> بخواهید که به‌روزرسانی کند.]]></string>
+    <string name="dialog_requesting_legacy_title">%1$s در حال درخواست TokenX قدیمی است</string>
+    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> پشتیبانی نسخه جدید شیزوکو دارد، اما شیزوکو قدیمی را درخواست می‌کند. این ممکن است به این دلیل باشد که TokenX در حال اجرا نیست، لطفاً در برنامه TokenX بررسی کنید.<p>TokenX قدیمی از مارس ۲۰۱۹ منسوخ شده است.]]></string>
+    <string name="dialog_requesting_legacy_button_open_shizuku">باز کردن TokenX</string>
     <string name="wadb_notification_attempt_now">سعی مجدد</string>
     <!-- Manage tab -->
     <!-- One app, and what it may do on the device -->

@@ -200,6 +200,9 @@ jobs:
           test -s manager/src/main/assets/rish_shizuku.dex
           ./gradlew :manager:assembleDebug --stacktrace
 
+      - name: Verify TokenX identity and client discovery
+        run: python3 ci/test-tokenx-identity.py
+
       - name: Test explicit RISH routing
         run: python3 ci/test-rish-routing.py
 

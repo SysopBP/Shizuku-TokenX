@@ -17,26 +17,26 @@
     <string name="dialog_adb_pairing_paring_code">Cod de asociere</string>
     <string name="paring_code_is_wrong">Codul de asociere este greșit.</string>
     <string name="cannot_connect_port">Nu mă pot conecta la serviciul de depanare wireless.\n\nTe
-        rugăm să te asiguri că Shizuku este pe lista albă în toate firewall-urile, ad-block-urile,
+        rugăm să te asiguri că TokenX este pe lista albă în toate firewall-urile, ad-block-urile,
         VPN-urile sau aplicațiile similare care pot restricționa accesul la rețea.</string>
     <string name="dialog_adb_pairing_message">Vă rugăm să începeți asocierea urmând următorii
         pași:\n- Navigați la „Opțiuni pentru dezvoltatori”\n- Activați „Depanare USB” și „Depanare
         wireless”\n- Atingeți partea stângă a opțiunii „Depanare wireless”\n- Atingeți „Asocieți
         dispozitivul cu cod de asociere”\n- Introduceți codul de asociere în notificare</string>
     <string name="dialog_adb_pairing_accessibility_permission">Pe Android 14,
-        instalarea/actualizarea Shizuku cu ajutorul programului de instalare a pachetelor revocă
+        instalarea/actualizarea TokenX cu ajutorul programului de instalare a pachetelor revocă
         permisiunea ^1, necesară pentru activarea serviciului de accesibilitate pentru
         asociere.\n\nPentru a o acorda, execută următoarea comandă ADB:\n\n^2\n\nDupă executarea
         comenzii, poți continua procesul de asociere.\n\nNotă: poți ocoli acest lucru
-        instalând/actualizând Shizuku cu ADB.</string>
+        instalând/actualizând TokenX cu ADB.</string>
     <string name="dialog_adb_pairing_accessibility_enable">Vă rugăm să activați serviciul de
         accesibilitate pentru a începe procesul de asociere. Acest lucru permite dispozitivului
-        Shizuku să detecteze codul de asociere.\n\nServiciul de accesibilitate va fi dezactivat când
+        TokenX să detecteze codul de asociere.\n\nServiciul de accesibilitate va fi dezactivat când
         codul este găsit sau după 1 minut pentru a economisi energie.</string>
     <string name="dialog_adb_pairing_accessibility_navigate">Vă rugăm să începeți asocierea urmând
         următorii pași:\n- Navigați la „Opțiuni pentru dezvoltatori”\n- Activați „Depanare USB” și
         „Depanare wireless”\n- Atingeți partea stângă a opțiunii „Depanare wireless”\n- Atingeți
-        „Asocieți dispozitivul cu cod de asociere”. Shizuku va detecta automat codul de asociere.</string>
+        „Asocieți dispozitivul cu cod de asociere”. TokenX va detecta automat codul de asociere.</string>
     <string name="adb_pairing_requires_multi_window">Intră mai întâi în modul ecran divizat
         (ferestre multiple).</string>
     <string name="adb_pairing_requires_multi_window_reason">Sistemul cere ca dialogul de împerechere
@@ -49,7 +49,7 @@
     <string name="enable">Permite</string>
     <string name="development_settings">Opțiuni dezvoltator</string>
     <string name="notification_settings">Opțiuni de notificare</string>
-    <string name="adb_pairing_tutorial_content_notification">O notificare de la Shizuku te va ajuta
+    <string name="adb_pairing_tutorial_content_notification">O notificare de la TokenX te va ajuta
         să finalizezi asocierea.</string>
     <string name="adb_pairing_tutorial_content_steps">Navigați la „Opțiuni pentru dezvoltatori”,
         apoi activați „Depanare USB” și „Depanare wireless”.</string>
@@ -57,22 +57,22 @@
         „Depanare wireless”, apoi atingeți „Asocierea dispozitivului cu codul de asociere”.
         Introduceți codul din notificare pentru a finaliza asocierea.</string>
     <string name="adb_pairing_tutorial_content_notification_blocked">Procesul de asociere necesită
-        să interacționarea cu o notificare de la Shizuku. Permite lui Shizuku să afișeze notificări.</string>
+        să interacționarea cu o notificare de la TokenX. Permite lui TokenX să afișeze notificări.</string>
     <string name="adb_pairing_tutorial_content_miui">Este posibil ca utilizatorii MIUI să fie
         nevoiți să schimbe stilul de notificare la „Android” în „Notificări” - „Panou de notificare”
         în setările sistemului.</string>
     <string name="adb_pairing_tutorial_content_miui_2">Altfel, este posibil să nu poți introduce
         codul de împerechere din notificare.</string>
-    <string name="adb_pairing_tutorial_content_finish">Întoarce-te la Shizuku și începe Shizuku.</string>
-    <string name="adb_pairing_tutorial_content_network">Shizuku trebuie să acceseze rețeaua locală.
+    <string name="adb_pairing_tutorial_content_finish">Întoarce-te la TokenX și începe TokenX.</string>
+    <string name="adb_pairing_tutorial_content_network">TokenX trebuie să acceseze rețeaua locală.
         Este controlat de permisiunea rețelei.</string>
     <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Unele sisteme (cum
         ar fi MIUI) interpermit accesul aplicațiilor la rețea atunci când nu sunt vizibile, chiar
         dacă aplicația folosește un serviciu de prim-plan. Vă rugăm să dezactivați funcțiile de
-        optimizare a bateriei pentru Shizuku pe astfel de sisteme.</string>
+        optimizare a bateriei pentru TokenX pe astfel de sisteme.</string>
     <!-- Home - Root -->
     <string name="home_root_title"><![CDATA[Pornire (pentru dispozitive root-ate)]]></string>
-    <string name="home_root_description"><![CDATA[Dacă folosești Magisk, poți încerca %1$s. Pentru utilizatorii root, acesta va înlocui în cele din urmă Shizuku. Reține că aplicațiile existente trebuie să se modifice puțin pentru a utiliza %2$s.]]></string>
+    <string name="home_root_description"><![CDATA[Dacă folosești Magisk, poți încerca %1$s. Pentru utilizatorii root, acesta va înlocui în cele din urmă TokenX. Reține că aplicațiile existente trebuie să se modifice puțin pentru a utiliza %2$s.]]></string>
     <string name="home_root_button_start">Pornire</string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
@@ -95,7 +95,7 @@
     <string name="terminal_tutorial_miui">Utilizatorii au raportat că MIUI încalcă Storage Access
         Framework, care este utilizat de funcția de export.</string>
     <string name="terminal_tutorial_miui_2">Dacă folosești MIUI, este posibil să fie nevoie să
-        extragi fișierul din folderul de resurse din APK-ul lui Shizuku.</string>
+        extragi fișierul din folderul de resurse din APK-ul lui TokenX.</string>
     <string name="terminal_tutorial_1">Exportați fișierele într-un folder nou.</string>
     <string name="terminal_tutorial_1_description">Vor fi exportate două fișiere: %1$s și %2$s. Dacă
         fișierele există deja în folderul selectat, acestea vor fi șterse.</string>
@@ -110,16 +110,16 @@
     <!-- Settings -->
     <string name="settings_start_on_boot">Pornire la pornire</string>
     <string name="settings_watchdog">Câine de pază</string>
-    <string name="settings_watchdog_summary">Repornește automat Shizuku dacă se blochează</string>
+    <string name="settings_watchdog_summary">Repornește automat TokenX dacă se blochează</string>
     <string name="settings_tcp_mode">Mod TCP</string>
-    <string name="settings_tcp_mode_summary">"Permite repornirea sistemului Shizuku fără Wi-Fi.
-        (Shizuku trebuie să fi pornit o dată de la repornire)"</string>
+    <string name="settings_tcp_mode_summary">"Permite repornirea sistemului TokenX fără Wi-Fi.
+        (TokenX trebuie să fi pornit o dată de la repornire)"</string>
     <string name="settings_tcp_mode_dialog_close_port">"Portul TCP va fi închis imediat. Veți avea
         nevoie de Wi-Fi pentru a reactiva modul TCP. Continuați?"</string>
     <string name="settings_restart_dialog_title">Repornire necesară</string>
-    <string name="settings_restart_dialog_message">Shizuku trebuie să repornească pentru a aplica
+    <string name="settings_restart_dialog_message">TokenX trebuie să repornească pentru a aplica
         această setare.</string>
-    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Wi-Fi este necesar. Shizuku va continua să ruleze și va aștepta o conexiune Wi-Fi înainte de a reporni în fundal.</b>]]></string>
+    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Wi-Fi este necesar. TokenX va continua să ruleze și va aștepta o conexiune Wi-Fi înainte de a reporni în fundal.</b>]]></string>
     <string name="settings_tcp_port">Port TCP</string>
     <string name="settings_language">Limba</string>
     <string name="settings_black_night_theme">Tema de noapte întunecată</string>
@@ -148,7 +148,7 @@
     <!-- Updates -->
     <!-- Toast -->
     <string name="toast_no_email_app">Nu a fost găsită nicio aplicație de e-mail</string>
-    <string name="toast_pairing_timeout">Serviciul de pereche Shizuku expirat.</string>
+    <string name="toast_pairing_timeout">Serviciul de pereche TokenX expirat.</string>
     <!-- Dark Mode Setting Override -->
     <string name="dark_theme_off">Întotdeauna lumină</string>
     <string name="dark_theme_on">Întotdeauna întuneric</string>
@@ -163,12 +163,12 @@
     <string name="notification_adb_pairing_stop_searching">Oprire căutare</string>
     <string name="notification_adb_pairing_working_title">Asociere în curs</string>
     <string name="notification_adb_pairing_succeed_title">Asociere reușită</string>
-    <string name="notification_adb_pairing_succeed_text">Poți porni serviciul Shizuku acum.</string>
+    <string name="notification_adb_pairing_succeed_text">Poți porni serviciul TokenX acum.</string>
     <string name="notification_adb_pairing_failed_title">Asocierea eșuată</string>
     <string name="notification_adb_pairing_retry">Încearcă din nou</string>
     <!-- Permission related, appears in system permission UI -->
-    <string name="permission_label">accesare Shizuku</string>
-    <string name="permission_description">Permite aplicației să folosească Shizuku.</string>
+    <string name="permission_label">accesare TokenX</string>
+    <string name="permission_description">Permite aplicației să folosească TokenX.</string>
     <string name="permission_warning_template"><![CDATA[Permiți <b>%1$s</b> să %2$s\?]]></string>
     <string name="grant_dialog_button_allow_always">Permite tot timpul</string>
     <string name="grant_dialog_button_deny">"Refuz"</string>
@@ -177,20 +177,20 @@
     <string name="start_with_root_failed">Nu se poate porni serviciul deoarece permisiunea root nu
         este acordată sau acest dispozitiv nu este root-at.</string>
     <!-- WADB Starter -->
-    <string name="wadb_notification_title">Pornirea lui Shizuku…</string>
+    <string name="wadb_notification_title">Pornirea lui TokenX…</string>
     <string name="wadb_notification_wifi_required">Se așteaptă conexiunea Wi-Fi înainte de a
         continua</string>
     <string name="wadb_notification_retry">Se așteaptă o nouă încercare</string>
     <string name="wadb_error_title">Eroare la pornire la bootare</string>
     <string name="wadb_error_notify_dev">Atingeți pentru a notifica dezvoltatorul.</string>
     <string name="wadb_permission_error_notification_title">Eroare de permisiune</string>
-    <string name="wadb_permission_error_notification_content">Shizuku are nevoie de
+    <string name="wadb_permission_error_notification_content">TokenX are nevoie de
         WRITE_SECURE_SETTINGS pentru a porni la pornire. Atingeți pentru a afla cum să îl acordați.</string>
     <!-- Shell -->
     <!-- Watchdog -->
     <string name="watchdog_running">Watchdog-ul rulează</string>
     <string name="watchdog_turn_off">Opreşte</string>
-    <string name="watchdog_shizuku_crashed_title">Shizuku s-a prăbușit recent</string>
+    <string name="watchdog_shizuku_crashed_title">TokenX s-a prăbușit recent</string>
     <string name="watchdog_shizuku_crashed_text">Watchdog a repornit serviciul. Apasă pentru a afla
         despre posibile soluții pentru a preveni viitoare blocări.</string>
     <string name="watchdog_shizuku_crashed_action_turn_off_alerts">Dezactivează alertele</string>
@@ -199,14 +199,14 @@
     <string name="toast_copied_to_clipboard">Copiat în clipboard</string>
     <string name="accessibility_service_description">Oferă asistență pentru asocierea dispozitivelor
         (de exemplu, televizoare cu Android 14+) unde nu se pot utiliza notificările sau ecranul
-        divizat.\n\nPermite Shizuku să extragă codul de asociere din ecranul de asociere pentru
+        divizat.\n\nPermite TokenX să extragă codul de asociere din ecranul de asociere pentru
         depanarea wireless. Se va dezactiva automat odată ce codul de asociere este găsit.</string>
     <!-- Messages for legacy -->
-    <string name="dialog_legacy_not_support_title">%1$s nu suportă Shizuku modern</string>
-    <string name="dialog_legacy_not_support_message"><![CDATA[Vechea versiune Shizuku a fost retrasă din martie 2019. De asemenea, vechea versiune Shizuku nu funcționează pe sisteme Android mai noi.<p>Cere dezvoltatorului <b>%1$s</b> să actualizeze.]]></string>
-    <string name="dialog_requesting_legacy_title">%1$s solicită Shizuku vechi</string>
-    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> are suport Shizuku modern, dar solicită Shizuku vechi. Acest lucru se poate datora faptului că Shizuku nu rulează, verifică în aplicația Shizuku.<p>Versiunea veche a Shizuku a fost retrasă din martie 2019.]]></string>
-    <string name="dialog_requesting_legacy_button_open_shizuku">Deschide Shizuku</string>
+    <string name="dialog_legacy_not_support_title">%1$s nu suportă TokenX modern</string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[Vechea versiune TokenX a fost retrasă din martie 2019. De asemenea, vechea versiune TokenX nu funcționează pe sisteme Android mai noi.<p>Cere dezvoltatorului <b>%1$s</b> să actualizeze.]]></string>
+    <string name="dialog_requesting_legacy_title">%1$s solicită TokenX vechi</string>
+    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> are suport TokenX modern, dar solicită TokenX vechi. Acest lucru se poate datora faptului că TokenX nu rulează, verifică în aplicația TokenX.<p>Versiunea veche a TokenX a fost retrasă din martie 2019.]]></string>
+    <string name="dialog_requesting_legacy_button_open_shizuku">Deschide TokenX</string>
     <string name="wadb_notification_attempt_now">Încearcă din nou</string>
     <!-- Manage tab -->
     <!-- One app, and what it may do on the device -->

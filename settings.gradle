@@ -90,6 +90,23 @@ if (propFile.canRead()) {
     }
 }
 
+// TokenX owns its manager identity. Apply this small, idempotent adaptation to
+// the pinned API submodule for every build, including local and release builds.
+// The Binder extra key stays upstream-compatible for third-party Shizuku clients.
+def tokenxProvider = file("$root/provider/src/main/java/rikka/shizuku/ShizukuProvider.java")
+if (!tokenxProvider.isFile()) {
+    throw new GradleException("Initialize the API submodule: git submodule update --init --recursive")
+}
+def tokenxProviderText = tokenxProvider.getText("UTF-8")
+def tokenxProviderAdapted = tokenxProviderText
+        .replace('MANAGER_APPLICATION_ID = "moe.shizuku.privileged.api"', 'MANAGER_APPLICATION_ID = "com.sysopbp.tokenx"')
+        .replace('PERMISSION = "moe.shizuku.manager.permission.API_V23"', 'PERMISSION = "com.sysopbp.tokenx.permission.API_V23"')
+if (tokenxProviderAdapted != tokenxProviderText) tokenxProvider.setText(tokenxProviderAdapted, "UTF-8")
+def tokenxProviderManifest = file("$root/provider/src/main/AndroidManifest.xml")
+def tokenxManifestText = tokenxProviderManifest.getText("UTF-8")
+def tokenxManifestAdapted = tokenxManifestText.replace('moe.shizuku.manager.permission.API_V23', 'com.sysopbp.tokenx.permission.API_V23')
+if (tokenxManifestAdapted != tokenxManifestText) tokenxProviderManifest.setText(tokenxManifestAdapted, "UTF-8")
+
 include ":aidl"
 project(":aidl").projectDir = file("$root${File.separator}aidl")
 

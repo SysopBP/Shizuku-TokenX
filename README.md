@@ -2,7 +2,7 @@
 
 <img src="docs/tokenx-app-icon.png" width="132" alt="TokenX app icon">
 
-# Shizuku-TokenX
+# TokenX
 
 ### Shizuku-compatible unified multi-backend privilege engine for Android
 
@@ -22,9 +22,9 @@
 
 This is a **preview build** intended for device testing before beta/stable. Root, System, and Shell routing are being validated independently; do not treat a successful System route as proof that Root or Shell has also been tested on the same boot. The packaged rish client uses **TokenX RISH protocol v3** with manager-classified backend identity.
 
-## Shizuku-TokenX at a glance
+## TokenX at a glance
 
-Shizuku-TokenX combines Shizuku-compatible app authorization with multiple Android privilege backends: **System / UID 1000**, **Root / UID 0**, and **Shell / UID 2000**. The current interface includes the TokenX Control Center, execution routing, System Server Bridge verification, App Ops, Firewall, Autostart, Root Console, Shell, and Diagnostics & Logs.
+TokenX combines Shizuku-compatible app authorization with multiple Android privilege backends: **System / UID 1000**, **Root / UID 0**, and **Shell / UID 2000**. The current interface includes the TokenX Control Center, execution routing, System Server Bridge verification, App Ops, Firewall, Autostart, Root Console, Shell, and Diagnostics & Logs.
 
 ### Before installing
 
@@ -345,7 +345,7 @@ The current interface also includes:
 
 <div align="center">
 
-<img src="docs/TokenX_collage_equal_sizes.png" width="100%" alt="Shizuku-TokenX v14.2.0-TKN interface and capability preview">
+<img src="docs/TokenX_collage_equal_sizes.png" width="100%" alt="TokenX v14.2.0-TKN interface and capability preview">
 
 </div>
 
@@ -507,7 +507,7 @@ Clone the repository with submodules:
 
 ```bash
 git clone --recurse-submodules https://github.com/SysopBP/Shizuku-TokenX.git
-cd Shizuku-TokenX
+cd TokenX
 ```
 
 Build the manager:
@@ -590,6 +590,16 @@ Unless a file states otherwise, project code remains licensed under the reposito
 
 <div align="center">
 
-**Shizuku-TokenX — one authorization layer, multiple Android privilege backends.**
+**TokenX — one authorization layer, multiple Android privilege backends.**
 
 </div>
+
+## TokenX identity and migration
+
+TokenX is an independent fork based on Shizuku and Shizuku-Next, not an official Shizuku release. Upstream Apache-2.0 code licenses, copyright notices, and attribution remain in place. TokenX uses original TX launcher artwork, the app name **TokenX**, application ID `com.sysopbp.tokenx`, and its own `com.sysopbp.tokenx.permission.*` declarations. No permission is declared under Shizuku's manager namespace.
+
+This package identity installs as a **new app**, not an in-place update of older TokenX builds using Shizuku's package ID. Configure TokenX again, grant root and notification permissions, select the new TokenX module in LSPosed with Android/System Framework scope as applicable, and reconnect the backends. Do not run both managers' servers at the same time. After verifying the new app, remove the old TokenX installation; avoid uninstalling an official Shizuku app by mistake.
+
+Export a fresh matching `rish` and `rish_shizuku.dex` pair from TokenX. Remove stale `MANAGER_APPLICATION_ID` overrides or set `MANAGER_APPLICATION_ID=com.sysopbp.tokenx`; keep `RISH_APPLICATION_ID=com.termux` for Termux. Root/System routing uses the same controls as before. Any separately installed provisioning module or companion app with a hard-coded old manager package must be updated before use.
+
+Existing Shizuku API clients remain discoverable through their requested API permission and receive the original Binder wire-format key. TokenX grants authorization in its own backend configuration rather than declaring or granting the upstream manager permission. Client compatibility and boot/System Server reconnection need device testing after migration.
