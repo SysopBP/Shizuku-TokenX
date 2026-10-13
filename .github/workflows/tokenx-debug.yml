@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - codex/tokenx-independent-identity
       - tokenx-dev
       - tokenx-recovery
       - tokenx-uid1000-cleanup
@@ -357,3 +358,4 @@ jobs:
           path: ${{ steps.apk.outputs.apk }}
           if-no-files-found: error
           retention-days: 14
+
