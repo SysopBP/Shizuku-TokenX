@@ -5,11 +5,8 @@ itself. It no longer directs this action to the disposable test companion or
 waits for a second native Binder endpoint. Existing Root and System backends
 remain independently routed. Manager UID 1000 is not System Server process identity.
 
-The flow follows JBCompanion's shared-user enrollment and same-package reinstall
-architecture. It uses adapted TokenX Java code through the existing authenticated
-LSPosed `_TKN` route, not JB's unchanged native payload. The original JB payload
-is hardcoded to JB's package. This implementation must not be described as the
-original payload reused byte-for-byte.
+The flow uses shared-user enrollment and same-package reinstall. It runs adapted
+TokenX Java code through the existing authenticated LSPosed `_TKN` route.
 
 CI builds ordinary and system-UID identities with identical manager package,
 build and signing certificate. The ordinary debug APK contains the system APK;

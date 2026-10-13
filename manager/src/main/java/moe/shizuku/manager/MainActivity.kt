@@ -123,7 +123,7 @@ class MainActivity : ComponentActivity() {
         line("Provision System Server UID 1000", 16f, Color.WHITE, true, 8)
         line("Inject into the running System Server and verify its UID 1000 Binder connection.",
             12f, Color.rgb(231, 183, 190), false, 8)
-        line("Requires root and ARM64. Uses the supplied JBCompanion native injector with the TokenX payload.",
+        line("Requires root and ARM64. Uses live native injection with the TokenX payload.",
             12f, Color.rgb(160, 160, 171), false, 8)
         val provisionButton = TextView(this).apply {
             text = "Provision System Server UID 1000"

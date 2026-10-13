@@ -1,4 +1,4 @@
-// Live System Server APK loader. Entry contract matches the supplied JBCompanion injector.
+// Live System Server APK loader. Entry contract matches the supplied native injector.
 #include <jni.h>
 #include <android/log.h>
 #include <dlfcn.h>

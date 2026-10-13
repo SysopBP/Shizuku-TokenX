@@ -7,10 +7,10 @@ the Build 674 tree and modern packaging; no backend verification is skipped.
 
 ## Current live native injection
 
-The Home button now uses the JBCompanion-compatible ARM64 live native injector.
+The Home button now uses the ARM64 live native injector.
 It stages the installed TokenX APK and verifies its Binder in the existing
 System Server process, without a requested reboot or KernelSU module install.
-See [the live injection implementation and reference provenance](jbcompanion-live-injection.md).
+See [the live injection implementation](tokenx-live-injection.md).
 
 The module-based installer described below is retained for compatibility but is
 no longer called by the Home provisioning action. Its old reboot verification
