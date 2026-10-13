@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - codex/build704-migration-fix
       - master
       - feature/system-server-uid1000-injection
       - feature/tokenx-uid1000-test-companion

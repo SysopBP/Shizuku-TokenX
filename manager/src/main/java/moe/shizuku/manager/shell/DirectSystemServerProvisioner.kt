@@ -7,14 +7,14 @@ import java.io.File
 import java.security.DigestInputStream
 import java.security.MessageDigest
 
-/** JBCompanion-compatible live injector, with TokenX's own authenticated Binder payload. */
+/** Live native injector, with TokenX's own authenticated Binder payload. */
 internal object DirectSystemServerProvisioner {
     private const val DIRECTORY = "/data/system/tokenx_direct"
     private const val REFERENCE_SHA256 = "35bbb34e14cddc2c0c1df23321ac118eab73bdac151d7494f0b76fd33c80140b"
 
     fun preflight(context: Context): SystemUidProvisioner.Result {
         if (Build.VERSION.SDK_INT < 27 || "arm64-v8a" !in Build.SUPPORTED_64_BIT_ABIS)
-            return SystemUidProvisioner.Result(false, 2, "The supplied JBCompanion injector requires ARM64 and Android 8.1+.", "direct preflight")
+            return SystemUidProvisioner.Result(false, 2, "Live native injection requires ARM64 and Android 8.1+.", "direct preflight")
         if (context.packageName != BuildConfig.APPLICATION_ID || context.applicationInfo.uid / 100000 != 0)
             return SystemUidProvisioner.Result(false, 2, "Use the original TokenX APK in the device owner profile.", "direct preflight")
         return SystemUidProvisioner.runRoot("""
@@ -38,7 +38,7 @@ internal object DirectSystemServerProvisioner {
         val payload = File(context.applicationInfo.nativeLibraryDir, "libtokenx_direct_payload.so")
         return try {
             require(apk.isFile && injector.isFile && payload.isFile) { "Installed APK or native injection files are missing" }
-            require(sha256(injector) == REFERENCE_SHA256) { "JBCompanion reference injector checksum mismatch" }
+            require(sha256(injector) == REFERENCE_SHA256) { "Native injector checksum mismatch" }
             onStatus("Staging the checked APK and native payload for live injection")
             val apkHash = sha256(apk)
             val payloadHash = sha256(payload)
