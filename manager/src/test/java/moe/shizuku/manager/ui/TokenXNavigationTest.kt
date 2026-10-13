@@ -45,6 +45,11 @@ class TokenXNavigationTest {
         }
     }
 
+    @Test fun `large font labels get enough height and content clearance`() {
+        assertTrue(dockHeight(56f, 2f) >= 22f + 3f + 16f + 24f)
+        assertTrue(dockReservedHeight(56f, 8f, 2f) > dockReservedHeight(56f, 8f))
+    }
+
     @Test fun `content reservation covers maximum dock height and bottom gap`() {
         assertTrue(dockReservedHeight(78f, 28f) >= 78f + 2f * (8f + 28f))
     }

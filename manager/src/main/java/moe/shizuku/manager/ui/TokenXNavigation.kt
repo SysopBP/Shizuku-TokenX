@@ -62,7 +62,9 @@ object TokenXSearchCatalog {
 }
 
 /** Reserve the complete dock including its configurable gap and a content margin. */
-fun dockReservedHeight(height: Float, gap: Float): Float = height.coerceIn(56f, 78f) +
+fun dockHeight(height: Float, fontScale: Float = 1f): Float = maxOf(height.coerceIn(56f, 78f), 41f + 12f * fontScale.coerceAtLeast(1f))
+
+fun dockReservedHeight(height: Float, gap: Float, fontScale: Float = 1f): Float = dockHeight(height, fontScale) +
     2f * (8f + gap.coerceIn(0f, 28f)) + 16f
 
 /** Keep all five tab targets at least 48dp wide whenever the window permits it. */

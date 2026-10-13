@@ -15,10 +15,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,7 +55,7 @@ fun ShizukuApp() {
                         val prefs = ShizukuSettings.getPreferences()
                         val bottomPadding = dockReservedHeight(
                             prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_HEIGHT, 64f),
-                            prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_BOTTOM_GAP, 8f)).dp +
+                            prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_BOTTOM_GAP, 8f), LocalDensity.current.fontScale).dp +
                             WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                         stateHolder.SaveableStateProvider(navigation.current) {
                             if (detail != null) {
@@ -127,7 +129,7 @@ private fun pageIcon(page: TokenXPage): ImageVector = when (page) {
 @Composable
 private fun TokenXDock(selected: String, onSelect: (String) -> Unit, onSearch: () -> Unit, modifier: Modifier) {
     val prefs = ShizukuSettings.getPreferences()
-    val height = prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_HEIGHT, 64f).coerceIn(56f, 78f).dp
+    val height = dockHeight(prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_HEIGHT, 64f), LocalDensity.current.fontScale).dp
     val opacity = prefs.getFloat(TokenXAppearanceKeys.FLOATING_BAR_OPACITY, .82f).coerceIn(.20f, 1f)
     val dark = MaterialTheme.colorScheme.background.luminance() < .5f
     val style = runCatching { FloatingBarStyle.valueOf(prefs.getString(TokenXAppearanceKeys.FLOATING_BAR_STYLE, FloatingBarStyle.FROSTED.name)!!) }
@@ -171,7 +173,7 @@ private fun TokenXDock(selected: String, onSelect: (String) -> Unit, onSearch: (
                                 verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically)) {
                                 Icon(pageIcon(page), page.title, Modifier.size(22.dp),
                                     tint = if (active) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(page.title, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                Text(page.title, fontSize = 10.sp, lineHeight = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                                     color = if (active) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
@@ -183,7 +185,7 @@ private fun TokenXDock(selected: String, onSelect: (String) -> Unit, onSearch: (
                 Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)) {
                     Icon(Icons.Outlined.Search, "Search TokenX", Modifier.size(22.dp))
-                    Text("CORE", fontSize = 10.sp, maxLines = 1)
+                    Text("CORE", fontSize = 10.sp, lineHeight = 12.sp, maxLines = 1)
                 }
             }
         }

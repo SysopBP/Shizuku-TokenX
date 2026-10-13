@@ -58,6 +58,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -122,15 +123,15 @@ fun AppsScreen(bottomPadding: Dp, active: Boolean = true, warmUp: Boolean = fals
     val pm = context.packageManager
 
     var all by remember { mutableStateOf<List<PackageInfo>>(emptyList()) }
-    var query by remember { mutableStateOf("") }
-    var sortOrder by remember { mutableStateOf(SortOrder.RECENTLY_INSTALLED) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var sortOrder by rememberSaveable { mutableStateOf(SortOrder.RECENTLY_INSTALLED) }
     var selected by remember { mutableStateOf(setOf<String>()) }
     var version by remember { mutableIntStateOf(0) }
     var sortMenu by remember { mutableStateOf(false) }
-    var filter by remember { mutableStateOf(AppFilter.ALL) }
-    var backendFilter by remember { mutableStateOf<String?>(null) }
+    var filter by rememberSaveable { mutableStateOf(AppFilter.ALL) }
+    var backendFilter by rememberSaveable { mutableStateOf<String?>(null) }
     // The kind of app, from the same set of filters the app-ops and Labs lists use.
-    var kind by remember { mutableStateOf(ManageFilter.ALL) }
+    var kind by rememberSaveable { mutableStateOf(ManageFilter.ALL) }
     var pendingBatch by remember { mutableStateOf<Boolean?>(null) }
     // Set to the state every listed app should end up in, once the user confirms.
     var pendingToggleAll by remember { mutableStateOf<Boolean?>(null) }

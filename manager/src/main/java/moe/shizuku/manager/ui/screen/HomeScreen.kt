@@ -74,6 +74,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
@@ -166,7 +167,7 @@ fun HomeScreen(bottomPadding: Dp, section: HomeSection = HomeSection.OVERVIEW,
     var showAdbCommand by remember { mutableStateOf(false) }
     var rebootRequired by remember { mutableStateOf(false) }
     var showDeviceRestartMenu by remember { mutableStateOf(false) }
-    var deviceRuntimeExpanded by remember { mutableStateOf(section == HomeSection.DEVICE) }
+    var deviceRuntimeExpanded by rememberSaveable { mutableStateOf(section == HomeSection.DEVICE) }
     var pendingDeviceRestart by remember { mutableStateOf<DeviceRestartAction?>(null) }
     var duplicateApp by remember { mutableStateOf(false) }
     var updateAvailable by remember { mutableStateOf(false) }
@@ -182,8 +183,8 @@ fun HomeScreen(bottomPadding: Dp, section: HomeSection = HomeSection.OVERVIEW,
     var heartbeatTick by remember { mutableStateOf(false) }
     var transportAlive by remember { mutableStateOf(false) }
     var transportGeneration by remember { mutableStateOf(0L) }
-    var transportInfoExpanded by remember { mutableStateOf(false) }
-    var transportStatsExpanded by remember { mutableStateOf(false) }
+    var transportInfoExpanded by rememberSaveable { mutableStateOf(false) }
+    var transportStatsExpanded by rememberSaveable { mutableStateOf(false) }
     var developerOptionsOn by remember { mutableStateOf(context.isDeveloperOptionsEnabled()) }
     var selinuxRes by remember { mutableStateOf<Int?>(null) }
     var seccompRes by remember { mutableStateOf<Int?>(null) }
