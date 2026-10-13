@@ -4,10 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - codex/build704-migration-fix
       - master
-      - feature/system-server-uid1000-injection
-      - feature/tokenx-uid1000-test-companion
       - tokenx-dev
       - tokenx-recovery
       - tokenx-uid1000-cleanup
@@ -17,11 +14,8 @@ on:
       - integration/37885383867-updates
       - codex/tokenx-666-pairing-fixes
       - main
-      - feature/670-system-bridge-recovery
     paths:
       - 'manager/**'
-      - 'uid-test/**'
-      - 'ci/**'
       - 'xposed/**'
       - 'common/**'
       - 'server/**'
@@ -178,13 +172,6 @@ jobs:
       - name: Accept Android SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
-      - name: Create dedicated disposable companion signing key
-        shell: bash
-        run: |
-          keytool -genkeypair -keystore uid-test.keystore -storepass tokenx-test-only \
-            -keypass tokenx-test-only -alias uid-test -keyalg RSA -keysize 3072 \
-            -validity 365 -dname 'CN=TokenX Disposable UID Test' -noprompt
-
       - name: Build debug APK
         env:
           # tribalfs SESL is hosted in another GitHub owner namespace. A repository
@@ -211,31 +198,16 @@ jobs:
           # into manager assets as rish_shizuku.dex, guaranteeing rish + dex match.
           ./gradlew :shell:assembleDebug
           test -s manager/src/main/assets/rish_shizuku.dex
-          # Build the same-package system identity with the same manager signing key.
-          # Only debug assets embed it, so the system variant cannot recursively embed itself.
-          ./gradlew :manager:assembleSystemUid --stacktrace
-          mkdir -p manager/src/debug/assets/tokenx-manager
-          SYSTEM_APK="$(find manager/build/outputs/apk/systemUid -maxdepth 1 -name '*.apk' | head -n 1)"
-          test -n "$SYSTEM_APK" && test -s "$SYSTEM_APK"
-          cp "$SYSTEM_APK" manager/src/debug/assets/tokenx-manager/system.apk
           ./gradlew :manager:assembleDebug --stacktrace
+
+      - name: Test explicit RISH routing
+        run: python3 ci/test-rish-routing.py
 
       - name: Run manager unit tests
         env:
           GITHUB_ACTOR: ${{ secrets.SESL_GITHUB_USERNAME }}
           GITHUB_TOKEN: ${{ secrets.SESL_GITHUB_TOKEN }}
         run: ./gradlew :manager:testDebugUnitTest
-
-      - name: Test provisioning failure gates
-        run: |
-          python3 ci/test-provision-preflight.py
-          python3 ci/test-direct-injection.py
-          python3 ci/test-manager-migration.py
-
-      - name: Verify companion APK identities, certificates and packaged endpoints
-        shell: bash
-        run: |
-          python3 ci/verify-uid-test.py
 
       - name: Verify Preview identity
         shell: bash
@@ -364,14 +336,6 @@ jobs:
             }
           echo "TokenX rish SYSTEM dedicated on-demand backend route verified"
 
-      - name: Verify packaged native System Server injection
-        shell: bash
-        run: |
-          set -euo pipefail
-          FILE="$(find manager/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
-          python3 ci/verify-system-server-injection.py "$FILE"
-          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose "$FILE"
-
       - name: Collect APK
         id: apk
         shell: bash
@@ -381,18 +345,12 @@ jobs:
           test -n "$FILE"
           mkdir -p tokenx-artifacts
           cp "$FILE" tokenx-artifacts/Shizuku-TokenX-debug.apk
-          cp manager/src/debug/assets/tokenx-manager/system.apk tokenx-artifacts/Shizuku-TokenX-system-uid1000.apk
-          python3 ci/verify-manager-migration.py "$FILE" tokenx-artifacts/Shizuku-TokenX-system-uid1000.apk "$ANDROID_HOME/build-tools/37.0.0/aapt2" "$ANDROID_HOME/build-tools/37.0.0/apksigner"
-          cp uid-test/build/outputs/apk/ordinary/debug/*.apk tokenx-artifacts/TokenX-UID-test-ordinary.apk
-          cp uid-test/build/outputs/apk/system/debug/*.apk tokenx-artifacts/TokenX-UID-test-system.apk
           echo "apk=tokenx-artifacts/Shizuku-TokenX-debug.apk" >> "$GITHUB_OUTPUT"
 
       - name: Upload TokenX debug APK
         uses: actions/upload-artifact@v6
         with:
           name: Shizuku-TokenX-debug
-          path: tokenx-artifacts/*.apk
+          path: ${{ steps.apk.outputs.apk }}
           if-no-files-found: error
           retention-days: 14
-
-

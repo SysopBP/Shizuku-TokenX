@@ -468,7 +468,6 @@ fun HomeScreen(bottomPadding: Dp) {
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = bottomPadding),
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
-            item { moe.shizuku.manager.ui.component.SystemServerProvisionCard() }
             if (updateAvailable) {
                 item {
                     Surface(
@@ -1731,4 +1730,3 @@ private enum class DeviceRestartAction(
         "(sleep 1; am force-stop com.vikram.exp; sleep 1; monkey -p com.vikram.exp -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1) >/dev/null 2>&1 &"
     )
 }
-

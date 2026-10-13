@@ -2,10 +2,6 @@ plugins { id "com.android.library" }
 
 android {
     namespace = "moe.shizuku.tokenx.xposed"
-    buildFeatures { buildConfig = true }
-    defaultConfig {
-        buildConfigField "int", "TOKENX_VERSION_CODE", rootProject.ext.versionCode.toString()
-    }
 }
 
 dependencies {
@@ -15,4 +11,3 @@ dependencies {
     compileOnly project(":server")
     compileOnly project(":server-shared")
 }
-

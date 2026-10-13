@@ -28,15 +28,15 @@ fi
 [ -z "$RISH_APPLICATION_ID" ] && export RISH_APPLICATION_ID="PKG" && export MANAGER_APPLICATION_ID="MANAGER_PKG"
 # TokenX per-session backend override. Consume the selector here so it never reaches /system/bin/sh.
 case "$1" in
-  --system)
+  --system|—system|–system)
     export TOKENX_RISH_BACKEND="system"
     shift
     ;;
-  --root)
+  --root|—root|–root)
     export TOKENX_RISH_BACKEND="root"
     shift
     ;;
-  --shell)
+  --shell|—shell|–shell)
     export TOKENX_RISH_BACKEND="shell"
     shift
     ;;

@@ -81,25 +81,30 @@ object ShellBinderRequestHandler {
             else -> null
         }
 
-        // Explicit Root must preserve the same proven binder path used by default rish.
-        // Retained Root is preferred, but a missing retained slot must not make an
-        // otherwise healthy root Shizuku server unreachable.
-        val shizukuBinder = when (requestedBackend) {
+        // Explicit routes must never fall back to the app's selected compatibility route.
+        val selectedBinder = when (requestedBackend) {
             "sserver", "system" -> ensureSystemBinder(context).also {
                 if (it == null) LOGGER.w("TokenX System Shizuku Binder requested but could not be started/published")
             }
-            "root" -> (
-                ShizukuManagerProvider.rootBinder()?.takeIf { it.isBinderAlive }
-                    ?: Shizuku.getBinder()?.takeIf { it.isBinderAlive }
-                ).also {
-                    if (it == null) LOGGER.w("TokenX Root Binder requested but neither retained nor default binder is alive")
-                }
+            "root" -> ShizukuManagerProvider.rootBinder()?.takeIf { it.isBinderAlive }.also {
+                if (it == null) LOGGER.w("TokenX Root Binder requested but no verified ROOT Binder is alive")
+            }
             "shell" -> ShizukuManagerProvider.shellBinder()?.takeIf { it.isBinderAlive }.also {
                 if (it == null) LOGGER.w("TokenX Shell Binder requested but not published/alive")
             }
             else -> Shizuku.getBinder()?.takeIf { it.isBinderAlive }.also {
                 if (it == null) LOGGER.w("Binder not received or Shizuku service not running")
             }
+        }
+
+        val backendUid = selectedBinder?.let {
+            runCatching { moe.shizuku.server.IShizukuService.Stub.asInterface(it).getUid() }.getOrDefault(-1)
+        } ?: -1
+        val shizukuBinder = selectedBinder?.takeIf {
+            sessionBackend == null || backendUid == sessionBackend.uid
+        }
+        if (sessionBackend != null && selectedBinder != null && shizukuBinder == null) {
+            LOGGER.w("TokenX rejected wrong-UID rish Binder requested=%s actualUid=%d", requestedBackend, backendUid)
         }
 
         // Never deliver a null/dead explicit backend binder. This turns the failure into
@@ -157,11 +162,8 @@ object ShellBinderRequestHandler {
             data.writeString(context.applicationInfo.sourceDir)
             data.writeLong(session?.id ?: 0L)
             data.writeString(session?.backend?.name)
-            // Send the UID of the backend slot that the manager already classified.
-            // Android 17 can reject the shell client's raw IShizukuService getUid
-            // transaction even when the Binder itself is healthy, which previously
-            // surfaced as UID -1 for an otherwise proven ROOT route.
-            data.writeInt(sessionBackend?.uid ?: -1)
+            // Report the selected Binder's actual UID, not the requested route's label.
+            data.writeInt(backendUid)
             val delivered = binder.transact(1, data, null, IBinder.FLAG_ONEWAY)
 
             if (!delivered && session != null) {

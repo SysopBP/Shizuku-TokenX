@@ -43,108 +43,6 @@ data class TokenXSystemProbe(
 }
 
 object TokenXXposedSystemServerClient {
-    @Volatile private var injectedBinder: IBinder? = null
-    fun isInjectionAlive(): Boolean = injectedBinder?.isBinderAlive == true
-    /** Test provisioning never falls back to an unverified activity-service hook. */
-    fun uidTestSigning(action: Int, certificate: ByteArray): android.os.Bundle {
-        require(action in 20..22)
-        val candidate = injectedBinder?.takeIf { it.isBinderAlive }
-            ?: error("Provision System Server injection first; native TokenX endpoint unavailable")
-        val identity = identity(candidate) ?: error("System Server identity unavailable")
-        check(identity.verifiedSystemServer && systemProbe(candidate)?.verified == true &&
-            challenge(candidate, moe.shizuku.manager.BuildConfig.VERSION_CODE)) {
-            "TokenX System Server handshake failed; no signing change requested"
-        }
-        val data = Parcel.obtain()
-        val reply = Parcel.obtain()
-        try {
-            data.writeInterfaceToken(DESCRIPTOR)
-            data.writeInt(action)
-            data.writeByteArray(certificate)
-            check(candidate.transact(TRANSACTION, data, reply, 0)) { "Signing transaction unsupported" }
-            reply.readException()
-            return reply.readBundle(javaClass.classLoader) ?: error("Missing signing result")
-        } finally { data.recycle(); reply.recycle() }
-    }
-    /** Manager migration uses the existing LSPosed route, never the native endpoint. */
-    fun managerUidSigning(action: Int, certificate: ByteArray): android.os.Bundle {
-        require(action in 30..32)
-        val candidate = ServiceManager.getService("activity") ?: error("Activity Binder unavailable")
-        check(identity(candidate)?.verifiedSystemServer == true && systemProbe(candidate)?.verified == true) {
-            "Enable TokenX in LSPosed System Framework and reconnect before provisioning"
-        }
-        val data = Parcel.obtain()
-        val reply = Parcel.obtain()
-        try {
-            data.writeInterfaceToken(DESCRIPTOR)
-            data.writeInt(action)
-            data.writeByteArray(certificate)
-            check(candidate.transact(TRANSACTION, data, reply, 0)) { "Manager migration RPC unavailable; reboot with the updated Xposed module" }
-            reply.readException()
-            return reply.readBundle(javaClass.classLoader) ?: error("Missing manager signing result")
-        } finally { data.recycle(); reply.recycle() }
-    }
-
-    private fun transport(): IBinder? = injectedBinder?.takeIf { it.isBinderAlive }
-        ?: ServiceManager.getService("activity")
-
-    /** Only the UID-1000-authenticated provider handoff may install this slot. */
-    fun acceptInjectedBinder(candidate: IBinder, senderPid: Int): Boolean {
-        val identity = identity(candidate)
-        val probe = systemProbe(candidate)
-        if (identity?.verifiedSystemServer != true || probe?.verified != true ||
-            identity.pid != probe.pid || identity.pid != senderPid ||
-            !challenge(candidate, moe.shizuku.manager.BuildConfig.VERSION_CODE)) return false
-        return runCatching {
-            candidate.linkToDeath({ if (injectedBinder === candidate) injectedBinder = null }, 0)
-            injectedBinder = candidate
-            true
-        }.getOrDefault(false)
-    }
-
-    fun verifyInjection(expectedBuild: Int, previousPid: Int): TokenXXposedIdentity? {
-        val candidate = injectedBinder?.takeIf { it.isBinderAlive } ?: return null
-        val identity = identity(candidate) ?: return null
-        val probe = systemProbe(candidate) ?: return null
-        return identity.takeIf {
-            it.verifiedSystemServer && probe.verified && probe.pid == it.pid &&
-                it.pid != previousPid && challenge(candidate, expectedBuild)
-        }
-    }
-
-    /** Proves THIS live injection answered in the original System Server process. */
-    fun verifyDirectInjection(expectedBuild: Int, targetPid: Int, request: Long): TokenXXposedIdentity? {
-        val candidate = injectedBinder?.takeIf { it.isBinderAlive } ?: return null
-        val identity = identity(candidate) ?: return null
-        val probe = systemProbe(candidate) ?: return null
-        if (request <= 0 || !identity.verifiedSystemServer || !probe.verified ||
-            probe.pid != identity.pid || identity.pid != targetPid || !challenge(candidate, expectedBuild)) return null
-        return runCatching {
-            val data = Parcel.obtain()
-            val reply = Parcel.obtain()
-            try {
-                data.writeInterfaceToken(DESCRIPTOR)
-                data.writeInt(7)
-                if (!candidate.transact(TRANSACTION, data, reply, 0)) return null
-                reply.readException()
-                identity.takeIf { reply.readLong() == request }
-            } finally { data.recycle(); reply.recycle() }
-        }.getOrNull()
-    }
-
-    private fun challenge(candidate: IBinder, expectedBuild: Int): Boolean = runCatching {
-        val nonce = java.security.SecureRandom().nextLong()
-        val data = Parcel.obtain()
-        val reply = Parcel.obtain()
-        try {
-            data.writeInterfaceToken(DESCRIPTOR)
-            data.writeInt(6)
-            data.writeLong(nonce)
-            if (!candidate.transact(TRANSACTION, data, reply, 0)) return false
-            reply.readException()
-            reply.readInt() == 4 && reply.readInt() == expectedBuild && reply.readLong() == nonce
-        } finally { data.recycle(); reply.recycle() }
-    }.getOrDefault(false)
     private const val TRANSACTION =
         ('_'.code shl 24) or ('T'.code shl 16) or ('K'.code shl 8) or 'N'.code
     private const val DESCRIPTOR = "android.app.IActivityManager"
@@ -201,7 +99,7 @@ object TokenXXposedSystemServerClient {
     }
 
     fun publishBinder(value: IBinder): Boolean = runCatching {
-        val activity = transport() ?: return false
+        val activity = ServiceManager.getService("activity") ?: return false
         val data = Parcel.obtain()
         val reply = Parcel.obtain()
         try {
@@ -218,7 +116,7 @@ object TokenXXposedSystemServerClient {
     }.getOrDefault(false)
 
     fun binder(): IBinder? = runCatching {
-        val activity = transport() ?: return null
+        val activity = ServiceManager.getService("activity") ?: return null
         val data = Parcel.obtain()
         val reply = Parcel.obtain()
         try {
@@ -233,8 +131,8 @@ object TokenXXposedSystemServerClient {
         }
     }.getOrNull()
 
-    fun systemProbe(bridge: IBinder? = transport()): TokenXSystemProbe? = runCatching {
-        val activity = bridge ?: return null
+    fun systemProbe(): TokenXSystemProbe? = runCatching {
+        val activity = ServiceManager.getService("activity") ?: return null
         val data = Parcel.obtain()
         val reply = Parcel.obtain()
         try {
@@ -256,7 +154,7 @@ object TokenXXposedSystemServerClient {
 
     fun packageUid(packageName: String): Int = runCatching {
         if (packageName.isBlank()) return -1
-        val activity = transport() ?: return -1
+        val activity = ServiceManager.getService("activity") ?: return -1
         val data = Parcel.obtain()
         val reply = Parcel.obtain()
         try {
@@ -272,8 +170,8 @@ object TokenXXposedSystemServerClient {
         }
     }.getOrDefault(-1)
 
-    fun identity(bridge: IBinder? = transport()): TokenXXposedIdentity? = runCatching {
-        val activity: IBinder = bridge ?: return null
+    fun identity(): TokenXXposedIdentity? = runCatching {
+        val activity: IBinder = ServiceManager.getService("activity") ?: return null
         val data = Parcel.obtain()
         val reply = Parcel.obtain()
         try {
@@ -293,4 +191,3 @@ object TokenXXposedSystemServerClient {
         }
     }.getOrNull()
 }
-

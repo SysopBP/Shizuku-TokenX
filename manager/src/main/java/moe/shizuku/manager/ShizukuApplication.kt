@@ -58,7 +58,7 @@ class ShizukuApplication : Application() {
         if(ShizukuSettings.getWatchdog()) WatchdogService.start(context)
 
         // App authorization is desired state, not server-process state. system_server,
-        // root or shell may be replaced while the user still expects the same
+        // Serv.apk, root or shell may be replaced while the user still expects the same
         // enabled apps. Replay the persisted list every time a server Binder arrives.
         Shizuku.addBinderReceivedListener {
             runCatching { AuthorizationManager.restoreDesiredGrantsWithRetry() }
@@ -71,9 +71,6 @@ class ShizukuApplication : Application() {
         application = this
         appContext = applicationContext
         init(this)
-        moe.shizuku.manager.shell.SystemUidProvisioning.initialize(this)
-        moe.shizuku.manager.shell.ManagerUidMigration.initialize(this)
     }
 
 }
-

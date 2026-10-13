@@ -27,7 +27,12 @@ import javax.net.ssl.SSLSocket
 
 private const val TAG = "AdbClient"
 
-class AdbClient(private val host: String, private val port: Int, private val key: AdbKey) : Closeable {
+class AdbClient internal constructor(
+    private val host: String,
+    private val port: Int,
+    private val keyProvider: () -> AdbKey
+) : Closeable {
+    constructor(host: String, port: Int, key: AdbKey) : this(host, port, { key })
 
     private lateinit var socket: Socket
     private lateinit var plainInputStream: DataInputStream
@@ -43,45 +48,58 @@ class AdbClient(private val host: String, private val port: Int, private val key
     private val outputStream get() = if (useTls) tlsOutputStream else plainOutputStream
 
     fun connect() {
-        val socket = Socket()
-        val address = InetSocketAddress(host, port)
-        socket.connect(address, 5000)
+        // Each retry starts with a new socket and plain protocol state.
+        close()
+        useTls = false
+        socket = Socket()
+        try {
+            val address = InetSocketAddress(host, port)
+            socket.connect(address, 5000)
+            socket.soTimeout = 5000
 
-        socket.tcpNoDelay = true
-        plainInputStream = DataInputStream(socket.getInputStream())
-        plainOutputStream = DataOutputStream(socket.getOutputStream())
+            socket.tcpNoDelay = true
+            plainInputStream = DataInputStream(socket.getInputStream())
+            plainOutputStream = DataOutputStream(socket.getOutputStream())
 
-        write(A_CNXN, A_VERSION, A_MAXDATA, "host::")
+            write(A_CNXN, A_VERSION, A_MAXDATA, "host::")
 
-        var message = read()
-        if (message.command == A_STLS) {
-            if (!BuildUtils.atLeast29) {
-                error("Connect to adb with TLS is not supported before Android 9")
-            }
-            write(A_STLS, A_STLS_VERSION, 0)
+            var message = read()
+            if (message.command == A_STLS) {
+                if (!BuildUtils.atLeast29) {
+                    error("Connect to adb with TLS is not supported before Android 9")
+                }
+                write(A_STLS, A_STLS_VERSION, 0)
 
-            val sslContext = key.sslContext
-            tlsSocket = sslContext.socketFactory.createSocket(socket, host, port, true) as SSLSocket
-            tlsSocket.startHandshake()
-            Log.d(TAG, "Handshake succeeded.")
+                val sslContext = keyProvider().sslContext
+                tlsSocket = sslContext.socketFactory.createSocket(socket, host, port, true) as SSLSocket
+                tlsSocket.soTimeout = 5000
+                tlsSocket.startHandshake()
+                Log.d(TAG, "Handshake succeeded.")
 
-            tlsInputStream = DataInputStream(tlsSocket.inputStream)
-            tlsOutputStream = DataOutputStream(tlsSocket.outputStream)
-            useTls = true
+                tlsInputStream = DataInputStream(tlsSocket.inputStream)
+                tlsOutputStream = DataOutputStream(tlsSocket.outputStream)
+                useTls = true
 
-            message = read()
-        } else if (message.command == A_AUTH) {
-            if (message.command != A_AUTH && message.arg0 != ADB_AUTH_TOKEN) error("not A_AUTH ADB_AUTH_TOKEN")
-            write(A_AUTH, ADB_AUTH_SIGNATURE, 0, key.sign(message.data))
-
-            message = read()
-            if (message.command != A_CNXN) {
-                write(A_AUTH, ADB_AUTH_RSAPUBLICKEY, 0, key.adbPublicKey)
                 message = read()
-            }
-        }
+            } else if (message.command == A_AUTH) {
+                if (message.command != A_AUTH || message.arg0 != ADB_AUTH_TOKEN) error("not A_AUTH ADB_AUTH_TOKEN")
+                write(A_AUTH, ADB_AUTH_SIGNATURE, 0, keyProvider().sign(message.data))
 
-        if (message.command != A_CNXN) error("not A_CNXN")
+                message = read()
+                if (message.command != A_CNXN) {
+                    write(A_AUTH, ADB_AUTH_RSAPUBLICKEY, 0, keyProvider().adbPublicKey)
+                    message = read()
+                }
+            }
+
+            if (message.command != A_CNXN) error("not A_CNXN")
+            // The startup command can outlive the bounded handshake.
+            socket.soTimeout = 0
+            if (useTls) tlsSocket.soTimeout = 0
+        } catch (e: Throwable) {
+            close()
+            throw e
+        }
     }
 
     fun command(cmd: String, listener: ((ByteArray) -> Unit)? = null) {
@@ -152,32 +170,9 @@ class AdbClient(private val host: String, private val port: Int, private val key
     }
 
     override fun close() {
-        try {
-            plainInputStream.close()
-        } catch (e: Throwable) {
-        }
-        try {
-            plainOutputStream.close()
-        } catch (e: Throwable) {
-        }
-        try {
-            socket.close()
-        } catch (e: Exception) {
-        }
-
-        if (useTls) {
-            try {
-                tlsInputStream.close()
-            } catch (e: Throwable) {
-            }
-            try {
-                tlsOutputStream.close()
-            } catch (e: Throwable) {
-            }
-            try {
-                tlsSocket.close()
-            } catch (e: Exception) {
-            }
-        }
+        // Close TLS even when its handshake failed before useTls became true.
+        if (::tlsSocket.isInitialized) runCatching { tlsSocket.close() }
+        if (::socket.isInitialized) runCatching { socket.close() }
+        useTls = false
     }
 }

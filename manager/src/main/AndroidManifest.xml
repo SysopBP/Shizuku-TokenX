@@ -88,7 +88,6 @@
 
     <queries>
         <package android:name="moe.shizuku.privileged.api" />
-        <package android:name="moe.shizuku.tokenx.uidtest" />
         <!-- TokenX only uses these for framework-presence discovery. An installed manager is not an active bridge. -->
         <package android:name="org.lsposed.manager" />
         <package android:name="org.meowcat.edxposed.manager" />
@@ -112,7 +111,6 @@
         tools:ignore="GoogleAppIndexingWarning"
         tools:remove="android:appComponentFactory"
         tools:targetApi="33">
-        <activity android:name=".ui.UidTestActivity" android:exported="false" />
 
         <activity
             android:name=".MainActivity"
@@ -246,15 +244,6 @@
             <intent-filter>
                 <action android:name="rikka.shizuku.intent.action.REQUEST_BINDER" />
                 <action android:name="moe.shizuku.tokenx.intent.action.REQUEST_TRANSPORT" />
-            </intent-filter>
-        </receiver>
-
-        <receiver
-            android:name=".receiver.SystemBridgeRecoveryReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 

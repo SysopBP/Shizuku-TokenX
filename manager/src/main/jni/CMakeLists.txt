@@ -31,13 +31,6 @@ target_link_libraries(libshizuku.so log cxx::cxx)
 add_executable(libtokenx.so tokenx.cpp)
 target_link_libraries(libtokenx.so log)
 
-# Self-contained Zygisk API v4 plugin: libc only, no external C++ runtime.
-add_library(tokenx_injector SHARED injection/tokenx_injector.cpp)
-target_link_libraries(tokenx_injector log)
-
-add_library(tokenx_direct_payload SHARED injection/tokenx_direct_payload.cpp)
-target_link_libraries(tokenx_direct_payload log dl)
-
 if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_custom_command(TARGET libtokenx.so POST_BUILD
             COMMAND ${CMAKE_STRIP} --remove-section=.comment "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libtokenx.so")
@@ -57,4 +50,3 @@ if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_custom_command(TARGET adb POST_BUILD
             COMMAND ${CMAKE_STRIP} --remove-section=.comment "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libadb.so")
 endif ()
-

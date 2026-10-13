@@ -27,6 +27,7 @@ public class ShizukuShellLoader {
     private static final int TOKENX_RISH_PROTOCOL = 3;
 
     private static String[] args;
+    private static String requestedBackend;
     private static String callingPackage;
     private static Handler handler;
 
@@ -49,7 +50,8 @@ public class ShizukuShellLoader {
                     final int routedUid = tokenxBackendUid;
                     handler.post(() -> onBinderReceived(binder, sourceDir, routedUid));
                 } else {
-                    System.err.println("Server is not running");
+                    System.err.println(requestedBackend == null ? "Server is not running"
+                            : "TokenX " + requestedBackend + " backend unavailable. Connect that backend in TokenX; the selected app route will not be used as a fallback.");
                     System.err.flush();
                     System.exit(1);
                 }
@@ -68,7 +70,7 @@ public class ShizukuShellLoader {
             managerApplicationId = BuildConfig.MANAGER_APPLICATION_ID;
         }
 
-        String tokenXBackend = System.getenv("TOKENX_RISH_BACKEND");
+        String tokenXBackend = requestedBackend;
         Intent intent = new Intent("rikka.shizuku.intent.action.REQUEST_BINDER")
                 .setPackage(managerApplicationId)
                 .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
@@ -127,7 +129,7 @@ public class ShizukuShellLoader {
     }
 
     private static void onBinderReceived(IBinder binder, String sourceDir, int routedUid) {
-        String requested = System.getenv("TOKENX_RISH_BACKEND");
+        String requested = requestedBackend;
         int expectedUid = -1;
         String backendName = null;
         if ("sserver".equals(requested) || "system".equals(requested)) {
@@ -164,8 +166,8 @@ public class ShizukuShellLoader {
             System.out.println("Entering shell...");
             var classLoader = new BaseDexClassLoader(sourceDir, null, librarySearchPath, ClassLoader.getSystemClassLoader());
             Class<?> cls = classLoader.loadClass("moe.shizuku.manager.shell.Shell");
-            cls.getDeclaredMethod("main", String[].class, String.class, IBinder.class, Handler.class)
-                    .invoke(null, args, callingPackage, binder, handler);
+            cls.getDeclaredMethod("main", String[].class, String.class, IBinder.class, Handler.class, String.class)
+                    .invoke(null, args, callingPackage, binder, handler, requestedBackend);
         } catch (ClassNotFoundException tr) {
             System.err.println("Class not found");
             System.err.println("Make sure you have Shizuku v12.0.0 or above installed");
@@ -179,7 +181,14 @@ public class ShizukuShellLoader {
     }
 
     public static void main(String[] args) {
-        ShizukuShellLoader.args = args;
+        try {
+            RishBackendSelector.Selection selection = RishBackendSelector.select(args, System.getenv("TOKENX_RISH_BACKEND"));
+            ShizukuShellLoader.args = selection.arguments;
+            requestedBackend = selection.backend;
+        } catch (IllegalArgumentException e) {
+            abort(e.getMessage());
+            return;
+        }
         System.out.println("TOKENX_RISH_PROTOCOL=" + TOKENX_RISH_PROTOCOL);
 
         String packageName;

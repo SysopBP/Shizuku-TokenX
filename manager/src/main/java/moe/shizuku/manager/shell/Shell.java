@@ -157,10 +157,24 @@ public class Shell extends Rish {
     }
 
     public static void main(String[] args, String packageName, IBinder binder, Handler handler) {
+        main(args, packageName, binder, handler, System.getenv("TOKENX_RISH_BACKEND"));
+    }
+
+    public static void main(String[] args, String packageName, IBinder binder, Handler handler, String requestedBackend) {
         RishConfig.init(binder, ShizukuApiConstants.BINDER_DESCRIPTOR, 30000);
         Shizuku.onBinderReceived(binder, packageName);
         Shizuku.addBinderReceivedListenerSticky(() -> {
             int serverUid = Shizuku.getUid();
+            int expectedUid = "root".equals(requestedBackend) ? 0
+                    : "shell".equals(requestedBackend) ? 2000
+                    : ("system".equals(requestedBackend) || "sserver".equals(requestedBackend)) ? 1000 : -1;
+            if (expectedUid >= 0 && serverUid != expectedUid) {
+                System.err.println("TokenX: refusing requested " + requestedBackend
+                        + " route: backend UID " + serverUid + ", expected " + expectedUid);
+                System.err.flush();
+                System.exit(1);
+                return;
+            }
             System.err.println("TokenX RISH: clientUid=" + Process.myUid() + ", serverUid=" + serverUid + ", package=" + packageName);
             System.err.flush();
 

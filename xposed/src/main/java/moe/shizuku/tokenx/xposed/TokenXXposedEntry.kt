@@ -209,53 +209,13 @@ class TokenXXposedEntry : XposedModule() {
                                 log(Log.INFO, TAG, "SYSTEM_SERVER_RPC_PACKAGE_UID package=$packageName user=$callingUserId uid=$resolvedUid callingUid=${Binder.getCallingUid()}")
                                 consumed = true
                             }
-                            6 -> {
-                                check(reply != null && (flags and IBinder.FLAG_ONEWAY) == 0) {
-                                    "Synchronous handshake required"
-                                }
-                                val nonce = data.readLong()
-                                require(data.dataAvail() == 0) { "Unexpected handshake data" }
-                                reply.writeNoException()
-                                reply.writeInt(4)
-                                reply.writeInt(BuildConfig.TOKENX_VERSION_CODE)
-                                reply.writeLong(nonce)
-                                consumed = true
-                            }
-                            in 30..32 -> {
-                                check(reply != null && (flags and IBinder.FLAG_ONEWAY) == 0) { "Synchronous manager request required" }
-                                val caller = Binder.getCallingUid()
-                                check(caller == resolvePackageUidFromSystem("moe.shizuku.privileged.api", 0)) {
-                                    "Only the installed TokenX manager may request UID migration"
-                                }
-                                val certificate = data.createByteArray()
-                                require(certificate != null && certificate.size in 128..16384 && data.dataAvail() == 0)
-                                val token = Binder.clearCallingIdentity()
-                                try {
-                                    val activityThread = Class.forName("android.app.ActivityThread")
-                                    val current = activityThread.getDeclaredMethod("currentActivityThread").invoke(null)
-                                    val context = activityThread.getDeclaredMethod("getSystemContext").invoke(current) as Context
-                                    val signing = Class.forName("rikka.shizuku.server.TokenXUidTestSigning", true, javaClass.classLoader)
-                                    val result = signing.getMethod("runManager", Context::class.java,
-                                        Int::class.javaPrimitiveType, ByteArray::class.java)
-                                        .invoke(null, context, action, certificate) as android.os.Bundle
-                                    reply.writeNoException()
-                                    reply.writeBundle(result)
-                                } finally { Binder.restoreCallingIdentity(token) }
-                                consumed = true
-                            }
                             else -> log(Log.WARN, TAG, "SYSTEM_SERVER_RPC_REJECT reason=unknown_action action=$action")
                         }
                     } catch (t: Throwable) {
-                        var cause = t
-                        while (cause is java.lang.reflect.InvocationTargetException && cause.targetException != null) {
-                            cause = cause.targetException
-                        }
-                        log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_HANDLE_FAILED: ${cause.javaClass.name}: ${cause.message}\n${cause.stackTraceToString()}")
+                        log(Log.ERROR, TAG, "SYSTEM_SERVER_RPC_HANDLE_FAILED: ${t.javaClass.name}: ${t.message}")
                         if ((flags and IBinder.FLAG_ONEWAY) == 0 && reply != null) {
                             reply.setDataPosition(0)
-                            // Parcel cannot marshal InvocationTargetException or
-                            // arbitrary RuntimeExceptions. Use a supported type.
-                            reply.writeException(IllegalStateException("${cause.javaClass.name}: ${cause.message}"))
+                            reply.writeException(t as? Exception ?: RuntimeException(t))
                             consumed = true
                         }
                     } finally {
@@ -378,4 +338,3 @@ class TokenXXposedEntry : XposedModule() {
         val embeddedStartScheduled = AtomicBoolean(false)
     }
 }
-

@@ -41,7 +41,6 @@ object TokenXRuntime {
     @Volatile private var lastXposedRpcVerifyAt = 0L
     @Volatile private var cachedXposedIdentity: TokenXXposedIdentity? = null
     @Volatile private var cachedXposedBridgeActive = false
-    @Volatile private var cachedNativeInjection = false
 
     /**
      * The UI refreshes once per second, but a full _TKN verification is a three-transaction
@@ -52,10 +51,9 @@ object TokenXRuntime {
     @Synchronized
     private fun verifyXposedRoute(running: Boolean): Pair<TokenXXposedIdentity?, Boolean> {
         val now = android.os.SystemClock.elapsedRealtime()
-        val injectionAlive = TokenXXposedSystemServerClient.isInjectionAlive()
-        val due = now - lastXposedRpcVerifyAt >= XPOSED_RPC_VERIFY_INTERVAL_MS || injectionAlive != cachedNativeInjection
+        val due = now - lastXposedRpcVerifyAt >= XPOSED_RPC_VERIFY_INTERVAL_MS
         if (!due) {
-            return cachedXposedIdentity to (cachedXposedBridgeActive && (running || (cachedNativeInjection && injectionAlive)))
+            return cachedXposedIdentity to (running && cachedXposedBridgeActive)
         }
 
         val identity = TokenXXposedSystemServerClient.identity()
@@ -64,14 +62,10 @@ object TokenXRuntime {
         val published = identityVerified &&
             liveShizukuBinder?.let { TokenXXposedSystemServerClient.publishBinder(it) } == true
         val returned = if (published) TokenXXposedSystemServerClient.binder() else null
-        val active = if (injectionAlive) {
-            val probe = TokenXXposedSystemServerClient.systemProbe()
-            identityVerified && probe?.verified == true && probe.pid == identity?.pid
-        } else identityVerified && returned?.isBinderAlive == true && returned.pingBinder()
+        val active = identityVerified && returned?.isBinderAlive == true && returned.pingBinder()
 
         cachedXposedIdentity = identity
         cachedXposedBridgeActive = active
-        cachedNativeInjection = injectionAlive
         lastXposedRpcVerifyAt = now
         return identity to active
     }
@@ -180,4 +174,3 @@ object TokenXRuntime {
         runCatching { pm.getPackageInfo(packageName, 0) }.isSuccess
 
 }
-

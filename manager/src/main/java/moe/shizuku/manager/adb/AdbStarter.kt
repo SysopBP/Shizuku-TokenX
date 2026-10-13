@@ -9,8 +9,6 @@ import android.widget.Toast
 import java.io.EOFException
 import java.net.Socket
 import java.net.SocketException
-import javax.net.ssl.SSLException
-import java.net.SocketTimeoutException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -36,9 +34,14 @@ class AdbPairingRequiredException(message: String?, cause: Throwable?) :
     Exception(message, cause)
 
 private fun Throwable.isCertificateUnknown(): Boolean {
-    val text = message ?: return false
-    return text.contains("CERTIFICATE_UNKNOWN", ignoreCase = true) ||
-        text.contains("SSLV3_ALERT", ignoreCase = true)
+    var cause: Throwable? = this
+    repeat(8) {
+        val text = cause?.message.orEmpty()
+        if (text.contains("CERTIFICATE_UNKNOWN", ignoreCase = true) ||
+            text.contains("BAD_CERTIFICATE", ignoreCase = true)) return true
+        cause = cause?.cause ?: return false
+    }
+    return false
 }
 
 object AdbStarter {
@@ -243,8 +246,8 @@ object AdbStarter {
         port: Int,
         timeoutMs: Long = 15_000L
     ): Boolean = withContext(Dispatchers.IO) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
+        val deadline = android.os.SystemClock.elapsedRealtime() + timeoutMs
+        while (android.os.SystemClock.elapsedRealtime() < deadline) {
             try {
                 Socket(host, port).use { return@withContext true }
             } catch (_: Exception) {
@@ -265,7 +268,7 @@ object AdbStarter {
             connect()
         } catch (e: Exception) {
             if (e is AdbPairingRequiredException) throw e
-            if (e is SSLException || e.isCertificateUnknown()) {
+            if (e.isCertificateUnknown()) {
                 // Expected whenever the device doesn't trust our key, and the UI turns it
                 // into the pairing flow so log one line, not a stack trace, which reads
                 // like a crash of its own.
@@ -292,11 +295,12 @@ object AdbStarter {
                 if (
                     attempt == maxAttempts ||
                     e is CancellationException ||
-                    e is SocketTimeoutException ||
                     // Not transient: retrying can't make the device trust our key, and the
                     // retry only produces a dead-socket error that hides the real reason.
                     e is AdbPairingRequiredException
                 ) throw e
+                client.close()
+                Log.i(TAG, "Retrying ADB handshake after ${e.javaClass.simpleName}; attempt ${attempt + 1}/$maxAttempts")
                 delayTime += 1000
             }
         }

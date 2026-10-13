@@ -40,7 +40,6 @@ class ShizukuManagerProvider : ShizukuProvider() {
         private const val EXTRA_ROUTE = "route"
 
         @Volatile private var tokenXTransportBinder: IBinder? = null
-        private val injectionLifetime = android.os.Binder()
 
         @Synchronized
         fun ensureTokenXTransport(context: android.content.Context): IBinder {
@@ -116,25 +115,14 @@ class ShizukuManagerProvider : ShizukuProvider() {
     }
 
     private fun probeServerUid(binder: IBinder): Int = runCatching {
-        // Use generated AIDL so explicit method IDs are translated to wire codes.
-        // getUid() = 3 means FIRST_CALL_TRANSACTION + 3, not raw transaction 3.
+        // Generated AIDL translates explicit method IDs into wire transaction codes.
         moe.shizuku.server.IShizukuService.Stub.asInterface(binder).getUid()
     }.getOrDefault(-1)
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         if (extras == null) return null
 
-        return if (method == "tokenx.injectedBackend") {
-            if (android.os.Binder.getCallingUid() != Process.SYSTEM_UID) return null
-            val senderPid = android.os.Binder.getCallingPid()
-            val candidate = extras.getBinder("binder") ?: return null
-            val identity = android.os.Binder.clearCallingIdentity()
-            try {
-                if (!TokenXXposedSystemServerClient.acceptInjectedBinder(candidate, senderPid)) return null
-                Log.i("TokenX/Injection", "Verified native system_server injection Binder")
-                Bundle().apply { putBinder("managerLifetime", injectionLifetime) }
-            } finally { android.os.Binder.restoreCallingIdentity(identity) }
-        } else if (method == "tokenx.transportProbe") {
+        return if (method == "tokenx.transportProbe") {
             val snapshot = TokenXRendezvous.snapshot()
             val transport = tokenXTransportBinder?.takeIf { it.isBinderAlive }
                 ?: snapshot.binder?.takeIf { it.isBinderAlive }
@@ -272,4 +260,3 @@ class ShizukuManagerProvider : ShizukuProvider() {
         }
     }
 }
-
