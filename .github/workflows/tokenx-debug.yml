@@ -236,8 +236,8 @@ jobs:
             fi
             rm -f "$EXTRACTED"
           done
-          grep -F -- '--system)' manager/src/main/assets/rish >/dev/null
-          grep -F -- '--root)' manager/src/main/assets/rish >/dev/null
+          grep -E -- '^[[:space:]]+--system[|)]' manager/src/main/assets/rish >/dev/null
+          grep -E -- '^[[:space:]]+--root[|)]' manager/src/main/assets/rish >/dev/null
           grep -F 'TOKENX_RISH_BACKEND' shell/src/main/java/rikka/shizuku/shell/ShizukuShellLoader.java >/dev/null
           if grep -F 'remoteUid(binder)' shell/src/main/java/rikka/shizuku/shell/ShizukuShellLoader.java >/dev/null; then
             echo "::error::Unsafe raw Binder UID probe restored"
