@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import moe.shizuku.manager.BuildConfig;
+
 import rikka.rish.Rish;
 import rikka.rish.RishConfig;
 import rikka.shizuku.Shizuku;
@@ -17,7 +19,6 @@ import rikka.shizuku.ShizukuApiConstants;
 public class Shell extends Rish {
 
     private static final int SYSTEM_UID = 1000;
-    private static final String BUILD_ROUTE_VERSION = "637";
     private static boolean canLaunchSystemUidWorker() {
         try {
             ProcessBuilder probe = new ProcessBuilder("su", "1000", "-c", "id -u");
@@ -99,7 +100,8 @@ public class Shell extends Rish {
             System.err.println("TOKENX_SETTINGS_ROUTE=" + (readOnlySettings
                     ? "UID1000_READ_ONLY" : (nativeProbe ? "UID1000_NATIVE_PROBE" : "UID1000")));
         }
-        System.err.println("TOKENX_ROUTE_BUILD=" + BUILD_ROUTE_VERSION);
+        System.err.println("TOKENX_ROUTE_BUILD=" + BuildConfig.VERSION_CODE);
+        System.err.println("TOKENX_APP_VERSION=" + BuildConfig.VERSION_NAME);
         if (compoundMutation) {
             System.err.println("TOKENX_SETTINGS_COMPOUND=UID1000_NO_ROOT_FALLBACK");
             System.err.println("TOKENX_SETTINGS_ATTRIBUTION=UNVERIFIED");
