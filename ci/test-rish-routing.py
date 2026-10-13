@@ -9,6 +9,7 @@ import tempfile
 with tempfile.TemporaryDirectory() as directory:
     root = Path(directory)
     sources = {
+        "moe/shizuku/manager/BuildConfig.java": "package moe.shizuku.manager; public final class BuildConfig { public static final int VERSION_CODE=12345; public static final String VERSION_NAME=\"routing-test\"; }",
         "android/content/pm/PackageManager.java": "package android.content.pm; public class PackageManager { public static final int PERMISSION_GRANTED=0; }",
         "android/os/Handler.java": "package android.os; public class Handler {}",
         "android/os/IBinder.java": "package android.os; public interface IBinder {}",
