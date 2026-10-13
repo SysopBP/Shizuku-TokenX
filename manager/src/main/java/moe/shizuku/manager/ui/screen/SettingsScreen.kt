@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Bolt
@@ -103,9 +104,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+enum class SettingsSection(val title: String) {
+    STARTUP("Startup & recovery"), WIRELESS("ADB & pairing"), TOOLS("Access & utilities"),
+    APPEARANCE("Theme & language"), ABOUT("About TokenX")
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
+fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit,
+                   section: SettingsSection = SettingsSection.STARTUP, onBack: () -> Unit = {}) {
     val context = LocalContext.current
 
     var startOnBoot by remember { mutableStateOf(ShizukuSettings.getStartOnBoot(context)) }
@@ -207,7 +214,10 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text(stringResource(R.string.tab_settings)) },
+            title = { Text(section.title) },
+            navigationIcon = { androidx.compose.material3.IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Back")
+            } },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0f)),
             windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
         )
@@ -216,6 +226,7 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = bottomPadding),
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
+            if (section == SettingsSection.STARTUP) {
             item {
                 SettingsSectionHeader(R.string.settings_section_startup)
             }
@@ -450,6 +461,8 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                 }
             }
 
+            }
+            if (section == SettingsSection.WIRELESS) {
             item {
                 SettingsSectionHeader(R.string.settings_section_wireless)
             }
@@ -550,6 +563,8 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                 }
             }
 
+            }
+            if (section == SettingsSection.TOOLS) {
             item {
                 SettingsSectionHeader(R.string.settings_section_tools)
             }
@@ -608,6 +623,8 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                 }
             }
 
+            }
+            if (section == SettingsSection.TOOLS) {
             item {
                 Text(
                     "TOKENX",
@@ -634,6 +651,8 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                 }
             }
 
+            }
+            if (section == SettingsSection.APPEARANCE) {
             item {
                 SettingsSectionHeader(R.string.settings_section_appearance)
             }
@@ -727,6 +746,8 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                 }
             }
 
+            }
+            if (section == SettingsSection.ABOUT) {
             item {
                 SettingsSectionHeader(R.string.settings_section_about)
             }
@@ -794,7 +815,8 @@ fun SettingsScreen(bottomPadding: Dp, onOpenDetail: (Detail) -> Unit) {
                         )
                     }
                 }
-            }
+            }            }
+
         }
     }
 

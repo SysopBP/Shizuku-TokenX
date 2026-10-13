@@ -46,7 +46,7 @@ fun TokenXGlassCard(
                         listOf(
                             base.copy(alpha = glass.opacity),
                             base.copy(alpha = (glass.opacity * 0.86f).coerceIn(0f, 1f)),
-                            Color.Black.copy(alpha = (glass.opacity * 0.32f).coerceIn(0f, 1f)),
+                            base.copy(alpha = (glass.opacity * 0.70f).coerceIn(0f, 1f)),
                         )
                     )
                 } else {
@@ -56,7 +56,7 @@ fun TokenXGlassCard(
             .border(
                 BorderStroke(
                     1.dp,
-                    Color.White.copy(alpha = if (glass.enabled) glass.borderOpacity else 0f)
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (glass.enabled) glass.borderOpacity else 0f)
                 ),
                 shape
             ),

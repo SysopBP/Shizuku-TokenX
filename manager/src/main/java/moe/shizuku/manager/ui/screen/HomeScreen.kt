@@ -145,9 +145,17 @@ import moe.shizuku.manager.utils.UpdateHelper
 import rikka.core.util.ClipboardUtils
 import rikka.shizuku.Shizuku
 
+enum class HomeSection(val title: String, val description: String) {
+    OVERVIEW("TokenX", "Your privilege engines, at a glance"),
+    CONNECTIONS("Connections", "Root, System and ADB transports"),
+    INTEGRATION("System integration", "Framework identity and integration checks"),
+    DEVICE("Device & runtime", "Manager, kernel and Android security state")
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(bottomPadding: Dp) {
+fun HomeScreen(bottomPadding: Dp, section: HomeSection = HomeSection.OVERVIEW,
+               onOpenDetail: (moe.shizuku.manager.ui.Detail) -> Unit = {}) {
     val context = LocalContext.current
 
     var running by remember { mutableStateOf(ShizukuStateMachine.isRunning()) }
@@ -158,7 +166,7 @@ fun HomeScreen(bottomPadding: Dp) {
     var showAdbCommand by remember { mutableStateOf(false) }
     var rebootRequired by remember { mutableStateOf(false) }
     var showDeviceRestartMenu by remember { mutableStateOf(false) }
-    var deviceRuntimeExpanded by remember { mutableStateOf(false) }
+    var deviceRuntimeExpanded by remember { mutableStateOf(section == HomeSection.DEVICE) }
     var pendingDeviceRestart by remember { mutableStateOf<DeviceRestartAction?>(null) }
     var duplicateApp by remember { mutableStateOf(false) }
     var updateAvailable by remember { mutableStateOf(false) }
@@ -468,6 +476,12 @@ fun HomeScreen(bottomPadding: Dp) {
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = bottomPadding),
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
+            item {
+                if (section == HomeSection.OVERVIEW) TokenXPageHeading(section.title, section.description)
+                else Text(section.description, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp))
+            }
+            if (section == HomeSection.OVERVIEW) {
             if (updateAvailable) {
                 item {
                     Surface(
@@ -670,6 +684,8 @@ fun HomeScreen(bottomPadding: Dp) {
                 }
             }
 
+            }
+            if (section == HomeSection.INTEGRATION) {
             item {
                 TokenXDashboard(
                     running = running,
@@ -678,6 +694,8 @@ fun HomeScreen(bottomPadding: Dp) {
                 )
             }
 
+            }
+            if (section == HomeSection.OVERVIEW) {
             item {
                 StatusCard(
                     running = running,
@@ -748,6 +766,15 @@ fun HomeScreen(bottomPadding: Dp) {
                 )
             }
 
+                item {
+                    TokenXShortcutGroup("Explore", listOf(
+                        TokenXShortcut("Connections", "Root, System, wireless and USB", moe.shizuku.manager.ui.Detail.CONNECTIONS),
+                        TokenXShortcut("Startup & recovery", "Boot behavior and watchdog", moe.shizuku.manager.ui.Detail.STARTUP),
+                        TokenXShortcut("System integration", "Identity and framework checks", moe.shizuku.manager.ui.Detail.INTEGRATION)
+                    ), onOpenDetail)
+                }
+            }
+            if (section == HomeSection.CONNECTIONS) {
             item {
                 HomeSectionHeader(
                     title = "Global connections",
@@ -935,6 +962,8 @@ fun HomeScreen(bottomPadding: Dp) {
                 }
             }
 
+            }
+            if (section == HomeSection.DEVICE) {
             item {
                 HomeCollapsibleSectionHeader(
                     title = "Device & runtime",
@@ -987,7 +1016,8 @@ fun HomeScreen(bottomPadding: Dp) {
                     }
                 }
             }
-            }
+            }            }
+
         }
     }
 
