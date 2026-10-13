@@ -100,6 +100,7 @@ public class Shell extends Rish {
             System.err.println("TOKENX_SETTINGS_ROUTE=" + (readOnlySettings
                     ? "UID1000_READ_ONLY" : (nativeProbe ? "UID1000_NATIVE_PROBE" : "UID1000")));
         }
+        // APK version code comes from Gradle metadata; it is not the Actions run number.
         System.err.println("TOKENX_ROUTE_BUILD=" + BuildConfig.VERSION_CODE);
         System.err.println("TOKENX_APP_VERSION=" + BuildConfig.VERSION_NAME);
         if (compoundMutation) {
