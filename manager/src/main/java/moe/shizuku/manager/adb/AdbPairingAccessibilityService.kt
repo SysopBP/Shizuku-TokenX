@@ -255,13 +255,13 @@ class AdbPairingAccessibilityService : AccessibilityService() {
 
     private fun onPaired() = serviceScope.launch(Dispatchers.Main) {
         // The notification-driven search has nothing left to find.
-        runCatching { startService(AdbPairingService.stopIntent(this)) }
+        runCatching { startService(AdbPairingService.stopIntent(this@AdbPairingAccessibilityService)) }
 
         // Pairing was the only thing standing between the user and a running Shizuku,
         // so start it instead of sending them back to tap Start again.
         StartStatusReporter.clear()
         toast(getString(R.string.notification_adb_pairing_succeed_text))
-        ShizukuReceiverStarter.start(this, userInitiated = true)
+        ShizukuReceiverStarter.start(this@AdbPairingAccessibilityService, userInitiated = true)
 
         pairing = false
         if (isTelevision) disableSelf()
