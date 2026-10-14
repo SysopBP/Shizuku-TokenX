@@ -19,6 +19,45 @@ class AdbClientTest {
         exerciseConnections(failFirst = true)
     }
 
+    @Test
+    fun `malformed packet length is rejected before reading or allocating its body`() {
+        for (length in listOf(-1, Int.MAX_VALUE)) {
+            ServerSocket(0).use { server ->
+                val executor = Executors.newSingleThreadExecutor()
+                try {
+                    val observed = executor.submit<Int> {
+                        server.accept().use { socket ->
+                            socket.soTimeout = 5000
+                            val input = DataInputStream(socket.getInputStream())
+                            val header = ByteArray(24)
+                            input.readFully(header)
+                            val requestLength = java.nio.ByteBuffer.wrap(header)
+                                .order(java.nio.ByteOrder.LITTLE_ENDIAN).getInt(12)
+                            input.readFully(ByteArray(requestLength))
+                            val response = java.nio.ByteBuffer.allocate(24)
+                                .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                                .putInt(AdbProtocol.A_CNXN).putInt(0).putInt(0)
+                                .putInt(length).putInt(0).putInt(AdbProtocol.A_CNXN xor -1)
+                            socket.getOutputStream().write(response.array())
+                            input.read()
+                        }
+                    }
+                    AdbClient("127.0.0.1", server.localPort) { error("No auth expected") }.use {
+                        try {
+                            it.connect()
+                            fail("Invalid packet accepted")
+                        } catch (expected: IllegalArgumentException) {
+                            // No body sent: reading it would block instead of rejecting the header.
+                        }
+                    }
+                    assertEquals(-1, observed.get(5, TimeUnit.SECONDS))
+                } finally {
+                    executor.shutdownNow()
+                }
+            }
+        }
+    }
+
     private fun exerciseConnections(failFirst: Boolean) {
         ServerSocket(0).use { server ->
             server.soTimeout = 5000

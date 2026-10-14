@@ -9,6 +9,7 @@ import android.widget.Toast
 import java.io.EOFException
 import java.net.Socket
 import java.net.SocketException
+import java.net.InetSocketAddress
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -249,7 +250,10 @@ object AdbStarter {
         val deadline = android.os.SystemClock.elapsedRealtime() + timeoutMs
         while (android.os.SystemClock.elapsedRealtime() < deadline) {
             try {
-                Socket(host, port).use { return@withContext true }
+                Socket().use {
+                    it.connect(InetSocketAddress(host, port), 1000)
+                    return@withContext true
+                }
             } catch (_: Exception) {
                 delay(300)
             }

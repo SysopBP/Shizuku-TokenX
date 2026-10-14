@@ -173,6 +173,7 @@ class AdbPairingClient(private val host: String, private val port: Int, private 
     }
 
     private lateinit var socket: Socket
+    private var tlsSocket: SSLSocket? = null
     private lateinit var inputStream: DataInputStream
     private lateinit var outputStream: DataOutputStream
 
@@ -209,6 +210,7 @@ class AdbPairingClient(private val host: String, private val port: Int, private 
 
         val sslContext = key.sslContext
         val sslSocket = sslContext.socketFactory.createSocket(socket, host, port, true) as SSLSocket
+        tlsSocket = sslSocket
         sslSocket.soTimeout = 15_000
         sslSocket.startHandshake()
         Log.d(TAG, "Handshake succeeded.")
@@ -290,6 +292,9 @@ class AdbPairingClient(private val host: String, private val port: Int, private 
     }
 
     override fun close() {
+        // The streams do not exist if TLS handshake fails; still release TLS state.
+        runCatching { tlsSocket?.close() }
+        tlsSocket = null
         try {
             inputStream.close()
         } catch (e: Throwable) {

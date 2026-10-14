@@ -94,8 +94,8 @@ class AdbClient internal constructor(
 
             if (message.command != A_CNXN) error("not A_CNXN")
             // The startup command can outlive the bounded handshake.
-            socket.soTimeout = 0
-            if (useTls) tlsSocket.soTimeout = 0
+            socket.soTimeout = 30_000
+            if (useTls) tlsSocket.soTimeout = 30_000
         } catch (e: Throwable) {
             close()
             throw e
@@ -156,6 +156,10 @@ class AdbClient internal constructor(
         val dataLength = buffer.int
         val checksum = buffer.int
         val magic = buffer.int
+        // Validate before allocation/read: an invalid daemon packet must not
+        // exhaust manager memory or leave the worker consuming an unbounded body.
+        require(command == (magic xor -1)) { "Invalid ADB packet magic" }
+        require(dataLength in 0..A_MAXDATA) { "Invalid ADB payload length: $dataLength" }
         val data: ByteArray?
         if (dataLength >= 0) {
             data = ByteArray(dataLength)

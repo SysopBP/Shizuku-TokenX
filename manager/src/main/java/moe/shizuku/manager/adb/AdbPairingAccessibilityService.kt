@@ -10,7 +10,11 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Toast
 import kotlin.coroutines.resume
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -49,7 +53,8 @@ class AdbPairingAccessibilityService : AccessibilityService() {
 
     private val handler = Handler(Looper.getMainLooper())
 
-    private var pairing = false
+    @Volatile private var pairing = false
+    private var serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     /** Last code we attempted, so dialog refreshes don't retry the code we failed on. */
     private var lastAttempt: String? = null
@@ -63,6 +68,10 @@ class AdbPairingAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        serviceScope.cancel()
+        serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        pairing = false
+        lastAttempt = null
 
         if (!isTelevision) return
 
@@ -193,7 +202,7 @@ class AdbPairingAccessibilityService : AccessibilityService() {
     private fun pair(dialog: PairingDialog) {
         pairing = true
 
-        GlobalScope.launch(Dispatchers.IO) {
+        serviceScope.launch(Dispatchers.IO) {
             // The dialog's own address when it has one, and the port the device advertises when
             // it does not: the pairing service is on `_adb-tls-pairing._tcp` either way, which
             // is how the notification flow finds it. On Android 17 this is the only way to
@@ -219,8 +228,9 @@ class AdbPairingAccessibilityService : AccessibilityService() {
                 return@launch
             }
 
-            runCatching { AdbPairingClient(host, port, dialog.code, key).use { it.start() } }
-                .onFailure { e ->
+            val result = runCatching { AdbPairingClient(host, port, dialog.code, key).use { it.start() } }
+            coroutineContext.ensureActive()
+            result.onFailure { e ->
                     Log.w(TAG, "Pair failed", e)
                     finish(
                         when (e) {
@@ -243,28 +253,28 @@ class AdbPairingAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun onPaired() {
+    private fun onPaired() = serviceScope.launch(Dispatchers.Main) {
         // The notification-driven search has nothing left to find.
-        runCatching { startService(AdbPairingService.stopIntent(this)) }
+        runCatching { startService(AdbPairingService.stopIntent(this@AdbPairingAccessibilityService)) }
 
         // Pairing was the only thing standing between the user and a running Shizuku,
         // so start it instead of sending them back to tap Start again.
         StartStatusReporter.clear()
         toast(getString(R.string.notification_adb_pairing_succeed_text))
-        ShizukuReceiverStarter.start(this, userInitiated = true)
+        ShizukuReceiverStarter.start(this@AdbPairingAccessibilityService, userInitiated = true)
 
         pairing = false
         if (isTelevision) disableSelf()
     }
 
-    private fun finish(message: String) {
+    private fun finish(message: String) = serviceScope.launch(Dispatchers.Main) {
         pairing = false
         StartStatusReporter.failed(message, StartFailureKind.PAIRING)
         toast(message)
     }
 
     private fun toast(message: String) {
-        GlobalScope.launch(Dispatchers.Main) {
+        serviceScope.launch(Dispatchers.Main) {
             Toast.makeText(this@AdbPairingAccessibilityService, message, Toast.LENGTH_LONG).show()
         }
     }
@@ -273,7 +283,15 @@ class AdbPairingAccessibilityService : AccessibilityService() {
 
     override fun onUnbind(intent: Intent?): Boolean {
         handler.removeCallbacksAndMessages(null)
+        serviceScope.cancel()
+        pairing = false
         return super.onUnbind(intent)
+    }
+
+    override fun onDestroy() {
+        serviceScope.cancel()
+        handler.removeCallbacksAndMessages(null)
+        super.onDestroy()
     }
 
     companion object {
