@@ -266,6 +266,12 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
                     // discovery should stay out for.
                     if (!forcedWireless) {
                         timeoutJob?.cancel()
+                        // Waiting for an unlock/authorization must also terminate.
+                        // Otherwise this unique worker can sit here indefinitely.
+                        timeoutJob = launch {
+                            delay(130_000L)
+                            close(TimeoutException("Timed out waiting for wireless authorization"))
+                        }
                         adbMdns.stop()
                     }
                 }

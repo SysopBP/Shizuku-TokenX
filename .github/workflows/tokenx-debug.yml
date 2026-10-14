@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - master
+      - release/tokenx-preview5
       - codex/tokenx-independent-identity
       - tokenx-dev
       - tokenx-recovery
@@ -203,9 +204,9 @@ jobs:
 
           # Build the rish shell first. shell/build.gradle extracts its classes.dex
           # into manager assets as rish_shizuku.dex, guaranteeing rish + dex match.
-          ./gradlew :shell:assembleDebug
+          ./gradlew :shell:assembleDebug -Ppreview
           test -s manager/src/main/assets/rish_shizuku.dex
-          ./gradlew :manager:assembleDebug --stacktrace
+          ./gradlew :manager:assembleDebug -Ppreview --stacktrace
 
       - name: Verify TokenX identity and client discovery
         run: python3 ci/test-tokenx-identity.py
@@ -365,3 +366,44 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+
+  preview-release:
+    needs: debug
+    if: github.ref == 'refs/heads/release/tokenx-preview5'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout reviewed release notes
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Download verified APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          gh run download "$RUN_ID" -R "$REPO" -n Shizuku-TokenX-debug -D release-files
+          mv release-files/Shizuku-TokenX-debug.apk release-files/TokenX-Preview-5.apk
+          cp docs/TOKENX-PREVIEW-5-AUDIT.md release-files/TokenX-Preview-5-Audit.md
+          (cd release-files && sha256sum *.apk *.md > SHA256SUMS.txt)
+      - name: Save Preview 5 draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          TAG="v14.2.0-TKN-preview.5"
+          if gh release view "$TAG" -R "$REPO" --json isDraft > existing-release.json 2>/dev/null; then
+            python3 -c 'import json; assert json.load(open("existing-release.json"))["isDraft"], "Refusing to overwrite a published release"'
+            gh release edit "$TAG" -R "$REPO" --notes-file docs/TOKENX-PREVIEW-5-AUDIT.md
+            gh release upload "$TAG" -R "$REPO" release-files/* --clobber
+          else
+            gh release create "$TAG" -R "$REPO" --target "$SOURCE_SHA" --draft --prerelease \
+              --title "TokenX Preview 5 — Wireless Reliability" \
+              --notes-file docs/TOKENX-PREVIEW-5-AUDIT.md release-files/*
+          fi

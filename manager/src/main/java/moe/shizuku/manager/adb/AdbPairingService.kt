@@ -69,7 +69,7 @@ class AdbPairingService : Service() {
 
     private val observer = Observer<Pair<String, Int>> { (host, port) ->
         Log.i(tag, "Pairing service host: $host, port: $port")
-        if (pairing) return@Observer
+        if (destroyed || pairing) return@Observer
         if (port <= 0) {
             inputNotification = null
             getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, searchingNotification)
@@ -88,6 +88,7 @@ class AdbPairingService : Service() {
     private var inputNotification: Notification? = null
     @Volatile private var pairing = false
     private var started = false
+    @Volatile private var destroyed = false
 
     override fun onCreate() {
         super.onCreate()
@@ -124,8 +125,9 @@ class AdbPairingService : Service() {
                 val code = RemoteInput.getResultsFromIntent(intent)?.getCharSequence(remoteInputResultKey) ?: ""
                 val host = intent.getStringExtra(hostKey) ?: "127.0.0.1"
                 val port = intent.getIntExtra(portKey, -1)
-                if (port != -1) {
-                    onInput(code.toString(), host, port)
+                val normalizedCode = code.toString().trim()
+                if (port in 1..65535 && normalizedCode.matches(Regex("[0-9]{6}"))) {
+                    onInput(normalizedCode, host, port)
                 } else {
                     onStart()
                 }
@@ -174,6 +176,7 @@ class AdbPairingService : Service() {
     }
 
     override fun onDestroy() {
+        destroyed = true
         super.onDestroy()
         stopSearch()
         pairingScope.cancel()
@@ -182,8 +185,9 @@ class AdbPairingService : Service() {
     private fun onStart(): Notification {
         if (pairing) return workingNotification
         stopSearch()
+        inputNotification = null
         startSearch()
-        return inputNotification ?: searchingNotification
+        return searchingNotification
     }
 
     private fun onInput(code: String, host: String, port: Int): Notification {
@@ -211,6 +215,12 @@ class AdbPairingService : Service() {
     }
 
     private fun handleResult(success: Boolean, exception: Throwable?) {
+        pairingScope.launch(Dispatchers.Main) {
+            if (!destroyed) publishResult(success, exception)
+        }
+    }
+
+    private fun publishResult(success: Boolean, exception: Throwable?) {
         stopForeground(STOP_FOREGROUND_DETACH)
 
         val title: String
