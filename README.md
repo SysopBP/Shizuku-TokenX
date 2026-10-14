@@ -603,3 +603,7 @@ This package identity installs as a **new app**, not an in-place update of older
 Export a fresh matching `rish` and `rish_shizuku.dex` pair from TokenX. Remove stale `MANAGER_APPLICATION_ID` overrides or set `MANAGER_APPLICATION_ID=com.sysopbp.tokenx`; keep `RISH_APPLICATION_ID=com.termux` for Termux. Root/System routing uses the same controls as before. Any separately installed provisioning module or companion app with a hard-coded old manager package must be updated before use.
 
 Existing Shizuku API clients remain discoverable through their requested API permission and receive the original Binder wire-format key. TokenX grants authorization in its own backend configuration rather than declaring or granting the upstream manager permission. Client compatibility and boot/System Server reconnection need device testing after migration.
+
+## Bundled license baseline
+
+The APK includes the project Apache license and [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt), including the API/provider and MaterialKolor MIT grants. Native and other resolved runtime artifacts still require per-component notice review before a compliance sign-off. Packaging duplicate META-INF files does not waive their notice obligations.

@@ -1,0 +1,85 @@
+TokenX third-party notices — 2026-10-14
+
+TokenX is an independent fork maintained by SysopBP, based on RikkaApps/Shizuku
+and thedjchi/Shizuku. Original file-level copyright and attribution remain.
+Project code uses Apache-2.0 unless a file/component states otherwise. The full
+Apache license is bundled as LICENSE-APACHE-2.0.txt.
+
+The following is a verified baseline, not a complete resolved-dependency audit.
+Review all direct/transitive runtime artifacts and native-library notices before
+publishing a release. Packaging exclusions for META-INF/LICENSE or NOTICE do not
+remove the obligation to give recipients the applicable license/notices.
+
+Shizuku API/provider (pinned submodule)
+Source: https://github.com/thedjchi/Shizuku-API
+Revision: 37ebcd3e45edf1d68975c70dd199350b434161f7
+License: MIT. Original author RikkaW.
+MIT License
+
+Copyright (c) 2021 RikkaW
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+MaterialKolor (com.materialkolor:material-kolor:3.0.1)
+Source: https://github.com/jordond/MaterialKolor
+License: MIT for the MaterialKolor wrapper. Its material-color-utilities
+component retains Apache-2.0 and its own upstream notices.
+MIT License
+
+Copyright (c) 2025 Jordon de Hoog
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+Miuix (top.yukonga.miuix.kmp:miuix-ui-android:0.9.4)
+Source: https://github.com/compose-miuix-ui/miuix
+License: Apache-2.0. Attribution belongs to Miuix contributors.
+
+AndroidX/Compose, Material Components, Kotlin/coroutines and SESL
+Sources: https://android.googlesource.com/platform/frameworks/support/
+https://github.com/material-components/material-components-android
+https://github.com/JetBrains/kotlin
+https://github.com/Kotlin/kotlinx.coroutines
+https://github.com/tribalfs/sesl-androidx
+These families retain Apache-2.0 for the identified components. Preserve
+artifact-specific copyright/NOTICE information and any additional terms for
+other embedded components. The full Apache license is bundled separately.
+
+Other runtime/native dependencies listed in manager/build.gradle retain their
+individual licenses. Their complete resolved notices still require artifact
+inspection; this baseline must not be represented as blanket clearance.
+
+Upstream project names are used for factual attribution. No endorsement by
+Shizuku, Miuix, Samsung, Google or other upstream projects is implied.

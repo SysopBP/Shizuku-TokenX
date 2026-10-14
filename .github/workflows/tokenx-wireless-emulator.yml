@@ -1,3 +1,4 @@
+# Modified by SysopBP, 2026-10-14: pin workflow dependencies to verified commits.
 name: TokenX Wireless ADB Emulator Probe
 
 on:
@@ -40,7 +41,7 @@ jobs:
           echo "SOURCE_RUN=$RUN_ID" >> "$GITHUB_ENV"
 
       - name: Emulate Android and probe real wireless pairing availability
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 35
           arch: x86_64
@@ -87,7 +88,7 @@ jobs:
 
       - name: Upload wireless diagnostics
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: TokenX-Wireless-Emulator-Diagnostics
           path: diagnostics/
