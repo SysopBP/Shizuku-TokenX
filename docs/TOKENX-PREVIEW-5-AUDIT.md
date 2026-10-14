@@ -11,6 +11,8 @@ Based on successful Build 715 (`a25a68e3`), retaining the current independent `c
 - ADB payload size was allocated before validating the header. Magic and length are now checked before reading/allocating the body. Socket regression tests cover malformed negative and oversized payloads.
 - Pairing restart could reuse a notification containing an old port. Restarts clear it and rediscover. Notification replies require a six-digit code and valid port; result publication runs on the main thread and is suppressed after service destruction.
 
+- Automatic accessibility pairing now cancels discovery/results when unbound or destroyed. The TLS wrapper is closed even if pairing fails during handshake.
+
 ## Validation
 
 CI compiles the APK, runs manager unit tests, validates TokenX identity/assets and rish routing. These checks do not prove six-digit pairing, mDNS lifecycle or Samsung reconnect behavior on a phone. Root/System backend code is unchanged by these fixes.
