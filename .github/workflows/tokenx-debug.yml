@@ -218,15 +218,15 @@ jobs:
         env:
           GITHUB_ACTOR: ${{ secrets.SESL_GITHUB_USERNAME }}
           GITHUB_TOKEN: ${{ secrets.SESL_GITHUB_TOKEN }}
-        run: ./gradlew :manager:testDebugUnitTest
+        run: ./gradlew :manager:testDebugUnitTest -Ppreview
 
       - name: Verify Preview identity
         shell: bash
         run: |
           set -euo pipefail
           grep -F 'def baseVersionName = "14.2.0-TKN"' build.gradle >/dev/null
-          grep -F '"-preview.3"' build.gradle >/dev/null
-          grep -F 'v14.2.0-TKN-preview.3' README.md >/dev/null
+          grep -F '"-preview.5"' build.gradle >/dev/null
+          grep -F 'v14.2.0-TKN-preview.5' README.md >/dev/null
           echo "TokenX Preview identity verified"
 
       - name: Verify bundled rish pair

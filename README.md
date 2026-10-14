@@ -6,7 +6,7 @@
 
 ### Shizuku-compatible unified multi-backend privilege engine for Android
 
-**v14.2.0-TKN-preview.3 · Preview**
+**v14.2.0-TKN-preview.5 · Preview**
 
 **System / UID 1000 · Root / UID 0 · Shell / UID 2000 · RISH Protocol v3 · System Server RPC**
 
@@ -17,6 +17,10 @@
 
 > [!IMPORTANT]
 > **Read the README before installing or updating Shizuku-TokenX.** Root / UID 0 requires a working root solution. System / UID 1000 uses TokenX's LSPosed `_TKN` system_server RPC and the manager-owned TokenX transport. The current System path does **not** require the legacy Serv.apk/UID-1000 package bridge.
+
+## Preview 5 wireless reliability
+
+This preview fixes discovery stop/start races, stale pairing prompts, indefinite wireless authorization/startup waits, and pairing lifecycle cleanup. See [audit findings and phone acceptance checks](docs/TOKENX-PREVIEW-5-AUDIT.md). Samsung pairing/reconnect remains device testing work.
 
 ## Preview status
 
