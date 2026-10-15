@@ -6,7 +6,9 @@
 
 ### Shizuku-compatible unified multi-backend privilege engine for Android
 
-**v14.2.0-TKN-preview.5 · Preview**
+**v14.2.0-TKN-preview.6 · Preview**
+
+[Preview 6 release notes and setup](docs/TOKENX-PREVIEW-6.md). Root and System both bound were user-confirmed on SM-S948U1 / Android 17 / One UI 9; the new release build still requires acceptance testing.
 
 **System / UID 1000 · Root / UID 0 · Shell / UID 2000 · RISH Protocol v3 · System Server RPC**
 

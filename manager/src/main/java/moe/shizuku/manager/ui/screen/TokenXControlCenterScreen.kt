@@ -180,16 +180,18 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     FeatureRow(Icons.Outlined.Extension, "LSPosed framework", if (runtime.xposedFrameworkDetected) "DETECTED" else "Not detected")
                     FeatureRow(Icons.Outlined.Security, "CorePatch", when {
                         runtime.corePatchDetected && runtime.nativeUid1000Verified -> "DETECTED • Native PM UID 1000 verified"
-                        runtime.corePatchDetected -> "DETECTED • RPC UID 1000 verified separately from PM admission"
+                        runtime.corePatchDetected -> "DETECTED • module presence only"
                         else -> "Not detected"
                     })
-                    FeatureRow(Icons.Outlined.Badge, "PackageManager System UID", if (runtime.nativeUid1000Verified) "VERIFIED • android.uid.system/1000" else "NOT PROVISIONED • separate from System Server RPC")
-                    FeatureRow(Icons.Outlined.AdminPanelSettings, "System Server identity", if (runtime.systemServerBridgeAttached) "ATTACHED • _TKN RPC" else "Not attached")
+                    if (runtime.nativeUid1000Verified) {
+                        FeatureRow(Icons.Outlined.Badge, "PackageManager shared UID", "VERIFIED • android.uid.system/1000 • separate from worker and RPC")
+                    }
+                    FeatureRow(Icons.Outlined.AdminPanelSettings, "System Server identity", if (runtime.systemServerBridgeAttached) "ATTACHED • identity handshake received" else "Not attached")
                     FeatureRow(Icons.Outlined.Link, "System Server RPC", if (runtime.xposedBridgeActive) "VERIFIED • _TKN • UID 1000" else "Not active")
                     HorizontalDivider()
                     FeatureRow(Icons.Outlined.Android, "Platform", "Android API ${runtime.androidApiLevel} • One UI ${runtime.oneUiVersion}")
                     Text(
-                        "Health checks are observational. TokenX does not enable KnoxPatch hooks or alter Knox/attestation behavior.",
+                        "System worker runs outside system_server. System Server RPC is a separate framework connection. Module detection alone does not verify either backend. Health checks do not enable KnoxPatch hooks or alter Knox/attestation behavior.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -215,16 +217,16 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                                 Column(Modifier.weight(1f)) {
                                     val backendLabel = when (entry.backend) {
                                         TokenXBackend.ROOT -> "ROOT"
-                                        TokenXBackend.SYSTEM_UID -> "SYSTEM UID"
+                                        TokenXBackend.SYSTEM_UID -> "SYSTEM WORKER"
                                         TokenXBackend.SYSTEM_SERVER -> "SYSTEM SERVER"
                                         TokenXBackend.SHELL -> "SHELL"
                                         else -> entry.backend.name.replace('_', ' ')
                                     }
                                     val backendDetail = when (entry.backend) {
                                         TokenXBackend.ROOT -> if (entry.ready) "UID 0 • KernelSU root transport ready" else "UID 0 • Root transport unavailable"
-                                        TokenXBackend.SYSTEM_UID -> if (entry.ready) "UID 1000 • Shizuku isolated system worker ready" else "UID 1000 • System worker unavailable"
+                                        TokenXBackend.SYSTEM_UID -> if (entry.ready) "UID 1000 • TokenX isolated system worker ready" else "UID 1000 • System worker unavailable"
                                         TokenXBackend.SYSTEM_SERVER -> if (entry.ready) "UID 1000 • LSPosed _TKN framework RPC verified" else "UID 1000 • System Server RPC unavailable"
-                                        TokenXBackend.SHELL -> if (entry.ready) "UID 2000 • Shizuku shell fallback ready" else "UID 2000 • Shell fallback unavailable"
+                                        TokenXBackend.SHELL -> if (entry.ready) "UID 2000 • TokenX shell fallback ready" else "UID 2000 • Shell fallback unavailable"
                                         else -> "UID ${entry.uid} • ${entry.detail}"
                                     }
                                     Text(backendLabel, fontWeight = FontWeight.Medium)
@@ -244,7 +246,7 @@ fun TokenXControlCenterScreen(onBack: () -> Unit) {
                     FeatureRow(Icons.Outlined.Route, "Selected backend", runtime.backendRegistry.selected.name.replace('_', ' '))
                     FeatureRow(Icons.Outlined.Badge, "Identity", selected?.let { "UID ${it.uid} • ${if (it.verified) "verified" else "discovered"}" } ?: "Unavailable")
                     FeatureRow(Icons.Outlined.Link, "System Server RPC", if (runtime.xposedBridgeActive) "VERIFIED • LSPosed _TKN identity" else "Not active")
-                    FeatureRow(Icons.Outlined.Security, "System UID Binder", if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID)) "VERIFIED • isolated Shizuku UID 1000 transport" else "Unavailable")
+                    FeatureRow(Icons.Outlined.Security, "System UID Binder", if (runtime.backendRegistry.isReady(TokenXBackend.SYSTEM_UID)) "READY • isolated TokenX UID 1000 transport" else "Unavailable")
                     FeatureRow(Icons.Outlined.Security, "System Server Identity", if (runtime.systemServerBridgeActive) "VERIFIED • LSPosed _TKN" else "Unavailable")
                     FeatureRow(Icons.Outlined.Terminal, "Root", if (runtime.backendRegistry.isReady(TokenXBackend.ROOT)) "READY • UID 0" else "Unavailable")
                 }

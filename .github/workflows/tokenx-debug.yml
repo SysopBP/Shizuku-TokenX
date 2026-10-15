@@ -7,6 +7,7 @@ on:
     branches:
       - master
       - release/tokenx-preview5
+      - release/tokenx-preview6
       - codex/tokenx-independent-identity
       - tokenx-dev
       - tokenx-recovery
@@ -225,8 +226,8 @@ jobs:
         run: |
           set -euo pipefail
           grep -F 'def baseVersionName = "14.2.0-TKN"' build.gradle >/dev/null
-          grep -F '"-preview.5"' build.gradle >/dev/null
-          grep -F 'v14.2.0-TKN-preview.5' README.md >/dev/null
+          grep -F '"-preview.6"' build.gradle >/dev/null
+          grep -F 'v14.2.0-TKN-preview.6' README.md >/dev/null
           echo "TokenX Preview identity verified"
 
       - name: Verify bundled rish pair
@@ -369,42 +370,51 @@ jobs:
 
   preview-release:
     needs: debug
-    if: github.ref == 'refs/heads/release/tokenx-preview5'
+    if: github.ref == 'refs/heads/release/tokenx-preview6'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       actions: read
     steps:
-      - name: Checkout reviewed release notes
+      - name: Checkout exact release source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Download verified APK
+      - name: Package verified APK and matching RISH
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
+          SOURCE_SHA: ${{ github.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
           set -euo pipefail
           gh run download "$RUN_ID" -R "$REPO" -n Shizuku-TokenX-debug -D release-files
-          mv release-files/Shizuku-TokenX-debug.apk release-files/TokenX-Preview-5.apk
-          cp docs/TOKENX-PREVIEW-5-AUDIT.md release-files/TokenX-Preview-5-Audit.md
-          (cd release-files && sha256sum *.apk *.md > SHA256SUMS.txt)
-      - name: Save Preview 5 draft release
+          mv release-files/Shizuku-TokenX-debug.apk release-files/TokenX-Preview-6.apk
+          cp docs/TOKENX-PREVIEW-6.md release-files/TokenX-Preview-6-Guide.md
+          mkdir rish-release
+          unzip -p release-files/TokenX-Preview-6.apk assets/rish > rish-release/rish
+          unzip -p release-files/TokenX-Preview-6.apk assets/rish_shizuku.dex > rish-release/rish_shizuku.dex
+          test -s rish-release/rish
+          test -s rish-release/rish_shizuku.dex
+          chmod 700 rish-release/rish
+          chmod 400 rish-release/rish_shizuku.dex
+          (cd rish-release && zip ../release-files/TokenX-Preview-6-RISH.zip rish rish_shizuku.dex)
+          printf 'source_commit=%s\nbuild_run=%s\nbuild_number=%s\n' "$SOURCE_SHA" "$RUN_ID" "$RUN_NUMBER" > release-files/BUILD-INFO.txt
+          (cd release-files && sha256sum *.apk *.zip *.md BUILD-INFO.txt > SHA256SUMS.txt)
+      - name: Publish Preview 6 prerelease
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           SOURCE_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          TAG="v14.2.0-TKN-preview.5"
-          if gh release view "$TAG" -R "$REPO" --json isDraft > existing-release.json 2>/dev/null; then
-            python3 -c 'import json; assert json.load(open("existing-release.json"))["isDraft"], "Refusing to overwrite a published release"'
-            gh release edit "$TAG" -R "$REPO" --notes-file docs/TOKENX-PREVIEW-5-AUDIT.md
-            gh release upload "$TAG" -R "$REPO" release-files/* --clobber
-          else
-            gh release create "$TAG" -R "$REPO" --target "$SOURCE_SHA" --draft --prerelease \
-              --title "TokenX Preview 5 — Wireless Reliability" \
-              --notes-file docs/TOKENX-PREVIEW-5-AUDIT.md release-files/*
+          TAG="v14.2.0-TKN-preview.6"
+          if gh release view "$TAG" -R "$REPO" >/dev/null 2>&1; then
+            echo "Release tag already exists; refusing to replace its APK."
+            exit 1
           fi
+          gh release create "$TAG" -R "$REPO" --target "$SOURCE_SHA" --prerelease --latest=false \
+            --title "TokenX Preview 6 — Dual Backend & CORE Interface" \
+            --notes-file docs/TOKENX-PREVIEW-6.md release-files/*
