@@ -1,0 +1,38 @@
+name: Add Preview 6 release artwork
+on:
+  push:
+    branches: [release/tokenx-preview6]
+    paths:
+      - 'docs/TokenX-Preview-6-Promo.png'
+      - '.github/workflows/tokenx-preview6-artwork.yml'
+permissions:
+  contents: write
+jobs:
+  artwork:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Attach artwork and update release description
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          TAG=v14.2.0-TKN-preview.6
+          gh release view "$TAG" -R "$REPO" --json body > release-body.json
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          body = json.loads(Path("release-body.json").read_text())["body"]
+          image = "![TokenX Preview 6](https://raw.githubusercontent.com/" + os.environ["REPO"] + "/" + os.environ["SOURCE_SHA"] + "/docs/TokenX-Preview-6-Promo.png)"
+          if "![TokenX Preview 6]" not in body:
+              body = image + "\n\n" + body
+          Path("release-notes.md").write_text(body)
+          PY
+          cp docs/TokenX-Preview-6-Promo.png TokenX-Preview-6-Promo.png
+          sha256sum TokenX-Preview-6-Promo.png > TokenX-Preview-6-Promo.sha256
+          gh release upload "$TAG" -R "$REPO" TokenX-Preview-6-Promo.png TokenX-Preview-6-Promo.sha256 --clobber
+          gh release edit "$TAG" -R "$REPO" --notes-file release-notes.md
