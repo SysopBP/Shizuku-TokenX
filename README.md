@@ -289,17 +289,27 @@ The TokenX Control Center expands that view with System Hook Health, including L
 
 ## Labs and power-user tools
 
-The current Labs surface intentionally exposes the features that are useful enough to test as part of TokenX:
+**Labs remains part of TokenX.** It provides advanced controls and diagnostic utilities for users testing the privilege engine. Availability of individual tools can depend on the installed preview build, the active backend, Android permissions, and device support.
 
-- **App Ops**
-- **Shell**
-- **Firewall**
-- **Autostart**
-- **TokenX Control Center** — Root · D2 · System RPC
-- **Root Console** — UID 0
-- **Secure Chain Monitor** — live D2/System RPC observation
+The currently documented Labs tools are:
 
-Experimental ideas that are not ready should not be presented as completed capabilities simply to make the feature list longer.
+| Tool | Purpose |
+| --- | --- |
+| **App Ops** | Inspect and manage supported application operations within the available privilege context. |
+| **Shell** | Run commands through the available TokenX execution route. |
+| **Firewall** | Access experimental network-control tooling where supported. |
+| **Autostart** | Inspect or manage supported app-start behavior. |
+| **TokenX Control Center** | Review Root, D2, and System RPC integration status. |
+| **Root Console** | Access UID 0 tooling when the Root backend is available. |
+| **Secure Chain Monitor** | Observe the D2 protection and System Server RPC chain. |
+
+### Experimental integrations and prerelease boundaries
+
+CorePatch, LSPosed CorePatch, OneUIX, and Receiver Compatibility have been explored as Labs or compatibility features during development. **Do not assume these integrations are functional or exposed in every build.** Unfinished items should remain hidden or clearly marked unavailable until their implementation and device-specific behavior are verified.
+
+Labs does not grant privileges by itself: Root (UID 0), System (UID 1000), and Shell (UID 2000) retain distinct permission and SELinux boundaries. A healthy backend or successful diagnostic does not guarantee that every Labs action is supported on a particular device.
+
+The README describes intended functionality; verify actual availability against the installed APK and its runtime diagnostics before reporting a feature as working.
 
 ## Startup and recovery controls
 
