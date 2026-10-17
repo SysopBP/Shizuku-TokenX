@@ -74,6 +74,31 @@ The current design is built around five principles:
 | Restart controls | Integrated | Soft reboot and System UI restart |
 | UI systems | MIUIX + Material | TokenX theme/style support |
 
+## Preview 6 release highlights
+
+**[TokenX Preview 6 — Dual Backend & CORE Interface](https://github.com/SysopBP/Shizuku-TokenX/releases/tag/v14.2.0-TKN-preview.6)** is the current published prerelease (October 15, 2026). It packages the multi-backend interface and preserves the existing glass styling rather than introducing a new UI rewrite.
+
+- **Home:** separate Root and System Binder indicators, configurable default route, and **Dual Backend Active** when both routes are bound.
+- **Connections:** TokenX transport, Root, System UID 1000, wireless debugging, USB debugging and PC/ADB controls in one place.
+- **Apps:** authorization and user/system/disabled/hidden filters, plus Root/System route filters. Granted apps, filtered results and connected sessions are **different counts**.
+- **CORE search:** shortcuts into Connections, startup/recovery, ADB pairing, System Integration, runtime information and tools.
+- **Appearance:** glass UI, MIUIX/Material options, wallpaper styling, bottom navigation and restored user-created blue launcher artwork.
+- **Control Center:** distinguishes an isolated UID-1000 worker from verified Android System Server RPC; UID alone is not proof of framework identity.
+
+### Wireless reliability fixes carried forward from Preview 5
+
+Preview 6 retains serialized discovery lifecycle, rejection of stale callbacks, bounded discovery retries and authorization waits, command-read inactivity timeouts, ADB packet-header/payload validation, pairing-port notification refresh, six-digit pairing-code validation, cancellation of stale accessibility pairing work, and cleanup of failed TLS handshakes.
+
+Wireless pairing still requires Android authorization and an available ADB endpoint. The pairing port and the normal wireless connection port are different.
+
+### Official Preview 6 downloads
+
+Download the matching **[APK](https://github.com/SysopBP/Shizuku-TokenX/releases/download/v14.2.0-TKN-preview.6/TokenX-Preview-6.apk)**, **[RISH bundle](https://github.com/SysopBP/Shizuku-TokenX/releases/download/v14.2.0-TKN-preview.6/TokenX-Preview-6-RISH.zip)** and **[setup guide](https://github.com/SysopBP/Shizuku-TokenX/releases/download/v14.2.0-TKN-preview.6/TokenX-Preview-6-Guide.md)** from the same release. BUILD-INFO.txt and SHA256SUMS.txt are also attached for build identification and integrity checking.
+
+Preview 6 does **not** bundle the legacy privileged companion APK or an old KernelSU bridge installer. Root support requires an existing compatible root environment; verified System Server RPC additionally requires a compatible Xposed framework with the appropriate scope.
+
+**Validation boundary:** a displayed Binder connection, an interactive RISH UID, a granted app, and verified framework RPC are separate observations. The published release notes describe CI gates and earlier device observations, not a guarantee of every feature on every device. Check the matching build's Actions results and verify routes on the installed APK.
+
 ## The three privilege routes
 
 ### Root — UID 0
@@ -489,9 +514,9 @@ Backend-specific requirements:
 
 This fork is signed with its own signing key. Android will not install it over another Shizuku build signed with a different key.
 
-If migrating from official Shizuku or another fork, uninstall the conflicting package first. A server started by the previous installation may remain alive until it is stopped or the device is rebooted.
+Preview 6 uses the Android package ID `com.sysopbp.tokenx`. Install its APK over an existing installation of that same package only when Android accepts the signing key and version. Official Shizuku and older `moe.shizuku.privileged.api` builds are **different packages**: do not assume an in-place upgrade, transferred app authorizations or an automatic migration. Review any coexistence/conflict before uninstalling an older manager, and stop its running service if necessary.
 
-The manager keeps the Shizuku package/API compatibility expected by Shizuku client apps.
+TokenX targets Shizuku-compatible client APIs, but compatibility and authorization persistence must be verified with the actual installed package and clients.
 
 ### System UID backend
 
@@ -572,6 +597,10 @@ export RISH_APPLICATION_ID=com.termux
 ```
 
 For System Server RPC, validation is kept separate from the interactive UID-1000 RISH check because they prove different things.
+
+### Preview 6 verification checklist
+
+After installation, inspect Home's independent Root/System Binder states and the selected default route. Verify explicit `./rish --root` and `./rish --system` execution using the matching Preview 6 RISH files; check Shell separately if available. For framework operations, verify the LSPosed `_TKN` System Server RPC identity separately from the isolated UID-1000 worker. Test authorization with an actual client app, System detach/rebind without restarting `system_server`, and wireless pairing/reconnection if used. Reboot/watchdog/D2 gate behavior depends on the device, root environment and firmware; do not treat CI compilation as proof of those runtime paths.
 
 ## Project status
 
