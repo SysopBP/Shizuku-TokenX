@@ -34,7 +34,7 @@ import moe.shizuku.manager.ui.component.SegmentedColumn
 import moe.shizuku.manager.ui.component.SegmentedListItem
 import rikka.core.util.ClipboardUtils
 
-private const val PACKAGE = "moe.shizuku.privileged.api"
+private const val PACKAGE = "com.sysopbp.tokenx"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -17,7 +17,7 @@
     <string name="dialog_adb_pairing_paring_code">Code d\'association</string>
     <string name="paring_code_is_wrong">Le code d\'association n\'est pas le bon.</string>
     <string name="cannot_connect_port">Impossible de se connecter au service de débogage sans
-        fil.\n\nVeuillez vous assurer que Shizuku est autorisé dans tous les pare-feu, bloqueurs de
+        fil.\n\nVeuillez vous assurer que TokenX est autorisé dans tous les pare-feu, bloqueurs de
         publicités, VPN ou applications similaires susceptibles de restreindre l\'accès au réseau.</string>
     <string name="dialog_adb_pairing_message">Veuillez commencer le jumelage en suivant les étapes
         suivantes :\n- Accédez aux « Options pour les développeurs »\n- Activez le « Débogage USB »
@@ -25,19 +25,19 @@
         Appuyez sur « Jumeler l\'appareil avec le code de jumelage »\n- Saisissez le code de
         jumelage affiché dans la notification</string>
     <string name="dialog_adb_pairing_accessibility_permission">Sur Android 14, l\'installation ou la
-        mise à jour de Shizuku via le gestionnaire de paquets révoque l\'autorisation ^1, nécessaire
+        mise à jour de TokenX via le gestionnaire de paquets révoque l\'autorisation ^1, nécessaire
         à l\'activation du service d\'accessibilité pour le jumelage.\n\nPour l\'accorder, exécutez
         la commande ADB suivante :\n\n^2\n\nUne fois la commande exécutée, vous pouvez poursuivre le
         processus de jumelage.\n\nRemarque : vous pouvez contourner cette restriction en installant
-        ou en mettant à jour Shizuku via ADB.</string>
+        ou en mettant à jour TokenX via ADB.</string>
     <string name="dialog_adb_pairing_accessibility_enable">Veuillez activer le service
-        d’accessibilité pour lancer le processus d’appairage. Cela permet à Shizuku de détecter le
+        d’accessibilité pour lancer le processus d’appairage. Cela permet à TokenX de détecter le
         code d’appairage.\n\nLe service d’accessibilité sera désactivé dès que le code sera trouvé
         ou après 1 minute pour économiser de l’énergie.</string>
     <string name="dialog_adb_pairing_accessibility_navigate">Veuillez commencer le jumelage en
         suivant les étapes suivantes :\n- Accédez à « Options pour les développeurs »\n- Activez
         « Débogage USB » et « Débogage sans fil »\n- Appuyez sur le côté gauche de « Débogage sans
-        fil »\n- Appuyez sur « Jumeler l\'appareil avec le code de jumelage ». Shizuku détectera
+        fil »\n- Appuyez sur « Jumeler l\'appareil avec le code de jumelage ». TokenX détectera
         automatiquement le code de jumelage.</string>
     <string name="adb_pairing_requires_multi_window">Merci d\'activer le mode écran partagé (mode
         multi-fenêtres) d\'abord.</string>
@@ -51,7 +51,7 @@
     <string name="enable">Activer</string>
     <string name="development_settings">Options pour les développeurs</string>
     <string name="notification_settings">Options des notifications</string>
-    <string name="adb_pairing_tutorial_content_notification">Une notification de Shizuku vous aidera
+    <string name="adb_pairing_tutorial_content_notification">Une notification de TokenX vous aidera
         à compléter l\'association.</string>
     <string name="adb_pairing_tutorial_content_steps">Accédez à « Options pour les développeurs »,
         puis activez « Débogage USB » et « Débogage sans fil ».</string>
@@ -59,23 +59,23 @@
         Débogage sans fil », puis sur « Associer l\'appareil avec le code d\'association ».
         Saisissez le code affiché dans la notification pour terminer l\'association.</string>
     <string name="adb_pairing_tutorial_content_notification_blocked">Le processus d\'association
-        requiert que vous interagissez avec une notification de Shizuku. Merci d\'autoriser Shizuku
+        requiert que vous interagissez avec une notification de TokenX. Merci d\'autoriser TokenX
         à envoyer les notifications.</string>
     <string name="adb_pairing_tutorial_content_miui">Les utilisateurs de MIUI pourraient devoir
         changer le style de notifications vers \"Android\" dans \"Notifications\" - \"Style de
         notification\" dans les paramètres système.</string>
     <string name="adb_pairing_tutorial_content_miui_2">Sinon, vous risquez de ne pas pouvoir saisir
         le code d\'appairage figurant dans la notification.</string>
-    <string name="adb_pairing_tutorial_content_finish">Retournez à Shizuku et démarrez Shizuku.</string>
-    <string name="adb_pairing_tutorial_content_network">Shizuku a besoin d\'accéder au réseau local.
+    <string name="adb_pairing_tutorial_content_finish">Retournez à TokenX et démarrez TokenX.</string>
+    <string name="adb_pairing_tutorial_content_network">TokenX a besoin d\'accéder au réseau local.
         Cet accès est contrôlé par les autorisations réseau.</string>
     <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Certains systèmes
         (comme MIUI) interdisent aux applications d\'accéder au réseau lorsqu\'elles ne sont pas
         visibles, même si l\'application utilise un service de premier plan. Veuillez désactiver les
-        fonctions d\'optimisation de la batterie pour Shizuku sur ces systèmes.</string>
+        fonctions d\'optimisation de la batterie pour TokenX sur ces systèmes.</string>
     <!-- Home - Root -->
     <string name="home_root_title"><![CDATA[Démarrer (pour les appareils rootés)]]></string>
-    <string name="home_root_description"><![CDATA[Si vous utilisez Magisk, vous pouvez essayer %1$s. Pour les utilisateurs root, cette commande remplacera à terme Shizuku. Notez que les applications existantes devront être légèrement modifiées pour utiliser %2$s.]]></string>
+    <string name="home_root_description"><![CDATA[Si vous utilisez Magisk, vous pouvez essayer %1$s. Pour les utilisateurs root, cette commande remplacera à terme TokenX. Notez que les applications existantes devront être légèrement modifiées pour utiliser %2$s.]]></string>
     <string name="home_root_button_start">Démarrer</string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
@@ -97,7 +97,7 @@
     <string name="terminal_tutorial_miui">Des utilisateurs ont signalé que MIUI endommage le Storage
         Access Framework, utilisé par la fonction d\'exportation.</string>
     <string name="terminal_tutorial_miui_2">Si vous utilisez MIUI, vous devrez peut-être extraire le
-        fichier du dossier assets de l\'APK de Shizuku.</string>
+        fichier du dossier assets de l\'APK de TokenX.</string>
     <string name="terminal_tutorial_1">Exportez les fichiers vers un nouveau dossier.</string>
     <string name="terminal_tutorial_1_description">Deux fichiers seront exportés : %1$s et %2$s. Si
         ces fichiers existent déjà dans le dossier sélectionné, ils seront supprimés.</string>
@@ -113,16 +113,16 @@
     <!-- Settings -->
     <string name="settings_start_on_boot">Démarrez au démarrage</string>
     <string name="settings_watchdog">Chien de garde</string>
-    <string name="settings_watchdog_summary">Redémarrage automatique de Shizuku en cas de plantage</string>
+    <string name="settings_watchdog_summary">Redémarrage automatique de TokenX en cas de plantage</string>
     <string name="settings_tcp_mode">Mode TCP</string>
-    <string name="settings_tcp_mode_summary">"Permet à Shizuku de redémarrer sans Wi-Fi. (Shizuku a
+    <string name="settings_tcp_mode_summary">"Permet à TokenX de redémarrer sans Wi-Fi. (TokenX a
         dû commencer une fois depuis le reboot)"</string>
     <string name="settings_tcp_mode_dialog_close_port">"Le port TCP sera immédiatement fermé. Vous
         aurez besoin du Wi-Fi pour réactiver le mode TCP. Continuer ?"</string>
     <string name="settings_restart_dialog_title">Redémarrage requis</string>
-    <string name="settings_restart_dialog_message">Shizuku doit redémarrer pour que ce paramètre
+    <string name="settings_restart_dialog_message">TokenX doit redémarrer pour que ce paramètre
         soit appliqué.</string>
-    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Une connexion Wi-Fi est requise. Shizuku continuera de fonctionner et attendra une connexion Wi-Fi avant de redémarrer en arrière-plan.</b>]]></string>
+    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Une connexion Wi-Fi est requise. TokenX continuera de fonctionner et attendra une connexion Wi-Fi avant de redémarrer en arrière-plan.</b>]]></string>
     <string name="settings_tcp_port">Port TCP</string>
     <string name="settings_language">Langue</string>
     <string name="settings_black_night_theme">Thème sombre noir</string>
@@ -153,7 +153,7 @@
     <!-- Updates -->
     <!-- Toast -->
     <string name="toast_no_email_app">Aucune application de messagerie trouvée</string>
-    <string name="toast_pairing_timeout">Le service de jumelage Shizuku a expiré</string>
+    <string name="toast_pairing_timeout">Le service de jumelage TokenX a expiré</string>
     <!-- Dark Mode Setting Override -->
     <string name="dark_theme_off">Toujours léger</string>
     <string name="dark_theme_on">Toujours sombre</string>
@@ -168,13 +168,13 @@
     <string name="notification_adb_pairing_stop_searching">Arrêter de chercher</string>
     <string name="notification_adb_pairing_working_title">Association en cours</string>
     <string name="notification_adb_pairing_succeed_title">Association terminée</string>
-    <string name="notification_adb_pairing_succeed_text">Vous pouvez démarrer le service de Shizuku
+    <string name="notification_adb_pairing_succeed_text">Vous pouvez démarrer le service de TokenX
         maintenant.</string>
     <string name="notification_adb_pairing_failed_title">L\'association a échoué</string>
     <string name="notification_adb_pairing_retry">Réessayer</string>
     <!-- Permission related, appears in system permission UI -->
-    <string name="permission_label">accéder à Shizuku</string>
-    <string name="permission_description">Autorise l\'appli à utiliser Shizuku.</string>
+    <string name="permission_label">accéder à TokenX</string>
+    <string name="permission_description">Autorise l\'appli à utiliser TokenX.</string>
     <string name="permission_warning_template"><![CDATA[Autoriser <b>%1$s</b> à %2$s \?]]></string>
     <string name="grant_dialog_button_allow_always">Autoriser tout le temps</string>
     <string name="grant_dialog_button_deny">"Refuser"</string>
@@ -183,19 +183,19 @@
     <string name="start_with_root_failed">Impossible de lancer le service parce que la permission
         root n\'est pas accordée ou que cet appareil n\'est pas rooté.</string>
     <!-- WADB Starter -->
-    <string name="wadb_notification_title">Début de Shizuku…</string>
+    <string name="wadb_notification_title">Début de TokenX…</string>
     <string name="wadb_notification_wifi_required">En attente de connexion Wi-Fi avant de poursuivre</string>
     <string name="wadb_notification_retry">En attente de nouvelle tentative</string>
     <string name="wadb_error_title">Erreur au démarrage</string>
     <string name="wadb_error_notify_dev">Appuyez pour informer le promoteur.</string>
     <string name="wadb_permission_error_notification_title">Erreur de permission</string>
-    <string name="wadb_permission_error_notification_content">Shizuku a besoin de
+    <string name="wadb_permission_error_notification_content">TokenX a besoin de
         WRITE_SECURE_SETTINGS pour commencer le démarrage. Appuyez pour apprendre à l’accorder.</string>
     <!-- Shell -->
     <!-- Watchdog -->
     <string name="watchdog_running">Le chien de garde est en fuite</string>
     <string name="watchdog_turn_off">Éteindre</string>
-    <string name="watchdog_shizuku_crashed_title">Shizuku s’est récemment écrasée</string>
+    <string name="watchdog_shizuku_crashed_title">TokenX s’est récemment écrasée</string>
     <string name="watchdog_shizuku_crashed_text">Watchdog a relancé le service. Appuyez pour
         connaître les solutions potentielles afin d’éviter de futurs plantages.</string>
     <string name="watchdog_shizuku_crashed_action_turn_off_alerts">Désactivez les alertes</string>
@@ -204,16 +204,16 @@
     <string name="toast_copied_to_clipboard">Copié dans le presse-papiers</string>
     <string name="accessibility_service_description">Offre un support de l’appairage pour les
         appareils (par exemple, les téléviseurs sous Android 14+) où les notifications ou l’écran
-        partagé ne peuvent pas être utilisés.\n\nPermet à Shizuku d’extraire le code d’appairage de
+        partagé ne peuvent pas être utilisés.\n\nPermet à TokenX d’extraire le code d’appairage de
         l’écran de débogage sans fil. Il se désactivera lui-même une fois le code d’appariement
         trouvé.</string>
     <!-- Messages for legacy -->
     <string name="dialog_legacy_not_support_title">%1$s ne supporte pas les versions plus récentes
-        de Shizuku</string>
-    <string name="dialog_legacy_not_support_message"><![CDATA[Les anciennes versions de Shizuku sont obsolètes depuis mars 2019. Aussi, elles ne fonctionnent pas sur les versions plus récentes d\'Android.<p>Merci de demander au développeur de <b>%1$s</b> de mettre à jour.]]></string>
-    <string name="dialog_requesting_legacy_title">%1$s requiert l\'ancien Shizuku</string>
-    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> supporte les versions récentes de Shizuku, mais demande l\'accès à l\'ancien Shizuku. C\'est peut être parce que Shizuku n\'est pas en cours de fonctionnement, merci de vérifier dans l\'appli Shizuku.<p>L\'ancien Shizuku est obsolète depuis mars 2019.]]></string>
-    <string name="dialog_requesting_legacy_button_open_shizuku">Ouvrir Shizuku</string>
+        de TokenX</string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[Les anciennes versions de TokenX sont obsolètes depuis mars 2019. Aussi, elles ne fonctionnent pas sur les versions plus récentes d\'Android.<p>Merci de demander au développeur de <b>%1$s</b> de mettre à jour.]]></string>
+    <string name="dialog_requesting_legacy_title">%1$s requiert l\'ancien TokenX</string>
+    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> supporte les versions récentes de TokenX, mais demande l\'accès à l\'ancien TokenX. C\'est peut être parce que TokenX n\'est pas en cours de fonctionnement, merci de vérifier dans l\'appli TokenX.<p>L\'ancien TokenX est obsolète depuis mars 2019.]]></string>
+    <string name="dialog_requesting_legacy_button_open_shizuku">Ouvrir TokenX</string>
     <string name="wadb_notification_attempt_now">Réessayer</string>
     <!-- Manage tab -->
     <!-- One app, and what it may do on the device -->

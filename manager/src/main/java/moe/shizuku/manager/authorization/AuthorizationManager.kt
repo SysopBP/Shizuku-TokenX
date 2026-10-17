@@ -135,7 +135,7 @@ object AuthorizationManager {
             for (pi in allPackages) {
                 if (pi.packageName in exclude) continue
                 if (pi.applicationInfo?.metaData?.getBoolean("moe.shizuku.client.V3_SUPPORT") != true) continue
-                if (pi.requestedPermissions?.contains(Manifest.permission.API_V23) != true) continue
+                if (!ServerConstants.requestsClientApi(pi.requestedPermissions)) continue
 
                 packages.add(pi)
             }

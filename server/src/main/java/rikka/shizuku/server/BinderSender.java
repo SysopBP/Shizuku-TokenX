@@ -35,8 +35,8 @@ public class BinderSender {
 
     private static final Logger LOGGER = new Logger("BinderSender");
 
-    private static final String PERMISSION_MANAGER = "moe.shizuku.manager.permission.MANAGER";
-    private static final String PERMISSION = "moe.shizuku.manager.permission.API_V23";
+    private static final String PERMISSION_MANAGER = "com.sysopbp.tokenx.permission.MANAGER";
+    private static final String PERMISSION = "com.sysopbp.tokenx.permission.API_V23";
 
     private static ShizukuService sShizukuService;
 
@@ -204,7 +204,7 @@ public class BinderSender {
                     ShizukuService.sendBinderToManager(sShizukuService, userId);
                     return;
                 }
-            } else if (ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
+            } else if (ServerConstants.requestsClientApi(pi.requestedPermissions)) {
                 if (!shouldServePackage(packageName, userId)) {
                     LOGGER.i("TokenX route skipped binder for %s on uid %d backend", packageName, Process.myUid());
                     continue;

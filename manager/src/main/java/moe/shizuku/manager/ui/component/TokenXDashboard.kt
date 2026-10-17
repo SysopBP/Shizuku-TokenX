@@ -393,7 +393,7 @@ fun TokenXDashboard(
                         IntegrationDetailRow("LSPosed", if (bridgeVerified) "Hook active" else "Detected")
                         IntegrationDetailRow("D2 Gate", if (liveStage?.stage == SystemUidProvisioner.Stage.D2_GATE && liveStage?.state == SystemUidProvisioner.StageState.FAILED) "Check failed" else "Protected")
                         IntegrationDetailRow("Root", if (rootAvailable) "Available • UID 0" else "Unavailable")
-                        IntegrationDetailRow("Shizuku", if (running) "Binder running • UID $uid" else "Not running")
+                        IntegrationDetailRow("TokenX", if (running) "Binder running • UID $uid" else "Not running")
                         IntegrationDetailRow("Router", if (bridgeVerified) "System Server → Root → Shell" else "Root → Shell fallback")
                         IntegrationDetailRow(
                             "Last verified",

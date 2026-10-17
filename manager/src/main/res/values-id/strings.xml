@@ -18,26 +18,26 @@
     <string name="dialog_adb_pairing_paring_code">Kode penghubung</string>
     <string name="paring_code_is_wrong">Kode penghubung tidak sesuai.</string>
     <string name="cannot_connect_port">Tidak dapat terhubung ke layanan debugging
-        nirkabel.\n\nPastikan Shizuku masuk daftar putih di semua firewall, pemblokir iklan, VPN,
+        nirkabel.\n\nPastikan TokenX masuk daftar putih di semua firewall, pemblokir iklan, VPN,
         atau aplikasi serupa yang dapat membatasi akses jaringan.</string>
     <string name="dialog_adb_pairing_message">Silakan mulai memasangkan dengan melakukan
         langkah-langkah berikut:\n- Arahkan ke \"Opsi Pengembang\"\n- Aktifkan \"Debugging USB\" dan
         \"Debugging Nirkabel\"\n- Ketuk sisi kiri \"Debugging Nirkabel\"\n- Ketuk \"Pasangkan
         perangkat dengan kode pemasangan\"\n- Masukkan kode pemasangan di notifikasi</string>
     <string name="dialog_adb_pairing_accessibility_permission">Pada Android 14,
-        menginstal/memperbarui Shizuku dengan Package Installer akan mencabut izin ^1, yang
+        menginstal/memperbarui TokenX dengan Package Installer akan mencabut izin ^1, yang
         diperlukan untuk mengaktifkan layanan aksesibilitas untuk pemasangan.\n\nUntuk
         memberikannya, jalankan perintah ADB berikut:\n\n^2\n\nSetelah menjalankan perintah, Anda
         dapat melanjutkan proses pemasangan.\n\nCatatan: Anda dapat melewati ini dengan
-        menginstal/memperbarui Shizuku dengan ADB.</string>
+        menginstal/memperbarui TokenX dengan ADB.</string>
     <string name="dialog_adb_pairing_accessibility_enable">Harap aktifkan layanan aksesibilitas
-        untuk memulai proses pemasangan. Ini memungkinkan Shizuku mendeteksi kode
+        untuk memulai proses pemasangan. Ini memungkinkan TokenX mendeteksi kode
         pemasangan.\n\nLayanan aksesibilitas akan dinonaktifkan ketika kode ditemukan atau setelah 1
         menit untuk menghemat energi.</string>
     <string name="dialog_adb_pairing_accessibility_navigate">Silakan mulai pemasangan dengan
         melakukan langkah-langkah berikut:\n- Buka \"Opsi Pengembang\"\n- Aktifkan \"Debugging USB\"
         dan \"Debugging Nirkabel\"\n- Ketuk sisi kiri \"Debugging Nirkabel\"\n- Ketuk \"Pasangkan
-        perangkat dengan kode pemasangan.\" Shizuku akan secara otomatis mendeteksi kode pemasangan.</string>
+        perangkat dengan kode pemasangan.\" TokenX akan secara otomatis mendeteksi kode pemasangan.</string>
     <string name="adb_pairing_requires_multi_window">Harap pindah ke mode layar pisah (split-screen)
         terlebih dahulu.</string>
     <string name="adb_pairing_requires_multi_window_reason">Sistem mengharuskan dialog pemasangan
@@ -50,7 +50,7 @@
     <string name="enable">Memungkinkan</string>
     <string name="development_settings">Pilihan pengembang</string>
     <string name="notification_settings">Pengaturan notifikasi</string>
-    <string name="adb_pairing_tutorial_content_notification">Notifikasi dari Shizuku akan membantu
+    <string name="adb_pairing_tutorial_content_notification">Notifikasi dari TokenX akan membantu
         Anda untuk menyelesaikan pemasangan.</string>
     <string name="adb_pairing_tutorial_content_steps">Arahkan ke \"Opsi Pengembang\", lalu aktifkan
         \"Debugging USB\" dan \"Debugging Nirkabel\".</string>
@@ -58,23 +58,23 @@
         Nirkabel\", lalu ketuk \"Pasangkan perangkat dengan kode pemasangan\". Masukkan kode
         tersebut ke notifikasi untuk menyelesaikan pemasangan.</string>
     <string name="adb_pairing_tutorial_content_notification_blocked">Proses penyambungan membutuhkan
-        Anda untuk berinteraksi dengan notifikasi dari Shizuku. Mohon izinkan Shizuku untuk mengirim
+        Anda untuk berinteraksi dengan notifikasi dari TokenX. Mohon izinkan TokenX untuk mengirim
         pemberitahuan.</string>
     <string name="adb_pairing_tutorial_content_miui">Pengguna MIUI mungkin perlu mengubah gaya
         pemberitahuan ke \"Android\" dari \"Pemberitahuan\" - \"Bayangan pemberitahuan\" di
         pengaturan sistem.</string>
     <string name="adb_pairing_tutorial_content_miui_2">Jika tidak, Anda mungkin tidak dapat
         memasukkan kode pemasangan dari notifikasi.</string>
-    <string name="adb_pairing_tutorial_content_finish">Kembali ke Shizuku dan mulai Shizuku.</string>
-    <string name="adb_pairing_tutorial_content_network">Shizuku perlu mengakses jaringan lokal.
+    <string name="adb_pairing_tutorial_content_finish">Kembali ke TokenX dan mulai TokenX.</string>
+    <string name="adb_pairing_tutorial_content_network">TokenX perlu mengakses jaringan lokal.
         Jaringan ini dikontrol oleh izin jaringan.</string>
     <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Beberapa sistem
         (seperti MIUI) melarang aplikasi mengakses jaringan saat tidak terlihat, meskipun aplikasi
         tersebut menggunakan layanan latar depan. Harap nonaktifkan fitur pengoptimalan baterai
-        untuk Shizuku pada sistem tersebut.</string>
+        untuk TokenX pada sistem tersebut.</string>
     <!-- Home - Root -->
     <string name="home_root_title"><![CDATA[Mulai (untuk perangkat dengan root)]]></string>
-    <string name="home_root_description"><![CDATA[Jika Anda menggunakan Magisk, Anda bisa mencoba %1$s. Bagi pengguna root, Magisk nantinya akan menggantikan Shizuku. Perlu diketahui, aplikasi yang sudah ada perlu sedikit diubah agar dapat menggunakan %2$s.]]></string>
+    <string name="home_root_description"><![CDATA[Jika Anda menggunakan Magisk, Anda bisa mencoba %1$s. Bagi pengguna root, Magisk nantinya akan menggantikan TokenX. Perlu diketahui, aplikasi yang sudah ada perlu sedikit diubah agar dapat menggunakan %2$s.]]></string>
     <string name="home_root_button_start">Mulai</string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
@@ -95,7 +95,7 @@
     <string name="terminal_tutorial_miui">Pengguna telah melaporkan bahwa MIUI merusak Storage
         Access Framework yang digunakan oleh fungsi ekspor.</string>
     <string name="terminal_tutorial_miui_2">Jika Anda menggunakan MIUI, Anda mungkin harus
-        mengekstrak file dari folder aset di APK Shizuku.</string>
+        mengekstrak file dari folder aset di APK TokenX.</string>
     <string name="terminal_tutorial_1">Ekspor file ke folder baru.</string>
     <string name="terminal_tutorial_1_description">Dua berkas akan diekspor: %1$s dan %2$s. Jika
         berkas tersebut sudah ada di folder yang dipilih, berkas tersebut akan dihapus.</string>
@@ -110,16 +110,16 @@
     <!-- Settings -->
     <string name="settings_start_on_boot">Mulai saat boot</string>
     <string name="settings_watchdog">Penjaga</string>
-    <string name="settings_watchdog_summary">Mulai ulang Shizuku secara otomatis jika macet</string>
+    <string name="settings_watchdog_summary">Mulai ulang TokenX secara otomatis jika macet</string>
     <string name="settings_tcp_mode">modus TCP</string>
-    <string name="settings_tcp_mode_summary">"Memungkinkan Shizuku untuk memulai ulang tanpa Wi-Fi.
-        (Shizuku harus sudah memulai sekali sejak di-reboot)"</string>
+    <string name="settings_tcp_mode_summary">"Memungkinkan TokenX untuk memulai ulang tanpa Wi-Fi.
+        (TokenX harus sudah memulai sekali sejak di-reboot)"</string>
     <string name="settings_tcp_mode_dialog_close_port">"Port TCP akan segera ditutup. Anda
         memerlukan Wi-Fi untuk mengaktifkan kembali mode TCP. Lanjutkan?"</string>
     <string name="settings_restart_dialog_title">Diperlukan Restart</string>
-    <string name="settings_restart_dialog_message">Shizuku perlu memulai ulang untuk menerapkan
+    <string name="settings_restart_dialog_message">TokenX perlu memulai ulang untuk menerapkan
         pengaturan ini.</string>
-    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Wi-Fi diperlukan. Shizuku akan terus berjalan dan menunggu koneksi Wi-Fi sebelum memulai ulang di latar belakang.</b>]]></string>
+    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Wi-Fi diperlukan. TokenX akan terus berjalan dan menunggu koneksi Wi-Fi sebelum memulai ulang di latar belakang.</b>]]></string>
     <string name="settings_tcp_port">Pelabuhan TCP</string>
     <string name="settings_language">Bahasa</string>
     <string name="settings_black_night_theme">Tema hitam gelap</string>
@@ -149,7 +149,7 @@
     <!-- Updates -->
     <!-- Toast -->
     <string name="toast_no_email_app">Tidak ada aplikasi email yang ditemukan</string>
-    <string name="toast_pairing_timeout">Layanan pemasangan Shizuku telah habis waktunya.</string>
+    <string name="toast_pairing_timeout">Layanan pemasangan TokenX telah habis waktunya.</string>
     <!-- Dark Mode Setting Override -->
     <string name="dark_theme_off">Selalu terang</string>
     <string name="dark_theme_on">Selalu gelap</string>
@@ -164,13 +164,13 @@
     <string name="notification_adb_pairing_stop_searching">Berhenti mencari</string>
     <string name="notification_adb_pairing_working_title">Penyambungan dalam proses</string>
     <string name="notification_adb_pairing_succeed_title">Penyambungan berhasil</string>
-    <string name="notification_adb_pairing_succeed_text">Anda dapat memulai layanan Shizuku
+    <string name="notification_adb_pairing_succeed_text">Anda dapat memulai layanan TokenX
         sekarang.</string>
     <string name="notification_adb_pairing_failed_title">Penyambungan gagal</string>
     <string name="notification_adb_pairing_retry">Ulangi</string>
     <!-- Permission related, appears in system permission UI -->
-    <string name="permission_label">mengakses Shizuku</string>
-    <string name="permission_description">Izinkan aplikasi menggunakan Shizuku.</string>
+    <string name="permission_label">mengakses TokenX</string>
+    <string name="permission_description">Izinkan aplikasi menggunakan TokenX.</string>
     <string name="permission_warning_template"><![CDATA[Izinkan <b>%1$s</b> untuk %2$s\?]]></string>
     <string name="grant_dialog_button_allow_always">Selalu izinkan</string>
     <string name="grant_dialog_button_deny">"Tolak"</string>
@@ -179,19 +179,19 @@
     <string name="start_with_root_failed">Layanan tidak bisa dimulai karena aplikasi tidak mendapat
         izin root atau perangkat tidak memiliki akses root.</string>
     <!-- WADB Starter -->
-    <string name="wadb_notification_title">Memulai Shizuku…</string>
+    <string name="wadb_notification_title">Memulai TokenX…</string>
     <string name="wadb_notification_wifi_required">Menunggu koneksi Wi-Fi sebelum melanjutkan</string>
     <string name="wadb_notification_retry">Menunggu untuk mencoba lagi</string>
     <string name="wadb_error_title">Kesalahan saat memulai saat boot</string>
     <string name="wadb_error_notify_dev">Ketuk untuk memberi tahu pengembang.</string>
     <string name="wadb_permission_error_notification_title">Kesalahan Izin</string>
-    <string name="wadb_permission_error_notification_content">Shizuku membutuhkan
+    <string name="wadb_permission_error_notification_content">TokenX membutuhkan
         WRITE_SECURE_SETTINGS untuk memulai saat boot. Ketuk untuk mempelajari cara memberikannya.</string>
     <!-- Shell -->
     <!-- Watchdog -->
     <string name="watchdog_running">Watchdog sedang berjalan</string>
     <string name="watchdog_turn_off">Mematikan</string>
-    <string name="watchdog_shizuku_crashed_title">Shizuku baru saja jatuh</string>
+    <string name="watchdog_shizuku_crashed_title">TokenX baru saja jatuh</string>
     <string name="watchdog_shizuku_crashed_text">Watchdog telah memulai kembali layanan. Ketuk untuk
         mempelajari kemungkinan perbaikan guna mencegah kerusakan di masa mendatang.</string>
     <string name="watchdog_shizuku_crashed_action_turn_off_alerts">Matikan Peringatan</string>
@@ -200,15 +200,15 @@
     <string name="toast_copied_to_clipboard">Disalin ke papan klip</string>
     <string name="accessibility_service_description">Menyediakan dukungan pemasangan untuk perangkat
         (misalnya, TV yang menjalankan Android 14+) yang tidak dapat menggunakan notifikasi atau
-        layar terpisah.\n\nMemungkinkan Shizuku untuk mengekstrak kode pemasangan dari layar
+        layar terpisah.\n\nMemungkinkan TokenX untuk mengekstrak kode pemasangan dari layar
         pemasangan debugging nirkabel. Perangkat akan menonaktifkan dirinya sendiri setelah kode
         pemasangan ditemukan.</string>
     <!-- Messages for legacy -->
-    <string name="dialog_legacy_not_support_title">%1$s tidak mendukung Shizuku modern</string>
-    <string name="dialog_legacy_not_support_message"><![CDATA[Shizuku Kuno sudah dihentikan sejak Maret 2019. Selain itu, Shizuku kuno tidak bisa bekerja pada sistem Android yang lebih baru.<p>Coba minta kepada pengembang dari <b>%1$s</b> untuk memperbarui aplikasinya.]]></string>
-    <string name="dialog_requesting_legacy_title">%1$s meminta akses Shizuku kuno</string>
-    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> memiliki dukungan Shizuku modern, namun meminta akses Shizuku kuno. Hal ini bisa terjadi karena Shizuku tidak aktif, harap periksa di aplikasi Shizuku. <p>Shizuku Kuno sudah dihentikan sejak Maret 2019.]]></string>
-    <string name="dialog_requesting_legacy_button_open_shizuku">Buka Shizuku</string>
+    <string name="dialog_legacy_not_support_title">%1$s tidak mendukung TokenX modern</string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[TokenX Kuno sudah dihentikan sejak Maret 2019. Selain itu, TokenX kuno tidak bisa bekerja pada sistem Android yang lebih baru.<p>Coba minta kepada pengembang dari <b>%1$s</b> untuk memperbarui aplikasinya.]]></string>
+    <string name="dialog_requesting_legacy_title">%1$s meminta akses TokenX kuno</string>
+    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> memiliki dukungan TokenX modern, namun meminta akses TokenX kuno. Hal ini bisa terjadi karena TokenX tidak aktif, harap periksa di aplikasi TokenX. <p>TokenX Kuno sudah dihentikan sejak Maret 2019.]]></string>
+    <string name="dialog_requesting_legacy_button_open_shizuku">Buka TokenX</string>
     <string name="wadb_notification_attempt_now">Ulangi</string>
     <!-- Manage tab -->
     <!-- One app, and what it may do on the device -->

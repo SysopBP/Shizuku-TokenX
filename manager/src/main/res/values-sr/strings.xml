@@ -18,7 +18,7 @@
     <string name="dialog_adb_pairing_paring_code">Kód za uparivanje</string>
     <string name="paring_code_is_wrong">Kód za uparivanje je pogrešan.</string>
     <string name="cannot_connect_port">Ne mogu da se povežem sa bežičnom uslugom otklanjanje
-        grešaka.\n\nUverite se da je Shizuku na beloj listi u svim zaštitnim zidovima, ad-block, VPN
+        grešaka.\n\nUverite se da je TokenX na beloj listi u svim zaštitnim zidovima, ad-block, VPN
         ili sličnim aplikacijama koje mogu ograničiti pristup mreži.</string>
     <string name="dialog_adb_pairing_message">Почните упаривање пратећи следеће кораке:\n- Идите на
         „Опције за програмере“\n- Омогућите „USB отклањање грешака“ и „Бежично отклањање грешака“\n-
@@ -49,7 +49,7 @@
     <string name="enable">Омогући</string>
     <string name="development_settings">Razvojne opcije programera</string>
     <string name="notification_settings">Opcije obaveštenja</string>
-    <string name="adb_pairing_tutorial_content_notification">Notifikacija iz Shizuku aplikacije će
+    <string name="adb_pairing_tutorial_content_notification">Notifikacija iz TokenX aplikacije će
         Vam pomoći da dovršite uparivanje.</string>
     <string name="adb_pairing_tutorial_content_steps">Идите на „Опције за програмере“, затим
         омогућите „USB дебаговање“ и „Бежично дебаговање“.</string>
@@ -62,16 +62,16 @@
         стил обавештења на „Android“ из „Обавештења“ - „Тањир обавештења“ у системским подешавањима.</string>
     <string name="adb_pairing_tutorial_content_miui_2">U suprotnom, možda nećete moći da unesete kod
         za uparivanje iz obaveštenja.</string>
-    <string name="adb_pairing_tutorial_content_finish">Vratite se u Shizuku i počnite Shizuku.</string>
-    <string name="adb_pairing_tutorial_content_network">Shizuku treba da pristupi lokalnoj mreži.
+    <string name="adb_pairing_tutorial_content_finish">Vratite se u TokenX i počnite TokenX.</string>
+    <string name="adb_pairing_tutorial_content_network">TokenX treba da pristupi lokalnoj mreži.
         Kontroliše se mrežnom dozvolom.</string>
     <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Neki sistemi (kao
         što je MIUI) ne dozvoljavaju aplikacijama pristup mreži kada nisu vidljive, čak i ako
         aplikacija koristi uslugu u prvom planu. Molimo Vas da onemogućite funkcije optimizacije
-        baterije za Shizuku na takvim sistemima.</string>
+        baterije za TokenX na takvim sistemima.</string>
     <!-- Home - Root -->
     <string name="home_root_title"><![CDATA[Покрени (за рутоване уређаје)]]></string>
-    <string name="home_root_description"><![CDATA[Ако користите Magisk, можете испробати %1$s. За root кориснике, на крају ће заменити Shizuku. Имајте на уму да постојеће апликације треба мало да се промене да би користиле %2$s.]]></string>
+    <string name="home_root_description"><![CDATA[Ако користите Magisk, можете испробати %1$s. За root кориснике, на крају ће заменити TokenX. Имајте на уму да постојеће апликације треба мало да се промене да би користиле %2$s.]]></string>
     <string name="home_root_button_start">Почетак</string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
@@ -94,7 +94,7 @@
     <string name="terminal_tutorial_miui">Корисници су пријавили да MIUI крши Storage Access
         Framework, који користи функција извоза.</string>
     <string name="terminal_tutorial_miui_2">Ако користите MIUI, можда ћете морати да извучете
-        датотеку из фасцикле assets у Shizuku-овом APK-у.</string>
+        датотеку из фасцикле assets у TokenX-овом APK-у.</string>
     <string name="terminal_tutorial_1">Извезите датотеке у нову фасциклу.</string>
     <string name="terminal_tutorial_1_description">Биће извезене две датотеке: %1$s и %2$s. Ако
         датотеке већ постоје у изабраној фасцикли, биће обрисане.</string>
@@ -116,9 +116,9 @@
     <string name="settings_tcp_mode_dialog_close_port">"TCP порт ће бити одмах затворен. Биће вам
         потребан Wi-Fi да бисте поново укључили TCP режим. Желите ли да наставите?"</string>
     <string name="settings_restart_dialog_title">Потребно је поновно покретање</string>
-    <string name="settings_restart_dialog_message">Shizuku treba da se ponovo pokrene da bi se
+    <string name="settings_restart_dialog_message">TokenX treba da se ponovo pokrene da bi se
         primenila ova postavka.</string>
-    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Vi-Fi je potreban. Shizuku će nastaviti da radi i čekati Vi-Fi vezu pre ponovnog pokretanja u pozadini.</b>]]></string>
+    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Vi-Fi je potreban. TokenX će nastaviti da radi i čekati Vi-Fi vezu pre ponovnog pokretanja u pozadini.</b>]]></string>
     <string name="settings_tcp_port">ТЦП порт</string>
     <string name="settings_language">Језик</string>
     <string name="settings_black_night_theme">Тема црне ноћи</string>
@@ -149,7 +149,7 @@
     <!-- Updates -->
     <!-- Toast -->
     <string name="toast_no_email_app">Није пронађена апликација за е-пошту</string>
-    <string name="toast_pairing_timeout">Shizuku uparivanje servis je isteklo.</string>
+    <string name="toast_pairing_timeout">TokenX uparivanje servis je isteklo.</string>
     <!-- Dark Mode Setting Override -->
     <string name="dark_theme_off">Увек светло</string>
     <string name="dark_theme_on">Увек мрачно</string>

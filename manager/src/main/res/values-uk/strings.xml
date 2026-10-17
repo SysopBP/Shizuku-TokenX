@@ -18,7 +18,7 @@
     <string name="dialog_adb_pairing_paring_code">Код парування</string>
     <string name="paring_code_is_wrong">Код парування неправильний.</string>
     <string name="cannot_connect_port">Не можу підключитися до бездротової служби
-        налагодження.\n\nБудь ласка, переконайтеся, що Shizuku внесений до білого списку у всіх
+        налагодження.\n\nБудь ласка, переконайтеся, що TokenX внесений до білого списку у всіх
         фаєрволах, блокуванні реклами, VPN чи подібних додатках, які можуть обмежувати доступ до
         мережі.</string>
     <string name="dialog_adb_pairing_message">Будь ласка, розпочніть сполучення, виконавши такі
@@ -27,18 +27,18 @@
         бездротового зв\'язку\"\n- Натисніть \"Спів\'язати пристрій за допомогою коду
         сполучення\"\n- Введіть код сполучення зі сповіщення</string>
     <string name="dialog_adb_pairing_accessibility_permission">На Android 14 встановлення/оновлення
-        Shizuku за допомогою інсталятора пакетів скасовує дозвіл ^1, який потрібен для ввімкнення
+        TokenX за допомогою інсталятора пакетів скасовує дозвіл ^1, який потрібен для ввімкнення
         служби доступності для сполучення.\n\nЩоб надати його, виконайте таку команду
         ADB:\n\n^2\n\nПісля виконання команди ви можете продовжити процес сполучення.\n\nПримітка:
-        ви можете обійти це, встановивши/оновивши Shizuku за допомогою ADB.</string>
+        ви можете обійти це, встановивши/оновивши TokenX за допомогою ADB.</string>
     <string name="dialog_adb_pairing_accessibility_enable">Будь ласка, увімкніть службу доступності,
-        щоб розпочати процес сполучення. Це дозволить Shizuku виявити код сполучення.\n\nСлужба
+        щоб розпочати процес сполучення. Це дозволить TokenX виявити код сполучення.\n\nСлужба
         доступності буде вимкнена після знаходження коду або через 1 хвилину для економії енергії.</string>
     <string name="dialog_adb_pairing_accessibility_navigate">Будь ласка, розпочніть сполучення,
         виконавши такі кроки:\n- Перейдіть до розділу \"Параметри розробника\"\n- Увімкніть
         \"Налагодження USB\" та \"Налагодження бездротового зв\'язку\"\n- Натисніть ліву частину
         \"Налагодження бездротового зв\'язку\"\n- Натисніть \"Спів\'язати пристрій за допомогою коду
-        сполучення\". Shizuku автоматично визначить код сполучення.</string>
+        сполучення\". TokenX автоматично визначить код сполучення.</string>
     <string name="adb_pairing_requires_multi_window">Спершу увійдіть в режим розділеного екрана
         (багатьох вікон).</string>
     <string name="adb_pairing_requires_multi_window_reason">Система вимагає, щоб діалог поєднання
@@ -51,7 +51,7 @@
     <string name="enable">Увімкнути</string>
     <string name="development_settings">Параметри розробника</string>
     <string name="notification_settings">Налаштування повідомлень</string>
-    <string name="adb_pairing_tutorial_content_notification">Повідомлення від Shizuku допоможе вам
+    <string name="adb_pairing_tutorial_content_notification">Повідомлення від TokenX допоможе вам
         закінчити парування.</string>
     <string name="adb_pairing_tutorial_content_steps">Перейдіть до розділу «Параметри розробника»,
         потім увімкніть «Налагодження по USB» та «Налагодження по бездротовому зв’язку».</string>
@@ -59,7 +59,7 @@
         «Бездротове налагодження», потім натисніть «Підключити пристрій за допомогою коду
         сполучення». Введіть код зі сповіщення, щоб завершити сполучення.</string>
     <string name="adb_pairing_tutorial_content_notification_blocked">Процес парування потребує, щоб
-        ви взаємодіяли із сповіщенням від Shizuku. Будь ласка, дозвольте Shizuku публікувати
+        ви взаємодіяли із сповіщенням від TokenX. Будь ласка, дозвольте TokenX публікувати
         сповіщення.</string>
     <string name="adb_pairing_tutorial_content_miui">Користувачам MIUI, иожливо, доведеться змінити
         стіль сповіщень на \"Android\" із \"Сповіщення\" - \"Панель сповіщень\" в системних
@@ -72,10 +72,10 @@
     <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Деякі системи
         (наприклад, MIUI) забороняють додаткам доступ до мережі, якщо вони не видимі, навіть якщо
         додаток використовує передній план. Будь ласка, вимкніть функції оптимізації батареї для
-        Shizuku на таких системах.</string>
+        TokenX на таких системах.</string>
     <!-- Home - Root -->
     <string name="home_root_title"><![CDATA[Запустіть службу з root доступом]]></string>
-    <string name="home_root_description"><![CDATA[Якщо ви користуєтеся Magisk, можете спробувати %1$s. Для користувачів root він зрештою замінить Shizuku. Зверніть увагу, що існуючі програми потребують дещо змін, щоб використовувати %2$s.]]></string>
+    <string name="home_root_description"><![CDATA[Якщо ви користуєтеся Magisk, можете спробувати %1$s. Для користувачів root він зрештою замінить TokenX. Зверніть увагу, що існуючі програми потребують дещо змін, щоб використовувати %2$s.]]></string>
     <string name="home_root_button_start">Запуск</string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
@@ -99,7 +99,7 @@
     <string name="terminal_tutorial_miui">Користувачі повідомляли, що MIUI порушує технологію
         доступу до сховища, яка використовується функцією експорту.</string>
     <string name="terminal_tutorial_miui_2">Якщо ви використовуєте MIUI, можливо, вам доведеться
-        витягти файл з папки assets в APK-файлі Shizuku.</string>
+        витягти файл з папки assets в APK-файлі TokenX.</string>
     <string name="terminal_tutorial_1">Експортуйте файли в нову папку.</string>
     <string name="terminal_tutorial_1_description">Буде експортовано два файли: %1$s та %2$s. Якщо
         файли вже існують у вибраній папці, їх буде видалено.</string>
@@ -114,9 +114,9 @@
     <!-- Settings -->
     <string name="settings_start_on_boot">Запуск при завантаженні</string>
     <string name="settings_watchdog">Сторожовий пес</string>
-    <string name="settings_watchdog_summary">Автоматично перезапускати Shizuku у разі збою</string>
+    <string name="settings_watchdog_summary">Автоматично перезапускати TokenX у разі збою</string>
     <string name="settings_tcp_mode">Режим TCP</string>
-    <string name="settings_tcp_mode_summary">"Дозволяє перезавантажити Shizuku без Wi-Fi. (Shizuku
+    <string name="settings_tcp_mode_summary">"Дозволяє перезавантажити TokenX без Wi-Fi. (TokenX
         мала запуститися один раз після перезавантаження)"</string>
     <string name="settings_tcp_mode_dialog_close_port">"TCP-порт буде негайно закрито. Щоб знову
         ввімкнути режим TCP, вам знадобиться Wi-Fi. Продовжити?"</string>
@@ -171,12 +171,12 @@
     <string name="notification_adb_pairing_stop_searching">Зупинити пошук</string>
     <string name="notification_adb_pairing_working_title">Виконується створення пари</string>
     <string name="notification_adb_pairing_succeed_title">Парування успішне</string>
-    <string name="notification_adb_pairing_succeed_text">Тепер ви можете запустити сервіс Shizuku.</string>
+    <string name="notification_adb_pairing_succeed_text">Тепер ви можете запустити сервіс TokenX.</string>
     <string name="notification_adb_pairing_failed_title">Парування невдале</string>
     <string name="notification_adb_pairing_retry">Спробувати ще раз</string>
     <!-- Permission related, appears in system permission UI -->
-    <string name="permission_label">доступ до Shizuku</string>
-    <string name="permission_description">Дозволити програмі використовувати Shizuku.</string>
+    <string name="permission_label">доступ до TokenX</string>
+    <string name="permission_description">Дозволити програмі використовувати TokenX.</string>
     <string name="permission_warning_template"><![CDATA[Дозволити додатку <b>%1$s</b> таке: %2$s\?]]></string>
     <string name="grant_dialog_button_allow_always">Завжди дозволяти</string>
     <string name="grant_dialog_button_deny">"Заборонити"</string>
@@ -192,7 +192,7 @@
     <string name="wadb_error_title">Помилка під час запуску при завантаженні</string>
     <string name="wadb_error_notify_dev">Натисніть, щоб повідомити розробника.</string>
     <string name="wadb_permission_error_notification_title">Помилка дозволу</string>
-    <string name="wadb_permission_error_notification_content">Для запуску Shizuku під час
+    <string name="wadb_permission_error_notification_content">Для запуску TokenX під час
         завантаження системи потрібні налаштування WRITE_SECURE_SETTINGS. Натисніть, щоб дізнатися,
         як їх надати.</string>
     <!-- Shell -->
@@ -208,14 +208,14 @@
     <string name="toast_copied_to_clipboard">Скопійовано в буфер обміну</string>
     <string name="accessibility_service_description">Забезпечує підтримку сполучення для пристроїв
         (наприклад, телевізорів з Android 14+), де не можна використовувати сповіщення або
-        розділений екран.\n\nДозволяє Shizuku витягувати код сполучення з екрана сполучення для
+        розділений екран.\n\nДозволяє TokenX витягувати код сполучення з екрана сполучення для
         бездротового налагодження. Він вимкнеться, як тільки код сполучення буде знайдено.</string>
     <!-- Messages for legacy -->
-    <string name="dialog_legacy_not_support_title">%1$s не підтримує сучасну версію Shizuku</string>
-    <string name="dialog_legacy_not_support_message"><![CDATA[Підтримка старої версії Shizuku завершилася у березні 2019 року. Також, стара версія Shizuku не працює на нових версіях Android.<p>Будь ласка, попросіть оновитися у розробника <b>%1$s</b>.]]></string>
-    <string name="dialog_requesting_legacy_title">%1$s просить стару версію Shizuku</string>
-    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> має підтримку нової версії Shizuku, але просить стару версію Shizuku. Це може трапитися тому, що Shizuku не запущено, будь ласка, перевірте у програмі Shizuku.<p>Підтримка старої версії Shizuku завершилася у березні 2019 року.]]></string>
-    <string name="dialog_requesting_legacy_button_open_shizuku">Відкрити Shizuku</string>
+    <string name="dialog_legacy_not_support_title">%1$s не підтримує сучасну версію TokenX</string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[Підтримка старої версії TokenX завершилася у березні 2019 року. Також, стара версія TokenX не працює на нових версіях Android.<p>Будь ласка, попросіть оновитися у розробника <b>%1$s</b>.]]></string>
+    <string name="dialog_requesting_legacy_title">%1$s просить стару версію TokenX</string>
+    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> має підтримку нової версії TokenX, але просить стару версію TokenX. Це може трапитися тому, що TokenX не запущено, будь ласка, перевірте у програмі TokenX.<p>Підтримка старої версії TokenX завершилася у березні 2019 року.]]></string>
+    <string name="dialog_requesting_legacy_button_open_shizuku">Відкрити TokenX</string>
     <string name="wadb_notification_attempt_now">Спробувати ще раз</string>
     <!-- Manage tab -->
     <!-- One app, and what it may do on the device -->

@@ -1,3 +1,4 @@
+# Modified by SysopBP, 2026-10-14: pin workflow dependencies to verified commits.
 name: Translations
 
 # Two halves of one job, and they run on different days, because they answer different
@@ -35,9 +36,9 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Send the source strings
-        uses: crowdin/github-action@v3
+        uses: crowdin/github-action@9c23991700c0ec5256fd41089b9d9d7d540e424e # v3
         with:
           config: crowdin.yml
           project_id: 935085
@@ -60,9 +61,9 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Bring back whatever has been translated
-        uses: crowdin/github-action@v3
+        uses: crowdin/github-action@9c23991700c0ec5256fd41089b9d9d7d540e424e # v3
         with:
           config: crowdin.yml
           project_id: 935085
@@ -100,7 +101,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
 

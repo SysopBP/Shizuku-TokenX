@@ -136,7 +136,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         // APK was not installed. Use TokenX's real manager package in the embedded path and
         // retain the upstream CLASSPATH discovery for root/shell standalone launches.
         if (Process.myUid() == Process.SYSTEM_UID) {
-            packageName = "moe.shizuku.privileged.api";
+            packageName = "com.sysopbp.tokenx";
             LOGGER.i("Embedded system_server TokenX manager package is " + packageName);
             ServerLog.mark("MANAGER_RESOLVED: embedded system_server -> " + packageName);
         } else {
@@ -720,7 +720,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                 } else if (pi.applicationInfo.metaData != null
                         && pi.applicationInfo.metaData.getBoolean("moe.shizuku.client.V3_SUPPORT", false)
                         && pi.requestedPermissions != null
-                        && ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
+                        && ServerConstants.requestsClientApi(pi.requestedPermissions)) {
                     list.add(pi);
                 }
             }
@@ -778,7 +778,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                 )
                 .stream()
                 .filter(pi -> pi != null && pi.requestedPermissions != null)
-                .filter(pi -> ArraysKt.contains(pi.requestedPermissions, PERMISSION));
+                .filter(pi -> ServerConstants.requestsClientApi(pi.requestedPermissions));
 
             LOGGER.i("sending binders");
             packages

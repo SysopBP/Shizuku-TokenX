@@ -18,19 +18,19 @@
     <string name="dialog_adb_pairing_paring_code">Զուգելու կոդ</string>
     <string name="paring_code_is_wrong">Զուգելու կոդը սխալ է։</string>
     <string name="cannot_connect_port">Հնարավոր չէ միանալ անլար վրիպազերծման
-        ծառայությանը։\n\nՀամոզվեք, որ Shizuku-ն սպիտակ ցուցակում է բոլոր firewall-ներում, գովազդի
+        ծառայությանը։\n\nՀամոզվեք, որ TokenX-ն սպիտակ ցուցակում է բոլոր firewall-ներում, գովազդի
         արգելափակման ծրագրերում, VPN-ներում կամ նմանատիպ ծրագրերում, որոնք կարող են սահմանափակել
         ցանցային մուտքը։</string>
     <string name="dialog_adb_pairing_message">Սկսեք զուգակցումը կատարելով հետևյալ քայլերը՝\n- Անցեք
         «Մշակողի ընտրանքներ»\n- Միացրեք «USB վրիպազերծում» և «Անլար վրիպազերծում»\n- Հպեք «Անլար
         վրիպազերծում» բաժնի ձախ կողմին\n- Հպեք «Զուգակցել սարքը զուգակցման կոդով»\n- Մուտքագրեք
         զուգակցման կոդը ծանուցման մեջ</string>
-    <string name="dialog_adb_pairing_accessibility_permission">Android 14-ում Shizuku-ի
+    <string name="dialog_adb_pairing_accessibility_permission">Android 14-ում TokenX-ի
         տեղադրումը/թարմացումը Package Installer-ի միջոցով չեղարկում է ^1 թույլտվությունը, որը
         անհրաժեշտ է զուգավորման համար հասանելիության ծառայությունը միացնելու համար:\n\nԱյն
         տրամադրելու համար գործարկեք հետևյալ ADB հրամանը՝\n\n^2\n\nՀրամանը գործարկելուց հետո կարող եք
         շարունակել զուգավորման գործընթացը:\n\nՆշում. կարող եք շրջանցել սա՝ տեղադրելով/թարմացնելով
-        Shizuku-ն ADB-ի միջոցով:</string>
+        TokenX-ն ADB-ի միջոցով:</string>
     <string name="dialog_adb_pairing_accessibility_enable">Խնդրում ենք միացնել մատչելիության
         ծառայությունը՝ զուգավորման գործընթացը սկսելու համար: Սա թույլ է տալիս Շիզուկուին հայտնաբերել
         զույգավորման կոդը։\n\nՄատչելիության ծառայությունն անջատվելու է, երբ կոդը գտնվի կամ 1 րոպե
@@ -58,7 +58,7 @@
         ձախ կողմին, այնուհետև հպեք «Սարքի զուգակցում զուգակցման կոդով» կոճակին։ Մուտքագրեք ծանուցման
         մեջ նշված կոդը՝ զուգակցումն ավարտելու համար։</string>
     <string name="adb_pairing_tutorial_content_notification_blocked">Զուգավորման գործընթացը
-        պահանջում է, որ դուք փոխազդեք Shizuku-ի ծանուցման հետ: Խնդրում ենք թույլատրել Shizuku-ին
+        պահանջում է, որ դուք փոխազդեք TokenX-ի ծանուցման հետ: Խնդրում ենք թույլատրել TokenX-ին
         հրապարակել ծանուցումներ:</string>
     <string name="adb_pairing_tutorial_content_miui">MIUI օգտատերերը կարող են ստիպված լինել
         համակարգի կարգավորումներում «Ծանուցում»-ից «Ծանուցման ստվեր» բաժնից փոխել ծանուցման ոճը
@@ -71,10 +71,10 @@
     <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Որոշ համակարգեր
         (օրինակ՝ MIUI-ը) թույլ չեն տալիս հավելվածներին մուտք գործել ցանց, երբ դրանք տեսանելի չեն,
         նույնիսկ եթե հավելվածն օգտագործում է առաջնային պլանի ծառայություն: Խնդրում ենք անջատել
-        Shizuku-ի մարտկոցի օպտիմալացման գործառույթները նման համակարգերում:</string>
+        TokenX-ի մարտկոցի օպտիմալացման գործառույթները նման համակարգերում:</string>
     <!-- Home - Root -->
     <string name="home_root_title"><![CDATA[Միացնել (root արած սարքերի համար)]]></string>
-    <string name="home_root_description"><![CDATA[Եթե օգտագործում եք Magisk, կարող եք փորձել %1$s-ը։ Root օգտատերերի համար այն ի վերջո կփոխարինի Shizuku-ին։ Նշենք, որ առկա ծրագրերը պետք է մի փոքր փոփոխվեն՝ %2$s-ն օգտագործելու համար։]]></string>
+    <string name="home_root_description"><![CDATA[Եթե օգտագործում եք Magisk, կարող եք փորձել %1$s-ը։ Root օգտատերերի համար այն ի վերջո կփոխարինի TokenX-ին։ Նշենք, որ առկա ծրագրերը պետք է մի փոքր փոփոխվեն՝ %2$s-ն օգտագործելու համար։]]></string>
     <string name="home_root_button_start">Միացնել</string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
@@ -96,7 +96,7 @@
     <string name="terminal_tutorial_miui">Օգտատերերը հայտնել են, որ MIUI-ը խախտում է Storage Access
         Framework-ը, որն օգտագործվում է արտահանման գործառույթի կողմից։</string>
     <string name="terminal_tutorial_miui_2">Եթե օգտագործում եք MIUI, հնարավոր է, որ ստիպված լինեք
-        ֆայլը հանել Shizuku-ի APK ֆայլի assets պանակից։</string>
+        ֆայլը հանել TokenX-ի APK ֆայլի assets պանակից։</string>
     <string name="terminal_tutorial_1">Արտահանեք ֆայլերը նոր թղթապանակ։</string>
     <string name="terminal_tutorial_1_description">Երկու ֆայլ կարտահանվի՝ %1$s և %2$s: Եթե ֆայլերն
         արդեն իսկ գոյություն ունեն ընտրված թղթապանակում, դրանք կջնջվեն:</string>
@@ -113,14 +113,14 @@
     <string name="settings_watchdog">Հսկիչ</string>
     <string name="settings_watchdog_summary">Ավտոմատ վերագործարկեք Շիզուկուն, եթե այն խափանվի</string>
     <string name="settings_tcp_mode">TCP ռեժիմ</string>
-    <string name="settings_tcp_mode_summary">"Թույլ է տալիս Shizuku-ին վերագործարկել առանց Wi-Fi-ի:
-        (Shizuku-ն պետք է որ մեկ անգամ սկսել է վերագործարկումից հետո)"</string>
+    <string name="settings_tcp_mode_summary">"Թույլ է տալիս TokenX-ին վերագործարկել առանց Wi-Fi-ի:
+        (TokenX-ն պետք է որ մեկ անգամ սկսել է վերագործարկումից հետո)"</string>
     <string name="settings_tcp_mode_dialog_close_port">"TCP միացքը անմիջապես կփակվի: TCP ռեժիմը
         կրկին միացնելու համար ձեզ անհրաժեշտ կլինի Wi-Fi: Շարունակե՞լ:"</string>
     <string name="settings_restart_dialog_title">Վերագործարկումը պարտադիր է</string>
     <string name="settings_restart_dialog_message">Այս կարգավորումը կիրառելու համար Շիզուկուն պետք է
         վերագործարկվի։</string>
-    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Պահանջվում է Wi-Fi: Shizuku-ն կշարունակի աշխատել և կսպասի Wi-Fi կապի, նախքան ֆոնային ռեժիմով վերագործարկվելը:</b>]]></string>
+    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Պահանջվում է Wi-Fi: TokenX-ն կշարունակի աշխատել և կսպասի Wi-Fi կապի, նախքան ֆոնային ռեժիմով վերագործարկվելը:</b>]]></string>
     <string name="settings_tcp_port">TCP նավահանգիստ</string>
     <string name="settings_language">Լեզու</string>
     <string name="settings_black_night_theme">Սև գիշերի տեսք</string>
@@ -165,12 +165,12 @@
     <string name="notification_adb_pairing_stop_searching">Ընդհատել որոնումը</string>
     <string name="notification_adb_pairing_working_title">Զուգավորումը ընթացքի մեջ է</string>
     <string name="notification_adb_pairing_succeed_title">Զուգավորումը հաջող</string>
-    <string name="notification_adb_pairing_succeed_text">Դուք կարող եք սկսել Shizuku ծառայությունը
+    <string name="notification_adb_pairing_succeed_text">Դուք կարող եք սկսել TokenX ծառայությունը
         հիմա:</string>
     <string name="notification_adb_pairing_failed_title">Զուգավորումը ձախողվեց</string>
     <string name="notification_adb_pairing_retry">Կրկին փորձել</string>
     <!-- Permission related, appears in system permission UI -->
-    <string name="permission_label">օգտվել Shizuku-ից</string>
+    <string name="permission_label">օգտվել TokenX-ից</string>
     <string name="permission_description">Թողնել ծրագրին օգտվել ավելի բարձր արտոնություններով
         համակարգային API-ներից։</string>
     <string name="permission_warning_template"><![CDATA[Թույլատրե՞լ <b>%1$s</b> հավելվածին %2$s:]]></string>
@@ -187,7 +187,7 @@
     <string name="wadb_error_title">Սխալ boot-ից սկսելիս</string>
     <string name="wadb_error_notify_dev">Սեղմեք մշակողին ծանուցելու համար:</string>
     <string name="wadb_permission_error_notification_title">Թույլտվության սխալ</string>
-    <string name="wadb_permission_error_notification_content">Shizuku-ն պետք է WRITE_SECURE_SETTINGS
+    <string name="wadb_permission_error_notification_content">TokenX-ն պետք է WRITE_SECURE_SETTINGS
         սկսել boot-ից։ Սեղմեք ՝ իմանալու համար, թե ինչպես շնորհել այն:</string>
     <!-- Shell -->
     <!-- Watchdog -->
@@ -202,14 +202,14 @@
     <string name="toast_copied_to_clipboard">Պատճենվել է սեղմատախտակին</string>
     <string name="accessibility_service_description">Ապահովում է զուգավորման աջակցություն սարքերի
         համար (օրինակ՝ Android 14+ աշխատող հեռուստացույցներ), որտեղ հնարավոր չէ օգտագործել
-        ծանուցումները կամ բաժանված էկրանը:\n\nՀնարավորություն է տալիս Shizuku-ին հանել զուգավորման
+        ծանուցումները կամ բաժանված էկրանը:\n\nՀնարավորություն է տալիս TokenX-ին հանել զուգավորման
         կոդը անլար կարգաբերման զուգավորման էկրանից: Այն կանջատի ինքն իրեն, երբ զույգ կոդը գտնվի:</string>
     <!-- Messages for legacy -->
-    <string name="dialog_legacy_not_support_title">%1$s-ը չի ընդունում այժմյան Shizuku-ն</string>
-    <string name="dialog_legacy_not_support_message"><![CDATA[Հին Shizuku-ն համարվում է հնացած 2019-ի մարտից։ Հին Shizuku-ն չի աշխատում նոր Android-ի փոփոխակներում։<p>Դիմեք <b>%1$s</b>-ի ծրագրավորողին և ասեք, որ ծրագիրը թարմացնի։]]></string>
-    <string name="dialog_requesting_legacy_title">%1$s-ն առաջարկում է օգտվել հին Shizuku-ից</string>
-    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b>-ն օժտված է նոր Shizuku-ից օգտվելու հատկությունից, բայց այն փորձում է օգտվել հին Shizuku-ից։ Հնարավոր է, որ Shizuku-ն միացված չէ, ստուգեք Shizuku ծրագիրը։<p>Հին Shizuku-ն համարվում է հնացած 2019-ի մարտից։]]></string>
-    <string name="dialog_requesting_legacy_button_open_shizuku">Բացել Shizuku-ն</string>
+    <string name="dialog_legacy_not_support_title">%1$s-ը չի ընդունում այժմյան TokenX-ն</string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[Հին TokenX-ն համարվում է հնացած 2019-ի մարտից։ Հին TokenX-ն չի աշխատում նոր Android-ի փոփոխակներում։<p>Դիմեք <b>%1$s</b>-ի ծրագրավորողին և ասեք, որ ծրագիրը թարմացնի։]]></string>
+    <string name="dialog_requesting_legacy_title">%1$s-ն առաջարկում է օգտվել հին TokenX-ից</string>
+    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b>-ն օժտված է նոր TokenX-ից օգտվելու հատկությունից, բայց այն փորձում է օգտվել հին TokenX-ից։ Հնարավոր է, որ TokenX-ն միացված չէ, ստուգեք TokenX ծրագիրը։<p>Հին TokenX-ն համարվում է հնացած 2019-ի մարտից։]]></string>
+    <string name="dialog_requesting_legacy_button_open_shizuku">Բացել TokenX-ն</string>
     <string name="wadb_notification_attempt_now">Կրկին փորձել</string>
     <!-- Manage tab -->
     <!-- One app, and what it may do on the device -->

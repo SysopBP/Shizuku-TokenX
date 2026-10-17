@@ -17,11 +17,11 @@
     <string name="dialog_adb_pairing_discovery">Hledání zařízení pro párování</string>
     <string name="dialog_adb_pairing_paring_code">Kód pro párování</string>
     <string name="paring_code_is_wrong">Chybný kód pro párování.</string>
-    <string name="cannot_connect_port">Nelze se připojit k bezdrátové ladicí službě.\n\nUjistěte se prosím, že je Shizuku na bílé listině ve všech firewallech, blokovačích reklam, VPN nebo podobných aplikacích, které mohou omezovat přístup k síti.</string>
+    <string name="cannot_connect_port">Nelze se připojit k bezdrátové ladicí službě.\n\nUjistěte se prosím, že je TokenX na bílé listině ve všech firewallech, blokovačích reklam, VPN nebo podobných aplikacích, které mohou omezovat přístup k síti.</string>
     <string name="dialog_adb_pairing_message">Párování zahajte provedením následujících kroků:\n- Přejděte do sekce „Možnosti pro vývojáře“\n- Povolte „Ladění USB“ a „Bezdrátové ladění“\n- Klepněte na levou stranu sekce „Bezdrátové ladění“\n- Klepněte na „Spárovat zařízení s párovacím kódem“\n- Zadejte párovací kód z oznámení</string>
-    <string name="dialog_adb_pairing_accessibility_permission">V systému Android 14 instalace/aktualizace Shizuku pomocí instalačního programu balíčků ruší oprávnění ^1, které je vyžadováno k povolení služby přístupnosti pro párování.\n\nChcete-li jej udělit, spusťte následující příkaz ADB:\n\n^2\n\nPo spuštění příkazu můžete pokračovat v procesu párování.\n\nPoznámka: Tomuto se můžete vyhnout instalací/aktualizací Shizuku pomocí ADB.</string>
-    <string name="dialog_adb_pairing_accessibility_enable">Prosím, povolte službu přístupnosti pro zahájení procesu párování. To umožňuje Shizuku detekovat párovací kód.\n\nSlužba přístupnosti bude vypnuta po nalezení kódu nebo po 1 minutě, aby se šetřila energie.</string>
-    <string name="dialog_adb_pairing_accessibility_navigate">Párování spusťte provedením následujících kroků:\n- Přejděte do sekce „Možnosti pro vývojáře“\n- Povolte „Ladění USB“ a „Bezdrátové ladění“\n- Klepněte na levou stranu sekce „Bezdrátové ladění“\n- Klepněte na „Spárovat zařízení s párovacím kódem“. Shizuku automaticky detekuje párovací kód.</string>
+    <string name="dialog_adb_pairing_accessibility_permission">V systému Android 14 instalace/aktualizace TokenX pomocí instalačního programu balíčků ruší oprávnění ^1, které je vyžadováno k povolení služby přístupnosti pro párování.\n\nChcete-li jej udělit, spusťte následující příkaz ADB:\n\n^2\n\nPo spuštění příkazu můžete pokračovat v procesu párování.\n\nPoznámka: Tomuto se můžete vyhnout instalací/aktualizací TokenX pomocí ADB.</string>
+    <string name="dialog_adb_pairing_accessibility_enable">Prosím, povolte službu přístupnosti pro zahájení procesu párování. To umožňuje TokenX detekovat párovací kód.\n\nSlužba přístupnosti bude vypnuta po nalezení kódu nebo po 1 minutě, aby se šetřila energie.</string>
+    <string name="dialog_adb_pairing_accessibility_navigate">Párování spusťte provedením následujících kroků:\n- Přejděte do sekce „Možnosti pro vývojáře“\n- Povolte „Ladění USB“ a „Bezdrátové ladění“\n- Klepněte na levou stranu sekce „Bezdrátové ladění“\n- Klepněte na „Spárovat zařízení s párovacím kódem“. TokenX automaticky detekuje párovací kód.</string>
     <string name="adb_pairing_requires_multi_window">Nejprve prosím přejděte do režimu rozdělené obrazovky (více oken).</string>
     <string name="adb_pairing_requires_multi_window_reason">Systém vyžaduje, aby byl dialog pro párování vždy viditelný. Použití režimu rozdělené obrazovky je jediný způsob, jak zajistit, aby tato aplikace a dialogové okno systému byly viditelné současně.</string>
     <string name="adb_error_key_store">Nelze vygenerovat klíč pro bezdrátové ladění.\nMůže to být způsobeno chybou mechanismu úložiště klíčů v tomto zařízení.</string>
@@ -30,18 +30,18 @@
     <string name="enable">Zapnout</string>
     <string name="development_settings">Možnosti vývojářů</string>
     <string name="notification_settings">Nastavení oznámení</string>
-    <string name="adb_pairing_tutorial_content_notification">Notifikace od Shizuku vám pomůže dokončit párování.</string>
+    <string name="adb_pairing_tutorial_content_notification">Notifikace od TokenX vám pomůže dokončit párování.</string>
     <string name="adb_pairing_tutorial_content_steps">Přejděte do části „Možnosti pro vývojáře“ a poté povolte „Ladění USB“ a „Bezdrátové ladění“.</string>
     <string name="adb_pairing_tutorial_content_enter_pairing_code">Klepněte na levou stranu „Bezdrátové ladění“ a poté klepněte na „Spárovat zařízení s párovacím kódem“. Zadejte kód z oznámení pro dokončení párování.</string>
-    <string name="adb_pairing_tutorial_content_notification_blocked">Proces párování vyžaduje interakci s oznámením od Shizuku. Prosím povolte Shizuku posílat oznámení.</string>
+    <string name="adb_pairing_tutorial_content_notification_blocked">Proces párování vyžaduje interakci s oznámením od TokenX. Prosím povolte TokenX posílat oznámení.</string>
     <string name="adb_pairing_tutorial_content_miui">Uživatelé MIUI možná budou muset přepnout styl oznámení na \"Android\" z \"Oznámení\" - \"Lišta Oznámení\" v nastavení systému.</string>
     <string name="adb_pairing_tutorial_content_miui_2">Jinak se vám nemusí podařit zadat párovací kód z oznámení.</string>
-    <string name="adb_pairing_tutorial_content_finish">Vraťte se do Shizuku a začněte Shizuku.</string>
-    <string name="adb_pairing_tutorial_content_network">Shizuku potřebuje přístup k místní síti. Je řízen síťovými oprávněními.</string>
-    <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Některé systémy (například MIUI) neumožňují aplikacím přístup k síti, když nejsou viditelné, a to i v případě, že aplikace používá službu v popředí. V takových systémech prosím vypněte funkce optimalizace baterie pro aplikaci Shizuku.</string>
+    <string name="adb_pairing_tutorial_content_finish">Vraťte se do TokenX a začněte TokenX.</string>
+    <string name="adb_pairing_tutorial_content_network">TokenX potřebuje přístup k místní síti. Je řízen síťovými oprávněními.</string>
+    <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Některé systémy (například MIUI) neumožňují aplikacím přístup k síti, když nejsou viditelné, a to i v případě, že aplikace používá službu v popředí. V takových systémech prosím vypněte funkce optimalizace baterie pro aplikaci TokenX.</string>
     <!-- Home - Root -->
     <string name="home_root_title"><![CDATA[Start (pro rootovaná zařízení)]]></string>
-    <string name="home_root_description"><![CDATA[Pokud používáte Magisk, můžete zkusit %1$s. Pro uživatele root nakonec nahradí Shizuku. Upozorňujeme, že stávající aplikace se musí trochu změnit, aby mohly používat %2$s.]]></string>
+    <string name="home_root_description"><![CDATA[Pokud používáte Magisk, můžete zkusit %1$s. Pro uživatele root nakonec nahradí TokenX. Upozorňujeme, že stávající aplikace se musí trochu změnit, aby mohly používat %2$s.]]></string>
     <string name="home_root_button_start">Spustit</string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
@@ -63,7 +63,7 @@
     <string name="intents_start">Spustit</string>
     <!-- Terminal -->
     <string name="terminal_tutorial_miui">Uživatelé hlásili, že MIUI narušuje rámec pro přístup k úložišti (Storage Access Framework), který používá funkce exportu.</string>
-    <string name="terminal_tutorial_miui_2">Pokud používáte MIUI, budete možná muset soubor extrahovat ze složky assets v APK souboru Shizuku.</string>
+    <string name="terminal_tutorial_miui_2">Pokud používáte MIUI, budete možná muset soubor extrahovat ze složky assets v APK souboru TokenX.</string>
     <string name="terminal_tutorial_1">Exportujte soubory do nové složky.</string>
     <string name="terminal_tutorial_1_description">Budou exportovány dva soubory: %1$s a %2$s. Pokud soubory již ve vybrané složce existují, budou smazány.</string>
     <string name="terminal_tutorial_2">Pomocí terminálové aplikace zkopírujte soubory do jejího soukromého adresáře souborů.</string>
@@ -73,13 +73,13 @@
     <!-- Settings -->
     <string name="settings_start_on_boot">Začněte na botě</string>
     <string name="settings_watchdog">Hlídací pes</string>
-    <string name="settings_watchdog_summary">Automaticky restartovat Shizuku v případě pádu</string>
+    <string name="settings_watchdog_summary">Automaticky restartovat TokenX v případě pádu</string>
     <string name="settings_tcp_mode">TCP režim</string>
-    <string name="settings_tcp_mode_summary">"Umožňuje Shizuku restartovat bez Wi-Fi. (Shizuku musela od restartu začít jednou)"</string>
+    <string name="settings_tcp_mode_summary">"Umožňuje TokenX restartovat bez Wi-Fi. (TokenX musela od restartu začít jednou)"</string>
     <string name="settings_tcp_mode_dialog_close_port">"Port TCP bude okamžitě uzavřen. Pro opětovné zapnutí režimu TCP budete potřebovat Wi-Fi. Pokračovat?"</string>
     <string name="settings_restart_dialog_title">Vyžadován restart</string>
-    <string name="settings_restart_dialog_message">Aby se toto nastavení projevilo, je nutné restartovat Shizuku.</string>
-    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Je vyžadováno připojení k Wi-Fi. Shizuku bude pokračovat v běhu a počká na připojení k Wi-Fi, než se restartuje na pozadí.</b>]]></string>
+    <string name="settings_restart_dialog_message">Aby se toto nastavení projevilo, je nutné restartovat TokenX.</string>
+    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Je vyžadováno připojení k Wi-Fi. TokenX bude pokračovat v běhu a počká na připojení k Wi-Fi, než se restartuje na pozadí.</b>]]></string>
     <string name="settings_language">Jazyk</string>
     <string name="settings_black_night_theme">Motiv černé noci</string>
     <string name="settings_black_night_theme_summary">Pokud je povolen noční režim, použijte motiv čistě černé barvy</string>
@@ -103,7 +103,7 @@
     <!-- Updates -->
     <!-- Toast -->
     <string name="toast_no_email_app">Žádná e-mailová aplikace nenalezena</string>
-    <string name="toast_pairing_timeout">Časový limit párovací služby Shizuku vypršel.</string>
+    <string name="toast_pairing_timeout">Časový limit párovací služby TokenX vypršel.</string>
     <!-- Dark Mode Setting Override -->
     <string name="dark_theme_off">Vždy světlé</string>
     <string name="dark_theme_on">Vždycky tma</string>
@@ -118,12 +118,12 @@
     <string name="notification_adb_pairing_stop_searching">Přestaňte hledat</string>
     <string name="notification_adb_pairing_working_title">Párování probíhá</string>
     <string name="notification_adb_pairing_succeed_title">Párování bylo úspěšné</string>
-    <string name="notification_adb_pairing_succeed_text">Nyní můžete spustit službu Shizuku.</string>
+    <string name="notification_adb_pairing_succeed_text">Nyní můžete spustit službu TokenX.</string>
     <string name="notification_adb_pairing_failed_title">Párování selhalo</string>
     <string name="notification_adb_pairing_retry">Zkusit znovu</string>
     <!-- Permission related, appears in system permission UI -->
-    <string name="permission_label">přístup k Shizuku</string>
-    <string name="permission_description">povolí aplikaci používat systémová rozhraní API s vyššími oprávněními (Shizuku).</string>
+    <string name="permission_label">přístup k TokenX</string>
+    <string name="permission_description">povolí aplikaci používat systémová rozhraní API s vyššími oprávněními (TokenX).</string>
     <string name="permission_warning_template"><![CDATA[Povolit aplikaci </b>%1$s</b> %2$s\?]]></string>
     <string name="grant_dialog_button_allow_always">Povolit vždy</string>
     <string name="grant_dialog_button_deny">"Zakázat"</string>
@@ -131,30 +131,30 @@
     <string name="starter">Spouštěč</string>
     <string name="start_with_root_failed">Službu nelze spustit, protože není uděleno oprávnění k rootu nebo toto zařízení není rootováno.</string>
     <!-- WADB Starter -->
-    <string name="wadb_notification_title">Startování Shizuku…</string>
+    <string name="wadb_notification_title">Startování TokenX…</string>
     <string name="wadb_notification_wifi_required">Čekání na připojení k Wi-Fi před pokračováním</string>
     <string name="wadb_notification_retry">Čekání na opakování</string>
     <string name="wadb_error_title">Chyba při startu při startu</string>
     <string name="wadb_error_notify_dev">Klepněte pro upozornění vývojáře.</string>
     <string name="wadb_permission_error_notification_title">Chyba oprávnění</string>
-    <string name="wadb_permission_error_notification_content">Shizuku potřebuje WRITE_SECURE_SETTINGS začít na startu. Klepněte a zjistěte, jak ji udělit.</string>
+    <string name="wadb_permission_error_notification_content">TokenX potřebuje WRITE_SECURE_SETTINGS začít na startu. Klepněte a zjistěte, jak ji udělit.</string>
     <!-- Shell -->
     <!-- Watchdog -->
     <string name="watchdog_running">Watchdog běží</string>
     <string name="watchdog_turn_off">Vypnout</string>
-    <string name="watchdog_shizuku_crashed_title">Shizuku nedávno havarovala</string>
+    <string name="watchdog_shizuku_crashed_title">TokenX nedávno havarovala</string>
     <string name="watchdog_shizuku_crashed_text">Watchdog službu znovu spustil. Klepněte a zjistěte o možných řešeních, jak předejít budoucím pádům.</string>
     <string name="watchdog_shizuku_crashed_action_turn_off_alerts">Vypnout upozornění</string>
     <!-- Misc -->
     <string name="dialog_cannot_open_browser_title">Prohlížeč nelze spustit</string>
     <string name="toast_copied_to_clipboard">Zkopírováno do schránky</string>
-    <string name="accessibility_service_description">Podporuje párování zařízení (např. televizorů s Androidem 14+), kde nelze používat oznámení nebo rozdělenou obrazovku.\n\nUmožňuje Shizuku extrahovat párovací kód z obrazovky pro ladění bezdrátového ladění. Jakmile najdete párovací kód, deaktivuje se.</string>
+    <string name="accessibility_service_description">Podporuje párování zařízení (např. televizorů s Androidem 14+), kde nelze používat oznámení nebo rozdělenou obrazovku.\n\nUmožňuje TokenX extrahovat párovací kód z obrazovky pro ladění bezdrátového ladění. Jakmile najdete párovací kód, deaktivuje se.</string>
     <!-- Messages for legacy -->
-    <string name="dialog_legacy_not_support_title">%1$s nepodporuje moderní Shizuku</string>
-    <string name="dialog_legacy_not_support_message"><![CDATA[Podpora starší verze Shizuku je od března 2019. Starší verze Shizuku také nefunguje na novějších systémech Android. <p> O aktualizaci požádejte vývojáře <b>%1$s </b>.]]></string>
-    <string name="dialog_requesting_legacy_title">%1$s vyžaduje starší Shizuku</string>
-    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s </b> má podporu pro moderní Shizuku, ale vyžaduje starší Shizuku. Mohlo by to být proto, že Shizuku není spuštěno, zkontrolujte aplikaci Shizuku. <p> Podpora staršího Shizuku je od března 2019 ukončena.]]></string>
-    <string name="dialog_requesting_legacy_button_open_shizuku">Otevřít Shizuku</string>
+    <string name="dialog_legacy_not_support_title">%1$s nepodporuje moderní TokenX</string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[Podpora starší verze TokenX je od března 2019. Starší verze TokenX také nefunguje na novějších systémech Android. <p> O aktualizaci požádejte vývojáře <b>%1$s </b>.]]></string>
+    <string name="dialog_requesting_legacy_title">%1$s vyžaduje starší TokenX</string>
+    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s </b> má podporu pro moderní TokenX, ale vyžaduje starší TokenX. Mohlo by to být proto, že TokenX není spuštěno, zkontrolujte aplikaci TokenX. <p> Podpora staršího TokenX je od března 2019 ukončena.]]></string>
+    <string name="dialog_requesting_legacy_button_open_shizuku">Otevřít TokenX</string>
     <string name="wadb_notification_attempt_now">Zkusit znovu</string>
     <!-- Manage tab -->
     <!-- One app, and what it may do on the device -->

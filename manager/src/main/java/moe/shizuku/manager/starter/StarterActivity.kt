@@ -60,7 +60,7 @@ private class NotRootedException: Exception()
 /** Written by the starter at the top of every run it records. */
 private const val STARTER_LOG_DIVIDER = "---- start ----"
 
-private const val STAGE_ACTION = "moe.shizuku.privileged.api.action.SYSTEM_START_STAGE"
+private const val STAGE_ACTION = "com.sysopbp.tokenx.action.SYSTEM_START_STAGE"
 private const val STAGE_EXTRA = "stage"
 private const val STAGE_AT_SHELL = "payload_reached_the_shell"
 private const val STAGE_AFTER_STARTER = "the_starter_returned"
@@ -269,7 +269,7 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
             val clipboard =
                 appContext.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                 ?: return@withContext false
-            clipboard.setPrimaryClip(ClipData.newPlainText("Shizuku", command))
+            clipboard.setPrimaryClip(ClipData.newPlainText("TokenX", command))
             true
         }
 

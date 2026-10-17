@@ -19,7 +19,7 @@
     <string name="paring_code_is_wrong">இணைத்தல் குறியீடு தவறானது.</string>
     <string name="cannot_connect_port">வயர்லெஸ் பிழைத்திருத்தச் சேவையுடன் இணைக்க
         இயலவில்லை.\n\nநெட்வொர்க் அணுகலைக் கட்டுப்படுத்தக்கூடிய அனைத்து ஃபயர்வால், விளம்பரத் தொகுதி,
-        VPN அல்லது ஒத்த பயன்பாடுகளிலும் Shizuku வெள்ளையாகப் பட்டியலிடப்பட்டுள்ளதா என்பதை
+        VPN அல்லது ஒத்த பயன்பாடுகளிலும் TokenX வெள்ளையாகப் பட்டியலிடப்பட்டுள்ளதா என்பதை
         உறுதிப்படுத்தவும்.</string>
     <string name="dialog_adb_pairing_message">பின்வரும் படிகளைச் செய்வதன் மூலம் இணைக்கத்
         தொடங்குங்கள்:\n- \"டெவலப்பர் விருப்பங்கள்\" என்பதற்குச் செல்லவும்\n- \"USB பிழைத்திருத்தம்\"
@@ -27,9 +27,9 @@
         இடது பக்கத்தைத் தட்டவும்\n- \"இணைப்பு குறியீட்டுடன் சாதனத்தை இணை\" என்பதைத் தட்டவும்\n-
         அறிவிப்பில் இணைத்தல் குறியீட்டை உள்ளிடவும்</string>
     <string name="dialog_adb_pairing_accessibility_permission">Android 14 இல், தொகுப்பு நிறுவி மூலம்
-        Shizuku ஐ நிறுவுதல்/புதுப்பித்தல், இணைப்பதற்கான அணுகல் சேவையை இயக்க தேவையான ^1 அனுமதியை
+        TokenX ஐ நிறுவுதல்/புதுப்பித்தல், இணைப்பதற்கான அணுகல் சேவையை இயக்க தேவையான ^1 அனுமதியை
         ரத்து செய்கிறது.\n\nஇதை வழங்க, பின்வரும் ADB கட்டளையை இயக்கவும்:\n\n^2\n\nகட்டளையை இயக்கிய
-        பிறகு, நீங்கள் இணைத்தல் செயல்முறையைத் தொடரலாம்.\n\nகுறிப்பு: ADB மூலம் Shizuku ஐ
+        பிறகு, நீங்கள் இணைத்தல் செயல்முறையைத் தொடரலாம்.\n\nகுறிப்பு: ADB மூலம் TokenX ஐ
         நிறுவுதல்/புதுப்பித்தல் மூலம் இதை நீங்கள் புறக்கணிக்கலாம்.</string>
     <string name="dialog_adb_pairing_accessibility_enable">இணைத்தல் செயல்முறையைத் தொடங்க அணுகல்
         சேவையை இயக்கவும். இது ஷிசுகுவை இணைத்தல் குறியீட்டைக் கண்டறிய அனுமதிக்கிறது.\n\nகுறியீடு
@@ -73,10 +73,10 @@
         இது நெட்வொர்க் அனுமதியால் கட்டுப்படுத்தப்படுகிறது.</string>
     <string name="adb_pairing_tutorial_content_network_limation_not_foreground">சில அமைப்புகள் (MIUI
         போன்றவை) பயன்பாடு முன்புற சேவையைப் பயன்படுத்தினாலும், நெட்வொர்க்கைத் தெரியாதபோது அவற்றை அணுக
-        அனுமதிக்காது. அத்தகைய அமைப்புகளில் Shizuku க்கான பேட்டரி தேர்வுமுறை அம்சங்களை முடக்கவும்.</string>
+        அனுமதிக்காது. அத்தகைய அமைப்புகளில் TokenX க்கான பேட்டரி தேர்வுமுறை அம்சங்களை முடக்கவும்.</string>
     <!-- Home - Root -->
     <string name="home_root_title"><![CDATA[தொடங்கு (ரூட் செய்யப்பட்ட சாதனங்களுக்கு)]]></string>
-    <string name="home_root_description"><![CDATA[நீங்கள் Magisk ஐப் பயன்படுத்துகிறீர்கள் என்றால், %1$sஐ முயற்சி செய்யலாம். ரூட் பயனர்களுக்கு, இது இறுதியில் Shizuku ஐ மாற்றும். குறிப்பு, %2$sஐப் பயன்படுத்த ஏற்கனவே உள்ள பயன்பாடுகள் சிறிது மாற வேண்டும்.]]></string>
+    <string name="home_root_description"><![CDATA[நீங்கள் Magisk ஐப் பயன்படுத்துகிறீர்கள் என்றால், %1$sஐ முயற்சி செய்யலாம். ரூட் பயனர்களுக்கு, இது இறுதியில் TokenX ஐ மாற்றும். குறிப்பு, %2$sஐப் பயன்படுத்த ஏற்கனவே உள்ள பயன்பாடுகள் சிறிது மாற வேண்டும்.]]></string>
     <string name="home_root_button_start">தொடங்கு</string>
     <!-- Home - Application management -->
     <plurals name="home_app_management_authorized_apps_count">
@@ -117,14 +117,14 @@
     <string name="settings_watchdog">கண்காணிப்பு நாய்</string>
     <string name="settings_watchdog_summary">ஷிசுகு செயலிழந்தால் தானாகவே மறுதொடக்கம் செய்யுங்கள்.</string>
     <string name="settings_tcp_mode">TCP பயன்முறை</string>
-    <string name="settings_tcp_mode_summary">"Wi-Fi இல்லாமல் Shizukuவை மறுதொடக்கம் செய்ய
-        அனுமதிக்கிறது. (மறுதொடக்கம் செய்யப்பட்டதிலிருந்து Shizuku ஒரு முறை தொடங்கியிருக்க வேண்டும்)"</string>
+    <string name="settings_tcp_mode_summary">"Wi-Fi இல்லாமல் TokenXவை மறுதொடக்கம் செய்ய
+        அனுமதிக்கிறது. (மறுதொடக்கம் செய்யப்பட்டதிலிருந்து TokenX ஒரு முறை தொடங்கியிருக்க வேண்டும்)"</string>
     <string name="settings_tcp_mode_dialog_close_port">"TCP போர்ட் உடனடியாக மூடப்படும். TCP
         பயன்முறையை மீண்டும் இயக்க உங்களுக்கு Wi-Fi தேவைப்படும். தொடரவா?"</string>
     <string name="settings_restart_dialog_title">மறுதொடக்கம் அவசியம்</string>
-    <string name="settings_restart_dialog_message">இந்த அமைப்பைப் பயன்படுத்த Shizuku மறுதொடக்கம்
+    <string name="settings_restart_dialog_message">இந்த அமைப்பைப் பயன்படுத்த TokenX மறுதொடக்கம்
         செய்ய வேண்டும்.</string>
-    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Wi-Fi தேவை. Shizuku தொடர்ந்து இயங்கும் மற்றும் பின்னணியில் மறுதொடக்கம் செய்வதற்கு முன் Wi-Fi இணைப்புக்காக காத்திருக்கும்.</b>]]></string>
+    <string name="settings_restart_dialog_message_wifi_required"><![CDATA[<br><br><b>Wi-Fi தேவை. TokenX தொடர்ந்து இயங்கும் மற்றும் பின்னணியில் மறுதொடக்கம் செய்வதற்கு முன் Wi-Fi இணைப்புக்காக காத்திருக்கும்.</b>]]></string>
     <string name="settings_tcp_port">TCP போர்ட்</string>
     <string name="settings_language">மொழி</string>
     <string name="settings_black_night_theme">கருப்பு இரவு தீம்</string>
@@ -157,7 +157,7 @@
     <!-- Updates -->
     <!-- Toast -->
     <string name="toast_no_email_app">மின்னஞ்சல் பயன்பாடு எதுவும் கிடைக்கவில்லை.</string>
-    <string name="toast_pairing_timeout">Shizuku இணைத்தல் சேவை நேரம் முடிந்துவிட்டது.</string>
+    <string name="toast_pairing_timeout">TokenX இணைத்தல் சேவை நேரம் முடிந்துவிட்டது.</string>
     <!-- Dark Mode Setting Override -->
     <string name="dark_theme_off">எப்போதும் வெளிச்சம்</string>
     <string name="dark_theme_on">எப்போதும் இருள்</string>
@@ -209,11 +209,11 @@
     <string name="accessibility_service_description">அறிவிப்புகள் அல்லது ஸ்பிளிட் ஸ்கிரீனைப்
         பயன்படுத்த முடியாத சாதனங்களுக்கு (எ.கா., Android 14+ இயங்கும் டிவிகள்) இணைத்தல் ஆதரவை
         வழங்குகிறது.\n\nவயர்லெஸ் பிழைத்திருத்த இணைத்தல் திரையில் இருந்து இணைத்தல் குறியீட்டைப்
-        பிரித்தெடுக்க Shizuku ஐ இயக்குகிறது. இணைத்தல் குறியீடு கண்டுபிடிக்கப்பட்டதும் அது தானாகவே
+        பிரித்தெடுக்க TokenX ஐ இயக்குகிறது. இணைத்தல் குறியீடு கண்டுபிடிக்கப்பட்டதும் அது தானாகவே
         முடக்கப்படும்.</string>
     <!-- Messages for legacy -->
     <string name="dialog_legacy_not_support_title">%1$s நவீன ஷிசுகுவை ஆதரிக்கவில்லை</string>
-    <string name="dialog_legacy_not_support_message"><![CDATA[மார்ச் 2019 முதல் Legacy Shizuku நிறுத்தப்பட்டுள்ளது. மேலும், Legacy Shizuku புதிய Android அமைப்புகளில் வேலை செய்யாது.<p>புதுப்பிக்க <b>%1$s</b> டெவலப்பரிடம் கேளுங்கள்.]]></string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[மார்ச் 2019 முதல் Legacy TokenX நிறுத்தப்பட்டுள்ளது. மேலும், Legacy TokenX புதிய Android அமைப்புகளில் வேலை செய்யாது.<p>புதுப்பிக்க <b>%1$s</b> டெவலப்பரிடம் கேளுங்கள்.]]></string>
     <string name="dialog_requesting_legacy_title">%1$s மரபுவழி ஷிசுகுவைக் கோருகிறது</string>
     <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> நவீன ஷிசுகு ஆதரவைக் கொண்டுள்ளது, ஆனால் இது மரபுவழி ஷிசுகுவைக் கோருகிறது. ஷிசுகு இயங்காததால் இது நிகழலாம், தயவுசெய்து ஷிசுகு பயன்பாட்டைப் பார்க்கவும்.<p>மரபுவழி ஷிசுகு மார்ச் 2019 முதல் நிறுத்தப்பட்டுள்ளது.]]></string>
     <string name="dialog_requesting_legacy_button_open_shizuku">ஷிசுகுவைத் திறக்கவும்</string>
